@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { eventIndexer } from "./services/eventIndexer";
 
 const app = express();
 
@@ -77,5 +78,18 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start event indexer after server is running
+    eventIndexer.start();
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    log('SIGTERM received, stopping event indexer...');
+    eventIndexer.stop();
+    server.close(() => {
+      log('Server closed');
+      process.exit(0);
+    });
   });
 })();
