@@ -1,0 +1,164 @@
+# Prediction Market Platform - Full-Stack Application
+
+## Project Overview
+
+This is a complete full-stack prediction market platform featuring 7 deployed smart contracts on **Sepolia testnet** and a beautiful Polymarket-style web interface. Users can browse markets, create new prediction markets, and view detailed market information with real-time data from deployed contracts.
+
+## Project Status
+
+✅ **DEPLOYED & RUNNING ON SEPOLIA TESTNET**
+
+**Smart Contracts (Sepolia Testnet - Chain ID: 11155111)**:
+- All 7 contracts deployed and verified on Sepolia testnet
+- MarketFactory, CTFExchange, ConditionalTokens, PythPriceResolver integrated
+- Pyth Network oracle: 0xDd24F84d36BF92C65F92307595335bdFab5Bbd21
+- All contracts verified on Etherscan ✅
+- FeeDistributor ownership transferred to MarketFactory ✅
+
+**Contract Addresses (Sepolia Testnet)**:
+- MockUSDT: `0x4041b89E54786F05744fCF13C1263a24164820AC`
+- FeeDistributor: `0x8A87e6610A762505408b30dcB03266ea255616D1`
+- ConditionalTokens: `0x27B0B87571e7908bAB95Dd374792bdC9634edfA4`
+- CTFExchange: `0xA9DbBb8d093518912EE8b0f1c19d8B694B8f8d92`
+- PythPriceResolver: `0x244DE5a1e2c0d0e158515bF3D47ba39cc878A411`
+- MarketFactory: `0x9Ce05c79aEcfE70711A5471B562947EfdF53AD68`
+- ProxyWallet: `0x6e81B3011804C126f1Dac71e8458DEfF9dA4bff8`
+
+**Web Application**:
+- Beautiful dark-themed UI matching Polymarket design
+- MetaMask wallet integration with Sepolia testnet
+- Market browsing with search and category filtering
+- Market creation form with Pyth price feed integration
+- Trading interface (EIP-712 demo)
+- Fully responsive design
+
+## Quick Start
+
+### Deploy All Contracts to Sepolia Testnet
+```bash
+npm run deploy
+```
+
+### Verify All Contracts on Etherscan
+```bash
+npm run verify
+```
+
+### Extract ABIs to abis/ Folder
+```bash
+npm run extract-abis
+```
+
+## System Architecture
+
+### Contracts (7 total)
+
+1. **MockUSDT** - ERC20 token with 6 decimals
+2. **FeeDistributor** - Platform (1.5%) + Creator (1.0%) fee management
+3. **ConditionalTokens** - ERC1155 YES/NO outcome tokens
+4. **CTFExchange** - Order book with EIP-712 signatures
+5. **PythPriceResolver** - Pyth Network price feed integration
+6. **MarketFactory** - Prediction market creation and management
+7. **ProxyWallet** - Gas-free trading proxy
+
+### Deployment Sequence
+
+```
+MockUSDT → FeeDistributor → ConditionalTokens → CTFExchange
+                          ↓                    ↓
+                    PythPriceResolver → MarketFactory
+                                             ↓
+                                       ProxyWallet
+```
+
+## Key Implementation Details
+
+### Solidity Configuration
+- Version: 0.8.20
+- Optimizer: Enabled (200 runs)
+- viaIR: Enabled (to handle stack depth in CTFExchange)
+
+### Network Configuration
+- Network: Sepolia Testnet (Chain ID: 11155111)
+- Pyth Contract: 0xDd24F84d36BF92C65F92307595335bdFab5Bbd21
+- RPC: Configured via SEPOLIA_RPC_URL secret
+- Deployer: 0x73eB1835929244710D4b894b147C4187dB80Aab7
+
+### Environment Variables (Replit Secrets)
+- `PRIVATE_KEY` - Wallet private key (with or without 0x prefix supported)
+- `SEPOLIA_RPC_URL` - Sepolia testnet RPC endpoint
+- `ETHERSCAN_API_KEY` - For contract verification on Etherscan
+
+## File Structure
+
+```
+.
+├── contracts/              # 7 Solidity contracts
+│   ├── MockUSDT.sol
+│   ├── FeeDistributor.sol
+│   ├── ConditionalTokens.sol
+│   ├── CTFExchange.sol
+│   ├── PythPriceResolver.sol
+│   ├── MarketFactory.sol
+│   └── ProxyWallet.sol
+├── scripts/               # Deployment & utility scripts
+│   ├── deploy.js         # Sepolia testnet deployment
+│   ├── verify.js         # Etherscan verification
+│   ├── extract-abis.js   # ABI extraction utility
+│   └── checkBalance.js   # Balance checker
+├── deployments/          # Deployment records (created after deploy)
+├── abis/                 # Extracted contract ABIs
+├── frontend/             # React + Vite web application
+├── hardhat.config.js     # Hardhat configuration
+├── package.json          # Dependencies & scripts
+├── README.md            # Full documentation
+└── replit.md            # Project memory and documentation
+```
+
+## Recent Changes
+
+### 2025-11-11
+- Successfully deployed all 7 contracts to Sepolia testnet
+- All contracts verified on Etherscan using API V2 format ✅
+- Updated frontend configuration to use Sepolia testnet (Chain ID: 11155111)
+- Updated hardhat.config.js to use Etherscan API V2 format
+- Extracted all 7 ABIs to searchable abis/ folder
+- All contract addresses updated in frontend/src/config/contracts.js
+- Transferred FeeDistributor ownership to MarketFactory (Tx: 0x1d289d58591ba7ef173a95e5e14e4c8990b8db718ff917faa5acf875470c0fa8) ✅
+
+## Dependencies
+
+### Production
+- @openzeppelin/contracts ^5.4.0
+- @pythnetwork/pyth-sdk-solidity ^4.2.0
+- dotenv ^17.2.3
+
+### Development
+- hardhat ^2.27.0
+- @nomicfoundation/hardhat-toolbox ^6.1.0
+- @nomicfoundation/hardhat-verify ^2.1.3
+- ethers ^6.15.0
+
+## User Preferences
+
+- Network: Sepolia testnet
+- Contract Code: Zero modifications - deployed exactly as provided
+- Deployment: Automated sequence with dependency injection
+- Documentation: Comprehensive guides for deployment and verification
+
+## Next Steps
+
+1. Access deployed contracts on Etherscan: https://sepolia.etherscan.io/
+2. Configure MetaMask to use Sepolia testnet (Chain ID: 11155111)
+3. Get testnet ETH from faucet to test market creation
+4. View contract ABIs in `abis/` folder
+5. Test the web application with deployed contracts
+
+## Support Resources
+
+- README.md - Full project documentation
+- replit.md - Project memory and preferences
+- Sepolia Faucet: https://sepoliafaucet.com/
+- Etherscan Sepolia: https://sepolia.etherscan.io/
+- Pyth Network Docs: https://docs.pyth.network/
+- MetaMask Setup Guide: https://metamask.io/
