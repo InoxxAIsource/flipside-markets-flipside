@@ -74,10 +74,20 @@ export class Web3Service {
   public proxyWallet: ethers.Contract;
 
   constructor(rpcUrl?: string) {
-    // Use provided RPC or default to Sepolia
-    this.provider = new ethers.JsonRpcProvider(
-      rpcUrl || process.env.SEPOLIA_RPC_URL || 'https://rpc.sepolia.org'
-    );
+    // Use provided RPC or Alchemy if available, fallback to public Sepolia
+    let defaultRpcUrl = 'https://rpc.sepolia.org';
+    
+    if (process.env.ALCHEMY_API_KEY) {
+      const alchemyKey = process.env.ALCHEMY_API_KEY;
+      // Check if the key is already a full URL or just the API key
+      if (alchemyKey.startsWith('http')) {
+        defaultRpcUrl = alchemyKey;
+      } else {
+        defaultRpcUrl = `https://eth-sepolia.g.alchemy.com/v2/${alchemyKey}`;
+      }
+    }
+    
+    this.provider = new ethers.JsonRpcProvider(rpcUrl || defaultRpcUrl);
 
     // Initialize contract instances (read-only)
     this.mockUSDT = new ethers.Contract(
