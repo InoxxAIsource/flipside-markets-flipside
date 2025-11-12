@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { eventIndexer } from "./services/eventIndexer";
+import { pythWorker } from "./services/pythWorker";
 
 const app = express();
 
@@ -79,14 +80,16 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
     
-    // Start event indexer after server is running
+    // Start background services after server is running
     eventIndexer.start();
+    pythWorker.start();
   });
 
   // Graceful shutdown
   process.on('SIGTERM', () => {
-    log('SIGTERM received, stopping event indexer...');
+    log('SIGTERM received, stopping services...');
     eventIndexer.stop();
+    pythWorker.stop();
     server.close(() => {
       log('Server closed');
       process.exit(0);

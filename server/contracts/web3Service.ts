@@ -273,6 +273,29 @@ export class Web3Service {
   }
 
   /**
+   * Get latest price from Pyth price feed
+   */
+  async getLatestPrice(priceFeedId: string): Promise<{ price: bigint; conf: bigint; publishTime: bigint; expo: number } | null> {
+    try {
+      // Convert price feed ID to bytes32 format if needed
+      const feedId = priceFeedId.startsWith('0x') ? priceFeedId : `0x${priceFeedId}`;
+      
+      // Get price from Pyth resolver - returns { price, conf, expo, publishTime }
+      const priceData = await this.pythPriceResolver.getLatestPrice(feedId);
+      
+      return {
+        price: priceData.price,
+        conf: priceData.conf,
+        publishTime: priceData.publishTime,
+        expo: Number(priceData.expo), // Exponent for price normalization
+      };
+    } catch (error: any) {
+      console.error(`Failed to fetch Pyth price for ${priceFeedId}:`, error.message);
+      return null;
+    }
+  }
+
+  /**
    * Stop listening to events
    */
   removeAllListeners() {
