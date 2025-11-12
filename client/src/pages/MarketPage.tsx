@@ -1,6 +1,8 @@
 import { useRoute } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
 import { PriceChart } from '@/components/PriceChart';
@@ -9,35 +11,31 @@ import { MarketStats } from '@/components/MarketStats';
 import { MarketDetails } from '@/components/MarketDetails';
 import type { Market } from '@shared/schema';
 
-// TODO: Remove mock data
-const mockMarket: Market = {
-  id: '1',
-  question: 'Will Bitcoin reach $100,000 by the end of 2025?',
-  description: 'This market will resolve to YES if Bitcoin (BTC/USD) reaches a price of $100,000 or higher at any point before December 31, 2025, 23:59:59 UTC. The price will be determined using the Pyth Network price feed.',
-  category: 'Crypto',
-  expiresAt: new Date('2025-12-31'),
-  resolvedAt: null,
-  outcome: null,
-  yesPrice: 0.68,
-  noPrice: 0.32,
-  volume: 125000,
-  liquidity: 50000,
-  creatorAddress: '0x1234567890123456789012345678901234567890',
-  contractAddress: '0x9876543210987654321098765432109876543210',
-  pythPriceFeed: 'BTC/USD',
-  baselinePrice: 95000,
-  resolved: false,
-  createdAt: new Date('2024-01-15'),
-};
-
 export default function MarketPage() {
   const [, params] = useRoute('/market/:id');
   const marketId = params?.id;
 
-  // TODO: Fetch market by ID from API
-  const market = mockMarket;
+  const { data: market, isLoading, error } = useQuery<Market>({
+    queryKey: ['/api/markets', marketId],
+    enabled: !!marketId,
+  });
 
-  if (!market) {
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-96 w-full" />
+          </div>
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !market) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <p className="text-muted-foreground">Market not found</p>

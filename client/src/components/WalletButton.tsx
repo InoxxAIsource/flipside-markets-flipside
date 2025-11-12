@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Wallet, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,25 +10,30 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { connectWallet, formatAddress } from '@/lib/web3';
+import { formatAddress, formatEther } from '@/lib/web3';
 import { useToast } from '@/hooks/use-toast';
+import { useWallet } from '@/hooks/use-wallet';
 
 export function WalletButton() {
-  const [address, setAddress] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string>('0');
+  const { account: address, isConnecting, connect, disconnect } = useWallet();
   const { toast } = useToast();
+
+  const { data: balanceData } = useQuery<{ balance: string }>({
+    queryKey: [`/api/web3/balance/${address}`],
+    enabled: !!address,
+    refetchInterval: 30000,
+  });
+
+  const balance = balanceData?.balance 
+    ? (parseFloat(balanceData.balance) / 1e6).toFixed(2)
+    : '0.00';
 
   const handleConnect = async () => {
     try {
-      const wallet = await connectWallet();
-      setAddress(wallet.address);
-      
-      // TODO: Fetch USDT balance from contract
-      setBalance('1000.00');
-      
+      const connectedAddress = await connect();
       toast({
         title: 'Wallet Connected',
-        description: `Connected to ${formatAddress(wallet.address)}`,
+        description: `Connected to ${connectedAddress ? formatAddress(connectedAddress) : 'wallet'}`,
       });
     } catch (error: any) {
       toast({
@@ -40,8 +45,7 @@ export function WalletButton() {
   };
 
   const handleDisconnect = () => {
-    setAddress(null);
-    setBalance('0');
+    disconnect();
     toast({
       title: 'Wallet Disconnected',
       description: 'Your wallet has been disconnected',
@@ -56,9 +60,13 @@ export function WalletButton() {
 
   if (!address) {
     return (
-      <Button onClick={handleConnect} data-testid="button-connect-wallet">
+      <Button 
+        onClick={handleConnect} 
+        disabled={isConnecting}
+        data-testid="button-connect-wallet"
+      >
         <Wallet className="mr-2 h-4 w-4" />
-        Connect Wallet
+        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </Button>
     );
   }

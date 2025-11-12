@@ -41,9 +41,10 @@ type FormData = z.infer<typeof formSchema>;
 
 interface CreateMarketFormProps {
   onSubmit?: (data: FormData) => void;
+  isSubmitting?: boolean;
 }
 
-export function CreateMarketForm({ onSubmit }: CreateMarketFormProps) {
+export function CreateMarketForm({ onSubmit, isSubmitting = false }: CreateMarketFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -235,10 +236,22 @@ export function CreateMarketForm({ onSubmit }: CreateMarketFormProps) {
           </div>
 
           <div className="flex gap-4">
-            <Button type="submit" size="lg" className="flex-1" data-testid="button-create-market">
-              Create Market
+            <Button 
+              type="submit" 
+              size="lg" 
+              className="flex-1" 
+              disabled={isSubmitting}
+              data-testid="button-create-market"
+            >
+              {isSubmitting ? 'Creating...' : 'Create Market'}
             </Button>
-            <Button type="button" variant="outline" size="lg" data-testid="button-cancel">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="lg" 
+              disabled={isSubmitting}
+              data-testid="button-cancel"
+            >
               Cancel
             </Button>
           </div>

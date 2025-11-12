@@ -1,138 +1,40 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { MarketCard } from '@/components/MarketCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, TrendingUp, Users, Activity } from 'lucide-react';
 import type { Market } from '@shared/schema';
-
-// TODO: Remove mock data
-const mockMarkets: Market[] = [
-  {
-    id: '1',
-    question: 'Will Bitcoin reach $100,000 by the end of 2025?',
-    description: 'Market resolves YES if BTC hits $100k',
-    category: 'Crypto',
-    expiresAt: new Date('2025-12-31'),
-    resolvedAt: null,
-    outcome: null,
-    yesPrice: 0.68,
-    noPrice: 0.32,
-    volume: 125000,
-    liquidity: 50000,
-    creatorAddress: '0x1234567890123456789012345678901234567890',
-    contractAddress: '0x9876543210987654321098765432109876543210',
-    pythPriceFeed: 'BTC/USD',
-    baselinePrice: 95000,
-    resolved: false,
-    createdAt: new Date('2024-01-15'),
-  },
-  {
-    id: '2',
-    question: 'Will Ethereum price exceed $5,000 in 2025?',
-    description: 'Market resolves YES if ETH exceeds $5,000',
-    category: 'Crypto',
-    expiresAt: new Date('2025-12-31'),
-    resolvedAt: null,
-    outcome: null,
-    yesPrice: 0.45,
-    noPrice: 0.55,
-    volume: 85000,
-    liquidity: 35000,
-    creatorAddress: '0x1234567890123456789012345678901234567890',
-    contractAddress: null,
-    pythPriceFeed: 'ETH/USD',
-    baselinePrice: 3500,
-    resolved: false,
-    createdAt: new Date('2024-01-16'),
-  },
-  {
-    id: '3',
-    question: 'Will the US economy enter recession in 2025?',
-    description: 'Resolves YES if NBER declares recession',
-    category: 'Finance',
-    expiresAt: new Date('2025-06-30'),
-    resolvedAt: null,
-    outcome: null,
-    yesPrice: 0.32,
-    noPrice: 0.68,
-    volume: 210000,
-    liquidity: 95000,
-    creatorAddress: '0x1234567890123456789012345678901234567890',
-    contractAddress: null,
-    pythPriceFeed: null,
-    baselinePrice: null,
-    resolved: false,
-    createdAt: new Date('2024-01-10'),
-  },
-  {
-    id: '4',
-    question: 'Will Solana reach $200 before March 2025?',
-    description: 'Market resolves YES if SOL hits $200',
-    category: 'Crypto',
-    expiresAt: new Date('2025-03-01'),
-    resolvedAt: null,
-    outcome: null,
-    yesPrice: 0.55,
-    noPrice: 0.45,
-    volume: 62000,
-    liquidity: 28000,
-    creatorAddress: '0x1234567890123456789012345678901234567890',
-    contractAddress: null,
-    pythPriceFeed: 'SOL/USD',
-    baselinePrice: 150,
-    resolved: false,
-    createdAt: new Date('2024-01-18'),
-  },
-  {
-    id: '5',
-    question: 'Will AI surpass human performance in coding by 2026?',
-    description: 'Resolves YES based on benchmarks',
-    category: 'Technology',
-    expiresAt: new Date('2026-01-01'),
-    resolvedAt: null,
-    outcome: null,
-    yesPrice: 0.72,
-    noPrice: 0.28,
-    volume: 145000,
-    liquidity: 68000,
-    creatorAddress: '0x1234567890123456789012345678901234567890',
-    contractAddress: null,
-    pythPriceFeed: null,
-    baselinePrice: null,
-    resolved: false,
-    createdAt: new Date('2024-01-12'),
-  },
-  {
-    id: '6',
-    question: 'Will Tesla stock price exceed $500 in 2025?',
-    description: 'Market resolves YES if TSLA > $500',
-    category: 'Finance',
-    expiresAt: new Date('2025-12-31'),
-    resolvedAt: null,
-    outcome: null,
-    yesPrice: 0.38,
-    noPrice: 0.62,
-    volume: 98000,
-    liquidity: 42000,
-    creatorAddress: '0x1234567890123456789012345678901234567890',
-    contractAddress: null,
-    pythPriceFeed: null,
-    baselinePrice: 250,
-    resolved: false,
-    createdAt: new Date('2024-01-14'),
-  },
-];
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredMarkets = mockMarkets.filter(market => {
-    const matchesCategory = selectedCategory === 'all' || market.category.toLowerCase() === selectedCategory;
-    const matchesSearch = market.question.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+  const { data: markets, isLoading } = useQuery<Market[]>({
+    queryKey: selectedCategory === 'all' ? ['/api/markets'] : ['/api/markets', { category: selectedCategory }],
   });
+
+  const filteredMarkets = useMemo(() => {
+    if (!markets) return [];
+    
+    return markets.filter(market => {
+      const matchesCategory = selectedCategory === 'all' || market.category.toLowerCase() === selectedCategory;
+      const matchesSearch = market.question.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [markets, selectedCategory, searchQuery]);
+
+  const stats = useMemo(() => {
+    if (!markets) return { totalVolume: 0, activeMarkets: 0, traders: 0 };
+    
+    const totalVolume = markets.reduce((sum, m) => sum + m.volume, 0);
+    const activeMarkets = markets.filter(m => !m.resolved).length;
+    const uniqueTraders = new Set(markets.map(m => m.creatorAddress)).size;
+    
+    return { totalVolume, activeMarkets, traders: uniqueTraders };
+  }, [markets]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -163,21 +65,33 @@ export default function Home() {
               <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold">$2.5M</h3>
+              {isLoading ? (
+                <Skeleton className="h-7 w-24 mx-auto" />
+              ) : (
+                <h3 className="font-semibold">${(stats.totalVolume / 1000000).toFixed(1)}M</h3>
+              )}
               <p className="text-sm text-muted-foreground">Total Volume</p>
             </div>
             <div className="text-center space-y-2">
               <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Activity className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold">48</h3>
+              {isLoading ? (
+                <Skeleton className="h-7 w-16 mx-auto" />
+              ) : (
+                <h3 className="font-semibold">{stats.activeMarkets}</h3>
+              )}
               <p className="text-sm text-muted-foreground">Active Markets</p>
             </div>
             <div className="text-center space-y-2">
               <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold">1,247</h3>
+              {isLoading ? (
+                <Skeleton className="h-7 w-20 mx-auto" />
+              ) : (
+                <h3 className="font-semibold">{stats.traders}</h3>
+              )}
               <p className="text-sm text-muted-foreground">Traders</p>
             </div>
           </div>
@@ -205,16 +119,30 @@ export default function Home() {
           onSelect={setSelectedCategory}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMarkets.map((market) => (
-            <MarketCard key={market.id} market={market} />
-          ))}
-        </div>
-
-        {filteredMarkets.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No markets found</p>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="border rounded-lg p-6 space-y-4">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ))}
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredMarkets.map((market) => (
+                <MarketCard key={market.id} market={market} />
+              ))}
+            </div>
+
+            {filteredMarkets.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No markets found</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
