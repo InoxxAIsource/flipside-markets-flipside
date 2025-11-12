@@ -163,9 +163,63 @@ Preferred communication style: Simple, everyday language.
 **Required Environment Variables:**
 - `DATABASE_URL`: PostgreSQL connection string (Neon serverless)
 - `NODE_ENV`: Development/production mode
+- `SESSION_SECRET`: Session encryption key
 - Smart contract addresses hardcoded in codebase (Sepolia deployment)
 
 **Optional Configuration:**
-- Session secrets for authentication
-- RPC endpoints for blockchain providers
-- WebSocket port configuration
+- `ETHEREUM_RPC_URL`: Custom RPC endpoint (default: public Sepolia endpoint)
+  - **Recommended**: Use Infura or Alchemy for production to avoid rate limits
+  - Public Sepolia RPC may be rate-limited or temporarily unavailable
+- WebSocket port configuration (default: 5000)
+
+## Production Deployment
+
+### Pyth Worker Configuration
+
+**Confidence & Staleness Gating Policy:**
+The Pyth worker enforces the following thresholds before resolving markets:
+
+1. **Confidence Threshold**: Maximum 1% of price value
+   - If `confidence > price * 0.01`, price update is rejected
+   - Prevents resolution on highly uncertain data
+
+2. **Staleness Threshold**: Maximum 60 seconds
+   - If `publishTime` is older than 60 seconds, price update is rejected
+   - Ensures only fresh oracle data triggers resolution
+
+These thresholds can be adjusted in `server/services/pythWorker.ts`:
+```typescript
+const MAX_CONFIDENCE_THRESHOLD = priceUpdate.price * 0.01; // 1% of price
+const MAX_STALENESS_MS = 60000; // 60 seconds
+```
+
+**Important:** All price normalization uses the actual exponent returned by the Pyth resolver (`expo` field) rather than hard-coded values. This ensures correct price calculation across different feed types.
+
+### Known Limitations
+
+1. **RPC Provider**: Public Sepolia RPC endpoint may experience rate limiting or downtime
+   - **Solution**: Configure a dedicated provider (Infura/Alchemy) via environment variable
+   
+2. **Background Services**: Event indexer and Pyth worker start on server boot
+   - Monitor server logs for any startup errors
+   - Services will retry failed requests automatically
+
+3. **Blockchain Features**: Require MetaMask or compatible Web3 wallet
+   - Wallet connection, balance queries, and on-chain transactions depend on RPC availability
+   - Off-chain features (viewing markets, order book) work independently
+
+### Testing Status
+
+✅ **Comprehensive E2E Testing Completed:**
+- Home page with market list and stats
+- Create market form with all inputs
+- Dark theme and responsive layout
+- UI/UX quality and accessibility
+
+⚠️ **Blockchain Features Not Tested:**
+- Wallet connection (requires MetaMask extension)
+- On-chain order placement and settlement
+- Real-time event synchronization
+- Automated market resolution
+
+**Recommendation:** Test blockchain features with a dedicated RPC provider and MetaMask wallet in production environment.
