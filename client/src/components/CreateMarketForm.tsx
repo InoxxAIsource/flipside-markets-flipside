@@ -33,8 +33,8 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters'),
   category: z.string().min(1, 'Please select a category'),
   expiresAt: z.date({ required_error: 'Please select an expiration date' }),
-  pythPriceFeed: z.string().optional(),
-  baselinePrice: z.string().optional(),
+  pythPriceFeedId: z.string().optional(),
+  baselinePrice: z.coerce.number().positive('Price must be positive').optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -55,8 +55,12 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false }: CreateMarke
   });
 
   const handleSubmit = (data: FormData) => {
-    onSubmit?.(data);
-    console.log('Create market:', data);
+    // Convert empty string baseline price to undefined
+    const submitData = {
+      ...data,
+      baselinePrice: data.baselinePrice === '' ? undefined : data.baselinePrice,
+    };
+    onSubmit?.(submitData);
   };
 
   return (
@@ -185,7 +189,7 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false }: CreateMarke
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="pythPriceFeed"
+              name="pythPriceFeedId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Pyth Price Feed (Optional)</FormLabel>
@@ -196,11 +200,11 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false }: CreateMarke
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="BTC/USD">BTC/USD</SelectItem>
-                      <SelectItem value="ETH/USD">ETH/USD</SelectItem>
-                      <SelectItem value="SOL/USD">SOL/USD</SelectItem>
-                      <SelectItem value="DOGE/USD">DOGE/USD</SelectItem>
-                      <SelectItem value="XRP/USD">XRP/USD</SelectItem>
+                      <SelectItem value="0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43">BTC/USD</SelectItem>
+                      <SelectItem value="0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace">ETH/USD</SelectItem>
+                      <SelectItem value="0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d">SOL/USD</SelectItem>
+                      <SelectItem value="0xdcef50dd0a4cd2dcc17e45df1676dcb336a11a61c69df7a0299b0150c672d25c">DOGE/USD</SelectItem>
+                      <SelectItem value="0xec5d399846a9209f3fe5881d70aae9268c94339ff9817e8d18ff19fa05eea1c8">XRP/USD</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
