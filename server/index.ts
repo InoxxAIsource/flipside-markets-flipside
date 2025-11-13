@@ -5,6 +5,11 @@ import { eventIndexer } from "./services/eventIndexer";
 import { pythWorker } from "./services/pythWorker";
 import { relayerService } from "./services/relayerService";
 
+// Global BigInt serializer - converts all BigInt values to strings in JSON
+(BigInt.prototype as any).toJSON = function() {
+  return this.toString();
+};
+
 const app = express();
 
 declare module 'http' {
