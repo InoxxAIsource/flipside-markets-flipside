@@ -8,6 +8,14 @@ import { insertMarketSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 
+// Helper to serialize orders (convert BigInt nonce to string)
+function serializeOrder(order: any) {
+  return {
+    ...order,
+    nonce: order.nonce.toString(),
+  };
+}
+
 // WebSocket client tracking
 const wsClients = new Map<string, Set<WebSocket>>();
 
@@ -151,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const status = req.query.status as string | undefined;
       const orders = await storage.getMarketOrders(req.params.marketId, status);
-      res.json(orders);
+      res.json(orders.map(serializeOrder));
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       res.status(500).json({ error: 'Failed to fetch orders' });
@@ -162,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/:address/orders', async (req, res) => {
     try {
       const orders = await storage.getUserOrders(req.params.address);
-      res.json(orders);
+      res.json(orders.map(serializeOrder));
     } catch (error: any) {
       console.error('Error fetching user orders:', error);
       res.status(500).json({ error: 'Failed to fetch user orders' });
@@ -210,9 +218,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.createOrder(validation.data);
 
       // Broadcast order book update
-      broadcastOrderBookUpdate(order.marketId, { type: 'new_order', order });
+      broadcastOrderBookUpdate(order.marketId, { type: 'new_order', order: serializeOrder(order) });
 
-      res.status(201).json(order);
+      res.status(201).json(serializeOrder(order));
     } catch (error: any) {
       console.error('Error creating order:', error);
       res.status(500).json({ error: 'Failed to create order' });
