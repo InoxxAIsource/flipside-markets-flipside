@@ -257,6 +257,8 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
       setLimitSize('');
 
       await queryClient.invalidateQueries({ queryKey: ['/api/markets', marketId, 'orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'positions'] });
     } catch (error: any) {
       console.error('Error placing limit order:', error);
       toast({
@@ -366,6 +368,8 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
       setMarketSize('');
 
       await queryClient.invalidateQueries({ queryKey: ['/api/markets', marketId, 'orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'positions'] });
     } catch (error: any) {
       console.error('Error executing market order:', error);
       toast({

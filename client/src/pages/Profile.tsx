@@ -22,13 +22,15 @@ export default function Profile() {
   };
 
   const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
-    queryKey: address ? [`/api/users/${address}/orders`] : ['disabled'],
+    queryKey: address ? ['/api/users', address, 'orders'] : ['disabled'],
     enabled: !!address,
+    refetchInterval: 10000,
   });
 
   const { data: positions, isLoading: positionsLoading } = useQuery<Position[]>({
-    queryKey: address ? [`/api/users/${address}/positions`] : ['disabled'],
+    queryKey: address ? ['/api/users', address, 'positions'] : ['disabled'],
     enabled: !!address,
+    refetchInterval: 10000,
   });
 
   const { data: markets } = useQuery<Market[]>({

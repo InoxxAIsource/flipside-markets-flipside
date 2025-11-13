@@ -9,7 +9,7 @@ interface OrderBookProps {
 
 export function OrderBook({ marketId }: OrderBookProps) {
   const { data: orders, isLoading } = useQuery<Order[]>({
-    queryKey: [`/api/markets/${marketId}/orders`],
+    queryKey: ['/api/markets', marketId, 'orders'],
     refetchInterval: 5000,
   });
 
