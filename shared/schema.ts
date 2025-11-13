@@ -53,6 +53,7 @@ export const markets = pgTable("markets", {
 export const orders = pgTable("orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   marketId: varchar("market_id").notNull().references(() => markets.id, { onDelete: 'cascade' }),
+  tokenId: text("token_id").notNull(), // ConditionalTokens token ID (YES or NO outcome)
   
   // Order details
   makerAddress: text("maker_address").notNull(), // User placing the order

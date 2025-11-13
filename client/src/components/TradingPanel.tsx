@@ -224,6 +224,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
       const orderData = {
         marketId,
+        tokenId,
         makerAddress: account,
         side: 'buy',
         outcome: limitSide === 'yes',
@@ -333,6 +334,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
       const orderData = {
         marketId,
+        tokenId,
         makerAddress: account,
         side: 'buy',
         outcome: marketSide === 'yes',

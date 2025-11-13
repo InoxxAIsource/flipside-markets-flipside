@@ -181,13 +181,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify signature
       const orderData = validation.data;
+      
+      // Convert amounts to wei (6 decimals) to match frontend signature
+      const { ethers } = await import('ethers');
+      const makerAmountWei = ethers.parseUnits(orderData.size.toString(), 6).toString();
+      const takerAmountWei = ethers.parseUnits(orderData.price.toString(), 6).toString();
+      
       const isValid = await web3Service.verifyOrderSignature(
         {
           maker: orderData.makerAddress,
-          taker: orderData.outcome ? '0x0000000000000000000000000000000000000000' : orderData.makerAddress,
-          tokenId: orderData.marketId,
-          makerAmount: orderData.size.toString(),
-          takerAmount: orderData.price.toString(),
+          taker: '0x0000000000000000000000000000000000000000',
+          tokenId: (orderData as any).tokenId || orderData.marketId,
+          makerAmount: makerAmountWei,
+          takerAmount: takerAmountWei,
           side: orderData.side === 'buy' ? 0 : 1,
           feeRateBps: 250, // 2.5%
           nonce: orderData.nonce,
