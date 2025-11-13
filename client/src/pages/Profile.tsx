@@ -10,17 +10,25 @@ import { formatDistanceToNow } from 'date-fns';
 import type { Order, Position, Market } from '@shared/schema';
 
 export default function Profile() {
-  const { account: address } = useWallet();
+  const { account: address, connect } = useWallet();
   const isConnected = !!address;
 
+  const handleConnectWallet = async () => {
+    try {
+      await connect();
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
+  };
+
   const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
-    queryKey: ['/api/users', address, 'orders'],
-    enabled: isConnected && !!address,
+    queryKey: address ? [`/api/users/${address}/orders`] : ['disabled'],
+    enabled: !!address,
   });
 
   const { data: positions, isLoading: positionsLoading } = useQuery<Position[]>({
-    queryKey: ['/api/users', address, 'positions'],
-    enabled: isConnected && !!address,
+    queryKey: address ? [`/api/users/${address}/positions`] : ['disabled'],
+    enabled: !!address,
   });
 
   const { data: markets } = useQuery<Market[]>({
@@ -35,7 +43,9 @@ export default function Profile() {
         <p className="text-muted-foreground mb-6">
           Please connect your wallet to view your profile
         </p>
-        <Button data-testid="button-connect-wallet">Connect Wallet</Button>
+        <Button onClick={handleConnectWallet} data-testid="button-connect-wallet">
+          Connect Wallet
+        </Button>
       </div>
     );
   }
