@@ -8,6 +8,9 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 
 const ProxyWalletABI = [
   "function deposit(uint256 amount)",
+  "function withdraw(uint256 amount)",
+  "function executeSplit(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
+  "function executeMerge(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
   "function getBalance(address user) view returns (uint256)",
   "function getPositionBalance(address user, uint256 tokenId) view returns (uint256)",
   "function getNonce(address user) view returns (uint256)",
@@ -49,6 +52,21 @@ interface MetaTransactionResponse {
   error?: string;
 }
 
+// Local nonce tracking helpers (contract doesn't have getNonce)
+const getNonce = (address: string): number => {
+  const key = `proxy_wallet_nonce_${address.toLowerCase()}`;
+  const stored = localStorage.getItem(key);
+  return stored ? parseInt(stored, 10) : 0;
+};
+
+const incrementNonce = (address: string): number => {
+  const currentNonce = getNonce(address);
+  const nextNonce = currentNonce + 1;
+  const key = `proxy_wallet_nonce_${address.toLowerCase()}`;
+  localStorage.setItem(key, nextNonce.toString());
+  return currentNonce; // Return current nonce for use
+};
+
 export function useProxyWallet() {
   const { account } = useWallet();
   const { toast } = useToast();
@@ -64,15 +82,7 @@ export function useProxyWallet() {
     refetchInterval: 10000, // Refresh every 10 seconds
   });
 
-  // Query for user's nonce
-  const { data: nonceData } = useQuery<ProxyWalletNonce>({
-    queryKey: ['/api/proxy/nonce', account],
-    enabled: !!account,
-    refetchInterval: 5000, // Refresh every 5 seconds
-  });
-
   const proxyBalance = proxyBalanceData?.balance || '0';
-  const nonce = nonceData?.nonce || 0;
 
   /**
    * Get position token balance from ProxyWallet
@@ -205,12 +215,15 @@ export function useProxyWallet() {
     // Create deadline (10 minutes from now)
     const deadline = Math.floor(Date.now() / 1000) + 600;
 
+    // Get current nonce (don't increment yet - wait for success)
+    const currentNonce = getNonce(account);
+
     // Create meta-transaction message
     const message = {
       user: account,
       target,
       data,
-      nonce: BigInt(nonce),
+      nonce: BigInt(currentNonce),
       deadline: BigInt(deadline),
     };
 
@@ -240,8 +253,8 @@ export function useProxyWallet() {
       throw new Error(result.error || 'Failed to submit meta-transaction');
     }
 
-    // Refresh nonce
-    await queryClient.invalidateQueries({ queryKey: ['/api/proxy/nonce', account] });
+    // Only increment nonce after successful submission
+    incrementNonce(account);
 
     return result.txId;
   };
@@ -300,7 +313,7 @@ export function useProxyWallet() {
   /**
    * Split USDT into YES+NO tokens (meta-transaction)
    */
-  const split = async (marketId: string, amount: string): Promise<string> => {
+  const split = async (conditionId: string, amount: string): Promise<string> => {
     if (!account) {
       throw new Error('Wallet not connected');
     }
@@ -315,15 +328,12 @@ export function useProxyWallet() {
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
       // Encode executeSplit function call
-      const splitABI = [
-        "function executeSplit(uint256 marketId, uint256 amount, bytes memory signature, uint256 deadline)"
-      ];
-      const proxyWalletInterface = new ethers.Interface(splitABI);
+      const proxyWalletInterface = new ethers.Interface(ProxyWalletABI);
       
       // For split, we pass empty signature and current timestamp as deadline
       // The actual signature is the meta-transaction signature
       const data = proxyWalletInterface.encodeFunctionData('executeSplit', [
-        marketId,
+        conditionId,
         amountWei,
         '0x',
         Math.floor(Date.now() / 1000) + 600
@@ -362,7 +372,7 @@ export function useProxyWallet() {
   /**
    * Merge YES+NO tokens back to USDT (meta-transaction)
    */
-  const merge = async (marketId: string, amount: string): Promise<string> => {
+  const merge = async (conditionId: string, amount: string): Promise<string> => {
     if (!account) {
       throw new Error('Wallet not connected');
     }
@@ -377,15 +387,12 @@ export function useProxyWallet() {
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
       // Encode executeMerge function call
-      const mergeABI = [
-        "function executeMerge(uint256 marketId, uint256 amount, bytes memory signature, uint256 deadline)"
-      ];
-      const proxyWalletInterface = new ethers.Interface(mergeABI);
+      const proxyWalletInterface = new ethers.Interface(ProxyWalletABI);
       
       // For merge, we pass empty signature and current timestamp as deadline
       // The actual signature is the meta-transaction signature
       const data = proxyWalletInterface.encodeFunctionData('executeMerge', [
-        marketId,
+        conditionId,
         amountWei,
         '0x',
         Math.floor(Date.now() / 1000) + 600
@@ -424,7 +431,6 @@ export function useProxyWallet() {
   return {
     // Balance data
     proxyBalance,
-    nonce,
     isLoading: isLoadingBalance,
     
     // Functions

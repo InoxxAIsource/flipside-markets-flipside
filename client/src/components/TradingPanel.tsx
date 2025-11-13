@@ -74,6 +74,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
   });
 
   const { data: market } = useQuery<{
+    conditionId?: string;
     yesTokenId?: string;
     noTokenId?: string;
     yesPrice?: number;
@@ -83,6 +84,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
     enabled: !!marketId,
   });
 
+  const conditionId = market?.conditionId || '0';
   const yesTokenId = market?.yesTokenId || '0';
   const noTokenId = market?.noTokenId || '0';
 
@@ -228,8 +230,8 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
         price,
         size,
         signature,
-        salt: ethers.randomBytes(32),
-        nonce: BigInt(nonce),
+        salt: ethers.hexlify(ethers.randomBytes(32)),
+        nonce: nonce.toString(),
         expiration: new Date(expiration * 1000),
       };
 
@@ -337,8 +339,8 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
         price: marketEstimatedPrice,
         size,
         signature,
-        salt: ethers.randomBytes(32),
-        nonce: BigInt(nonce),
+        salt: ethers.hexlify(ethers.randomBytes(32)),
+        nonce: nonce.toString(),
         expiration: new Date(expiration * 1000),
       };
 
@@ -397,7 +399,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
     }
 
     try {
-      await split(marketId, splitAmount);
+      await split(conditionId, splitAmount);
       setSplitAmount('');
     } catch (error) {
       console.error('Split error:', error);
@@ -426,7 +428,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
     }
 
     try {
-      await merge(marketId, mergeAmount);
+      await merge(conditionId, mergeAmount);
       setMergeAmount('');
     } catch (error) {
       console.error('Merge error:', error);

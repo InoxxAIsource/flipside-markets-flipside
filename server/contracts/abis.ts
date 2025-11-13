@@ -53,8 +53,8 @@ export const FeeDistributorABI = [
 export const ProxyWalletABI = [
   "function deposit(uint256 amount)",
   "function withdraw(uint256 amount)",
-  "function executeSplit(uint256 marketId, uint256 amount, bytes memory signature, uint256 deadline)",
-  "function executeMerge(uint256 marketId, uint256 amount, bytes memory signature, uint256 deadline)",
+  "function executeSplit(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
+  "function executeMerge(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
   "function executeFill((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order, bytes memory signature, uint256 fillAmount, bytes memory metaSignature, uint256 deadline)",
   "function executeMetaTransaction(bytes memory signature, address user, bytes memory data)",
   "function getBalance(address user) view returns (uint256)",
@@ -62,8 +62,8 @@ export const ProxyWalletABI = [
   "function getNonce(address user) view returns (uint256)",
   "event Deposited(address indexed user, uint256 amount)",
   "event Withdrawn(address indexed user, uint256 amount)",
-  "event SplitExecuted(address indexed user, uint256 marketId, uint256 amount)",
-  "event MergeExecuted(address indexed user, uint256 marketId, uint256 amount)",
+  "event SplitExecuted(address indexed user, bytes32 indexed conditionId, uint256 amount)",
+  "event MergeExecuted(address indexed user, bytes32 indexed conditionId, uint256 amount)",
   "event FillExecuted(address indexed user, bytes32 orderHash, uint256 fillAmount)",
   "event MetaTransactionExecuted(address indexed user, address indexed target, bool success)",
 ] as const;
