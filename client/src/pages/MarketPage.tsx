@@ -10,6 +10,7 @@ import { TradingPanel } from '@/components/TradingPanel';
 import { MarketStats } from '@/components/MarketStats';
 import { MarketDetails } from '@/components/MarketDetails';
 import { DepositWithdrawPanel } from '@/components/DepositWithdrawPanel';
+import { OrderBook } from '@/components/OrderBook';
 import type { Market } from '@shared/schema';
 
 export default function MarketPage() {
@@ -129,6 +130,8 @@ export default function MarketPage() {
                 </div>
               </div>
             </div>
+
+            <OrderBook marketId={market.id} />
           </div>
 
           <div className="space-y-6">
