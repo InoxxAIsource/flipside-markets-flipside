@@ -6,6 +6,55 @@ A full-stack prediction market platform that enables users to create, trade, and
 
 The application combines blockchain technology (smart contracts for trustless market creation and trading) with a traditional web stack (React frontend, Express backend, PostgreSQL database) to deliver a seamless prediction market experience.
 
+## Recent Updates (November 13, 2025)
+
+### New Features Added
+
+**1. Public Order Book** (MarketPage)
+- Real-time order book display showing all active buy and sell orders
+- Visual separation: buy orders (green), sell orders (red)
+- Displays: price, size, total for each order
+- Shows spread between best bid and ask
+- Order book statistics: total orders, active traders
+- Auto-refreshes every 5 seconds
+- Component: `client/src/components/OrderBook.tsx`
+
+**2. Detailed Profile Page** (`/profile`)
+- **Order History Tab**: Complete trading history with filters
+  - Shows all user orders (open, filled, cancelled, expired)
+  - Displays market name, side (BUY/SELL), outcome (YES/NO), price, size
+  - Real-time fill tracking (filled amount, percentage, remaining)
+  - Time since order placement
+  - Cancel order button for open orders
+- **Positions Tab**: Portfolio holdings across all markets
+  - YES and NO shares with current market prices
+  - Profit & Loss calculations (realized + unrealized)
+  - Total invested vs. current value
+  - P&L percentage and USDT amounts
+  - Click market name to navigate to market page
+- Wallet connection required (shows "Connect Wallet" button if disconnected)
+- Component: `client/src/pages/Profile.tsx`
+
+**3. Enhanced Navigation**
+- Profile icon button in TopNav (accessible from any page)
+- Create market icon button in TopNav (quick access to market creation)
+- Clean, minimal icon-based navigation
+
+### Technical Implementation
+
+**Backend:**
+- Existing API endpoints used:
+  - `GET /api/users/:address/orders` - Fetches user order history
+  - `GET /api/users/:address/positions` - Fetches user positions
+  - `GET /api/markets/:marketId/orders` - Fetches market order book
+
+**Frontend:**
+- React Query for data fetching with proper query key management
+- Conditional query execution to prevent undefined address requests
+- Auto-refresh for order book (5 second interval)
+- Integration with useWallet hook for wallet state management
+- Responsive design with mobile-first approach
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
