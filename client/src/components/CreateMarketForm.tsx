@@ -34,7 +34,7 @@ const formSchema = z.object({
   category: z.string().min(1, 'Please select a category'),
   expiresAt: z.date({ required_error: 'Please select an expiration date' }),
   pythPriceFeedId: z.string().optional(),
-  baselinePrice: z.coerce.number().positive('Price must be positive').optional().or(z.literal('')),
+  baselinePrice: z.string().transform(val => val === '' ? undefined : Number(val)).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -55,12 +55,7 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false }: CreateMarke
   });
 
   const handleSubmit = (data: FormData) => {
-    // Convert empty string baseline price to undefined
-    const submitData = {
-      ...data,
-      baselinePrice: data.baselinePrice === '' ? undefined : data.baselinePrice,
-    };
-    onSubmit?.(submitData);
+    onSubmit?.(data);
   };
 
   return (
