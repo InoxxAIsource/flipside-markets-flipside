@@ -1,0 +1,75 @@
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=bk24qOdfieKN' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)Understand this error
+ Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ Oe: User rejected the request.
+    at r.request (chrome-extension://bfnaelmomeimhlpmgjnjophhpkkoljpa/evmAsk.js:5:1430)
+    at async r.selectExtension (chrome-extension://bfnaelmomeimhlpmgjnjophhpkkoljpa/evmAsk.js:5:6120)
+selectExtension @ chrome-extension://b…kkoljpa/evmAsk.js:5Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+ Split error: TypeError: invalid BigNumberish string: Cannot convert 2c175220-7ecb-4757-bf5a-1adf978afa33 to a BigInt (argument="value", value="2c175220-7ecb-4757-bf5a-1adf978afa33", code=INVALID_ARGUMENT, version=6.15.0)
+    at makeError (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:330:15)
+    at assert (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:350:11)
+    at assertArgument (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:354:3)
+    at getBigInt (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:575:9)
+    at NumberCoder.encode (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:7997:17)
+    at /@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:7794:13
+    at Array.forEach (<anonymous>)
+    at pack (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:7784:10)
+    at TupleCoder.encode (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:8083:12)
+    at _AbiCoder.encode (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:12055:11)
+split @ /src/hooks/use-proxy-wallet.tsx:252Understand this error
+ Split error: TypeError: invalid BigNumberish string: Cannot convert 2c175220-7ecb-4757-bf5a-1adf978afa33 to a BigInt (argument="value", value="2c175220-7ecb-4757-bf5a-1adf978afa33", code=INVALID_ARGUMENT, version=6.15.0)
+    at makeError (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:330:15)
+    at assert (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:350:11)
+    at assertArgument (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:354:3)
+    at getBigInt (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:575:9)
+    at NumberCoder.encode (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:7997:17)
+    at /@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:7794:13
+    at Array.forEach (<anonymous>)
+    at pack (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:7784:10)
+    at TupleCoder.encode (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:8083:12)
+    at _AbiCoder.encode (/@fs/home/runner/workspace/node_modules/.vite/deps/ethers.js?v=eef1faa1:12055:11)
+executeSplit @ /src/components/TradingPanel.tsx:352Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+ Error placing limit order: TypeError: Do not know how to serialize a BigInt
+    at JSON.stringify (<anonymous>)
+    at apiRequest (/src/lib/queryClient.ts:12:23)
+    at placeLimitOrder (/src/components/TradingPanel.tsx:216:30)
+placeLimitOrder @ /src/components/TradingPanel.tsx:229Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+  GET https://38faddfd-b4c3-4407-978d-8578f2404db9-00-gbpgp5t2etar.riker.replit.dev/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7 500 (Internal Server Error)
+(anonymous) @ /src/lib/queryClient.ts:19
+fetchFn @ /@fs/home/runner/wor…y.js?v=eef1faa1:840
+run @ /@fs/home/runner/wor…y.js?v=eef1faa1:494
+start @ /@fs/home/runner/wor…y.js?v=eef1faa1:536
+fetch @ /@fs/home/runner/wor…y.js?v=eef1faa1:926
+executeFetch_fn @ /@fs/home/runner/wor….js?v=eef1faa1:2211
+(anonymous) @ /@fs/home/runner/wor….js?v=eef1faa1:2245Understand this error
+  GET https://38faddfd-b4c3-4407-978d-8578f2404db9-00-gbpgp5t2etar.riker.replit.dev/api/proxy/nonce/0x73eb1835929244710d4b894b147c4187db80aab7 500 (Internal Server Error)
