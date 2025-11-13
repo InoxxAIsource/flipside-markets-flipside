@@ -97,14 +97,29 @@ Preferred communication style: Simple, everyday language.
 3. **CTFExchange**: Order book DEX with EIP-712 signed orders
 4. **PythPriceResolver**: Oracle-based automated resolution
 5. **FeeDistributor**: Platform and creator fee distribution
-6. **ProxyWallet**: User wallet abstraction
+6. **ProxyWallet**: Pooled wallet for gasless meta-transactions (0x4a373C230BE7574B905A31c43317EE912D3B65c7)
 7. **MockUSDT**: ERC-20 collateral token for testnet
 
 **Web3 Integration Pattern:**
 - Client-side: MetaMask/browser wallet via Ethers.js
 - Server-side: Read-only provider for event listening and state queries
-- EIP-712 typed signatures for gasless order placement
+- EIP-712 typed signatures for gasless order placement and meta-transactions
 - Wallet connection state managed in React hooks
+
+**Gasless Trading System:**
+- **ProxyWallet Contract**: Pooled architecture where one contract holds all user balances internally
+- **Relayer Service**: Background queue processor that executes meta-transactions on behalf of users
+  - Relayer wallet: 0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0
+  - Rate limiting: 10 transactions per user per minute
+  - Nonce management: Fetches fresh nonce from chain before each execution to prevent desync
+  - Processing interval: Every 2 seconds
+- **Meta-Transaction Flow**:
+  1. User deposits USDT to ProxyWallet (requires gas once)
+  2. User signs EIP-712 meta-transaction (no gas)
+  3. Frontend submits signature to relayer API
+  4. Relayer executes ProxyWallet.executeMetaTransaction() on-chain (relayer pays gas)
+- **Supported Operations**: Withdraw, Split (USDT → YES+NO), Merge (YES+NO → USDT)
+- **Frontend Integration**: DepositWithdrawPanel + TradingPanel with split/merge tabs
 
 **Event Synchronization:**
 - Background indexer subscribes to contract events

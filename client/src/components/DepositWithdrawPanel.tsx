@@ -8,7 +8,7 @@ import { Wallet, ArrowDownToLine, ArrowUpFromLine, Loader2 } from 'lucide-react'
 import { useWallet } from '@/hooks/use-wallet';
 import { useProxyWallet } from '@/hooks/use-proxy-wallet';
 import { useToast } from '@/hooks/use-toast';
-import { formatUnits, parseUnits } from 'ethers';
+import { formatUnits } from 'ethers';
 
 export function DepositWithdrawPanel() {
   const { account } = useWallet();
@@ -30,8 +30,8 @@ export function DepositWithdrawPanel() {
     }
 
     try {
-      const amountInWei = parseUnits(depositAmount, 6).toString();
-      await deposit(amountInWei);
+      // Pass human-readable amount - hook will handle parseUnits
+      await deposit(depositAmount);
       setDepositAmount('');
       toast({
         title: 'Deposit Successful',
@@ -57,8 +57,8 @@ export function DepositWithdrawPanel() {
     }
 
     try {
-      const amountInWei = parseUnits(withdrawAmount, 6).toString();
-      const txId = await withdraw(amountInWei);
+      // Pass human-readable amount - hook will handle parseUnits
+      const txId = await withdraw(withdrawAmount);
       setWithdrawAmount('');
       toast({
         title: 'Withdrawal Submitted',
