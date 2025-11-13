@@ -7,6 +7,7 @@ import { TopNav } from "@/components/TopNav";
 import Home from "@/pages/Home";
 import MarketPage from "@/pages/MarketPage";
 import CreateMarket from "@/pages/CreateMarket";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/market/:id" component={MarketPage} />
       <Route path="/create" component={CreateMarket} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
