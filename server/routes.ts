@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { web3Service } from "./contracts/web3Service";
+import { relayerService } from "./services/relayerService";
 import { insertMarketSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -341,6 +342,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching token balance:', error);
       res.status(500).json({ error: 'Failed to fetch token balance' });
+    }
+  });
+
+  // ========== ProxyWallet Routes ==========
+
+  // POST /api/proxy/meta-transaction - Submit signed meta-transaction to relayer queue
+  app.post('/api/proxy/meta-transaction', async (req, res) => {
+    try {
+      const { user, target, data, signature, deadline } = req.body;
+
+      if (!user || !target || !data || !signature || !deadline) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: user, target, data, signature, deadline' 
+        });
+      }
+
+      const result = await relayerService.addMetaTransaction(
+        user,
+        target,
+        data,
+        signature,
+        deadline
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error submitting meta-transaction:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to submit meta-transaction' 
+      });
+    }
+  });
+
+  // GET /api/proxy/meta-transaction/:txId - Get meta-transaction status
+  app.get('/api/proxy/meta-transaction/:txId', async (req, res) => {
+    try {
+      const status = relayerService.getTransactionStatus(req.params.txId);
+
+      if (!status) {
+        return res.status(404).json({ error: 'Transaction not found' });
+      }
+
+      res.json(status);
+    } catch (error: any) {
+      console.error('Error fetching meta-transaction status:', error);
+      res.status(500).json({ error: 'Failed to fetch meta-transaction status' });
+    }
+  });
+
+  // GET /api/proxy/balance/:address - Get user's USDT balance in ProxyWallet
+  app.get('/api/proxy/balance/:address', async (req, res) => {
+    try {
+      const balance = await web3Service.getProxyWalletBalance(req.params.address);
+      res.json({ balance: balance.toString() });
+    } catch (error: any) {
+      console.error('Error fetching ProxyWallet balance:', error);
+      res.status(500).json({ error: 'Failed to fetch ProxyWallet balance' });
+    }
+  });
+
+  // GET /api/proxy/positions/:address/:tokenId - Get user's position token balance in ProxyWallet
+  app.get('/api/proxy/positions/:address/:tokenId', async (req, res) => {
+    try {
+      const balance = await web3Service.getProxyPositionBalance(
+        req.params.address,
+        BigInt(req.params.tokenId)
+      );
+      res.json({ balance: balance.toString() });
+    } catch (error: any) {
+      console.error('Error fetching ProxyWallet position balance:', error);
+      res.status(500).json({ error: 'Failed to fetch ProxyWallet position balance' });
+    }
+  });
+
+  // GET /api/proxy/nonce/:address - Get user's current nonce for meta-transaction signing
+  app.get('/api/proxy/nonce/:address', async (req, res) => {
+    try {
+      const nonce = await web3Service.getProxyWalletNonce(req.params.address);
+      res.json({ nonce: Number(nonce) });
+    } catch (error: any) {
+      console.error('Error fetching ProxyWallet nonce:', error);
+      res.status(500).json({ error: 'Failed to fetch ProxyWallet nonce' });
+    }
+  });
+
+  // GET /api/proxy/stats - Get relayer queue statistics
+  app.get('/api/proxy/stats', async (req, res) => {
+    try {
+      const stats = relayerService.getQueueStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error('Error fetching relayer stats:', error);
+      res.status(500).json({ error: 'Failed to fetch relayer stats' });
     }
   });
 

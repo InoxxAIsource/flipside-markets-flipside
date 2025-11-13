@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { eventIndexer } from "./services/eventIndexer";
 import { pythWorker } from "./services/pythWorker";
+import { relayerService } from "./services/relayerService";
 
 const app = express();
 
@@ -83,6 +84,9 @@ app.use((req, res, next) => {
     // Start background services after server is running
     eventIndexer.start();
     pythWorker.start();
+    
+    // Relayer service starts automatically on initialization
+    log(`Relayer service initialized (address: ${(relayerService as any).relayerWallet.address})`);
   });
 
   // Graceful shutdown

@@ -306,6 +306,27 @@ export class Web3Service {
   }
 
   /**
+   * Get ProxyWallet balance for a user
+   */
+  async getProxyWalletBalance(userAddress: string): Promise<bigint> {
+    return await this.proxyWallet.getBalance(userAddress);
+  }
+
+  /**
+   * Get position balance in ProxyWallet
+   */
+  async getProxyPositionBalance(userAddress: string, tokenId: bigint): Promise<bigint> {
+    return await this.proxyWallet.getPositionBalance(userAddress, tokenId);
+  }
+
+  /**
+   * Get user's nonce in ProxyWallet
+   */
+  async getProxyWalletNonce(userAddress: string): Promise<bigint> {
+    return await this.proxyWallet.getNonce(userAddress);
+  }
+
+  /**
    * Stop listening to events
    */
   removeAllListeners() {

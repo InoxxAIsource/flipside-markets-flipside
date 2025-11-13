@@ -131,10 +131,7 @@ export default function MarketPage() {
           </div>
 
           <div className="space-y-6">
-            <TradingPanel 
-              yesPrice={market.yesPrice}
-              noPrice={market.noPrice}
-            />
+            <TradingPanel marketId={market.id} />
             <MarketDetails market={market} />
           </div>
         </div>

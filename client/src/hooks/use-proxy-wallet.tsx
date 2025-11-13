@@ -1,0 +1,443 @@
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { ethers } from 'ethers';
+import { useWallet } from './use-wallet';
+import { useToast } from './use-toast';
+import { CONTRACT_ADDRESSES } from '@/lib/web3';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+
+const ProxyWalletABI = [
+  "function deposit(uint256 amount)",
+  "function getBalance(address user) view returns (uint256)",
+  "function getPositionBalance(address user, uint256 tokenId) view returns (uint256)",
+  "function getNonce(address user) view returns (uint256)",
+] as const;
+
+const MockUSDTABI = [
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
+] as const;
+
+const EIP712_DOMAIN = {
+  name: 'ProxyWallet',
+  version: '1',
+  chainId: 11155111,
+  verifyingContract: CONTRACT_ADDRESSES.ProxyWallet,
+} as const;
+
+const META_TRANSACTION_TYPES = {
+  MetaTransaction: [
+    { name: 'user', type: 'address' },
+    { name: 'target', type: 'address' },
+    { name: 'data', type: 'bytes' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+};
+
+interface ProxyWalletBalance {
+  balance: string;
+}
+
+interface ProxyWalletNonce {
+  nonce: number;
+}
+
+interface MetaTransactionResponse {
+  success: boolean;
+  txId?: string;
+  error?: string;
+}
+
+export function useProxyWallet() {
+  const { account } = useWallet();
+  const { toast } = useToast();
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isSplitting, setIsSplitting] = useState(false);
+  const [isMerging, setIsMerging] = useState(false);
+
+  // Query for ProxyWallet USDT balance
+  const { data: proxyBalanceData, isLoading: isLoadingBalance } = useQuery<ProxyWalletBalance>({
+    queryKey: ['/api/proxy/balance', account],
+    enabled: !!account,
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+
+  // Query for user's nonce
+  const { data: nonceData } = useQuery<ProxyWalletNonce>({
+    queryKey: ['/api/proxy/nonce', account],
+    enabled: !!account,
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+
+  const proxyBalance = proxyBalanceData?.balance || '0';
+  const nonce = nonceData?.nonce || 0;
+
+  /**
+   * Get position token balance from ProxyWallet
+   */
+  const getPositionBalance = async (tokenId: string): Promise<string> => {
+    if (!account) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      const response = await fetch(`/api/proxy/positions/${account}/${tokenId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch position balance');
+      }
+      const data = await response.json();
+      return data.balance;
+    } catch (error: any) {
+      console.error('Error fetching position balance:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Deposit USDT to ProxyWallet
+   */
+  const deposit = async (amount: string): Promise<string> => {
+    if (!account || !window.ethereum) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsDepositing(true);
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      const usdtContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.MockUSDT,
+        MockUSDTABI,
+        signer
+      );
+
+      const proxyWalletContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.ProxyWallet,
+        ProxyWalletABI,
+        signer
+      );
+
+      const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
+
+      // Check allowance
+      const allowance = await usdtContract.allowance(account, CONTRACT_ADDRESSES.ProxyWallet);
+
+      // Approve if needed
+      if (allowance < amountWei) {
+        toast({
+          title: 'Approval Required',
+          description: 'Please approve USDT spending...',
+        });
+
+        const approveTx = await usdtContract.approve(
+          CONTRACT_ADDRESSES.ProxyWallet,
+          amountWei
+        );
+
+        toast({
+          title: 'Approval Pending',
+          description: 'Waiting for approval confirmation...',
+        });
+
+        await approveTx.wait();
+
+        toast({
+          title: 'Approval Confirmed',
+          description: 'USDT spending approved',
+        });
+      }
+
+      // Deposit to ProxyWallet
+      toast({
+        title: 'Deposit Pending',
+        description: 'Depositing USDT to ProxyWallet...',
+      });
+
+      const depositTx = await proxyWalletContract.deposit(amountWei);
+      
+      toast({
+        title: 'Deposit Submitted',
+        description: 'Waiting for deposit confirmation...',
+      });
+
+      const receipt = await depositTx.wait();
+
+      toast({
+        title: 'Deposit Successful',
+        description: `Deposited ${amount} USDT to ProxyWallet`,
+      });
+
+      // Refresh balance
+      await queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
+
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Deposit error:', error);
+      toast({
+        title: 'Deposit Failed',
+        description: error.message || 'Failed to deposit USDT',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsDepositing(false);
+    }
+  };
+
+  /**
+   * Sign and submit a meta-transaction to the relayer
+   */
+  const signAndSubmitMetaTransaction = async (
+    target: string,
+    data: string,
+    operationName: string
+  ): Promise<string> => {
+    if (!account || !window.ethereum) {
+      throw new Error('Wallet not connected');
+    }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+
+    // Create deadline (10 minutes from now)
+    const deadline = Math.floor(Date.now() / 1000) + 600;
+
+    // Create meta-transaction message
+    const message = {
+      user: account,
+      target,
+      data,
+      nonce: BigInt(nonce),
+      deadline: BigInt(deadline),
+    };
+
+    // Sign using EIP-712
+    const signature = await signer.signTypedData(
+      EIP712_DOMAIN,
+      META_TRANSACTION_TYPES,
+      message
+    );
+
+    // Submit to relayer
+    const response = await apiRequest(
+      'POST',
+      '/api/proxy/meta-transaction',
+      {
+        user: account,
+        target,
+        data,
+        signature,
+        deadline,
+      }
+    );
+
+    const result: MetaTransactionResponse = await response.json();
+
+    if (!result.success || !result.txId) {
+      throw new Error(result.error || 'Failed to submit meta-transaction');
+    }
+
+    // Refresh nonce
+    await queryClient.invalidateQueries({ queryKey: ['/api/proxy/nonce', account] });
+
+    return result.txId;
+  };
+
+  /**
+   * Withdraw USDT from ProxyWallet (meta-transaction)
+   */
+  const withdraw = async (amount: string): Promise<string> => {
+    if (!account) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsWithdrawing(true);
+    try {
+      toast({
+        title: 'Withdrawal Pending',
+        description: 'Signing withdrawal transaction...',
+      });
+
+      const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
+
+      // Encode withdraw function call
+      const proxyWalletInterface = new ethers.Interface(ProxyWalletABI);
+      const data = proxyWalletInterface.encodeFunctionData('withdraw', [amountWei]);
+
+      const txId = await signAndSubmitMetaTransaction(
+        CONTRACT_ADDRESSES.ProxyWallet,
+        data,
+        'Withdraw'
+      );
+
+      toast({
+        title: 'Withdrawal Submitted',
+        description: `Withdrawing ${amount} USDT from ProxyWallet`,
+      });
+
+      // Refresh balance after a delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
+      }, 5000);
+
+      return txId;
+    } catch (error: any) {
+      console.error('Withdraw error:', error);
+      toast({
+        title: 'Withdrawal Failed',
+        description: error.message || 'Failed to withdraw USDT',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  /**
+   * Split USDT into YES+NO tokens (meta-transaction)
+   */
+  const split = async (marketId: string, amount: string): Promise<string> => {
+    if (!account) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsSplitting(true);
+    try {
+      toast({
+        title: 'Split Pending',
+        description: 'Signing split transaction...',
+      });
+
+      const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
+
+      // Encode executeSplit function call
+      const splitABI = [
+        "function executeSplit(uint256 marketId, uint256 amount, bytes memory signature, uint256 deadline)"
+      ];
+      const proxyWalletInterface = new ethers.Interface(splitABI);
+      
+      // For split, we pass empty signature and current timestamp as deadline
+      // The actual signature is the meta-transaction signature
+      const data = proxyWalletInterface.encodeFunctionData('executeSplit', [
+        marketId,
+        amountWei,
+        '0x',
+        Math.floor(Date.now() / 1000) + 600
+      ]);
+
+      const txId = await signAndSubmitMetaTransaction(
+        CONTRACT_ADDRESSES.ProxyWallet,
+        data,
+        'Split'
+      );
+
+      toast({
+        title: 'Split Submitted',
+        description: `Splitting ${amount} USDT into YES+NO tokens`,
+      });
+
+      // Refresh balances after a delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
+      }, 5000);
+
+      return txId;
+    } catch (error: any) {
+      console.error('Split error:', error);
+      toast({
+        title: 'Split Failed',
+        description: error.message || 'Failed to split tokens',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsSplitting(false);
+    }
+  };
+
+  /**
+   * Merge YES+NO tokens back to USDT (meta-transaction)
+   */
+  const merge = async (marketId: string, amount: string): Promise<string> => {
+    if (!account) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsMerging(true);
+    try {
+      toast({
+        title: 'Merge Pending',
+        description: 'Signing merge transaction...',
+      });
+
+      const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
+
+      // Encode executeMerge function call
+      const mergeABI = [
+        "function executeMerge(uint256 marketId, uint256 amount, bytes memory signature, uint256 deadline)"
+      ];
+      const proxyWalletInterface = new ethers.Interface(mergeABI);
+      
+      // For merge, we pass empty signature and current timestamp as deadline
+      // The actual signature is the meta-transaction signature
+      const data = proxyWalletInterface.encodeFunctionData('executeMerge', [
+        marketId,
+        amountWei,
+        '0x',
+        Math.floor(Date.now() / 1000) + 600
+      ]);
+
+      const txId = await signAndSubmitMetaTransaction(
+        CONTRACT_ADDRESSES.ProxyWallet,
+        data,
+        'Merge'
+      );
+
+      toast({
+        title: 'Merge Submitted',
+        description: `Merging ${amount} YES+NO tokens to USDT`,
+      });
+
+      // Refresh balances after a delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
+      }, 5000);
+
+      return txId;
+    } catch (error: any) {
+      console.error('Merge error:', error);
+      toast({
+        title: 'Merge Failed',
+        description: error.message || 'Failed to merge tokens',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  return {
+    // Balance data
+    proxyBalance,
+    nonce,
+    isLoading: isLoadingBalance,
+    
+    // Functions
+    getPositionBalance,
+    deposit,
+    withdraw,
+    split,
+    merge,
+    
+    // Loading states
+    isDepositing,
+    isWithdrawing,
+    isSplitting,
+    isMerging,
+  };
+}
