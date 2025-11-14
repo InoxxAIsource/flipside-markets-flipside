@@ -1,13 +1,13 @@
 /**
- * Split/Merge Service - Proxy-Wallet-First Architecture
+ * Split/Merge Service - Multi-Context Execution Architecture
  * 
  * Handles splitting collateral into conditional tokens (USDT → YES + NO)
  * and merging conditional tokens back into collateral (YES + NO → USDT).
  * 
  * Key Design Principles:
- * 1. Build calldata, defer execution to ProxyWallet/Relayer
- * 2. NEVER accept private keys server-side (security)
- * 3. Support both user-initiated and CLOB-matching flows
+ * 1. Support three execution contexts: USER_PROXY, RELAYER, DIRECT
+ * 2. Use execution profile pattern to separate actor logic
+ * 3. NEVER accept private keys server-side (security)
  * 4. Comprehensive edge case validation
  * 5. Deterministic position ID calculation
  */
@@ -20,9 +20,9 @@ import { storage } from '../storage';
  * Execution context for split/merge operations
  */
 export enum ExecutionContext {
-  USER_PROXY = 'USER_PROXY',     // User's ProxyWallet (gasless)
-  RELAYER = 'RELAYER',           // Backend relayer for CLOB operations
-  DIRECT = 'DIRECT',             // Direct EOA (legacy/testing)
+  USER_PROXY = 'USER_PROXY',     // User's ProxyWallet (gasless meta-tx)
+  RELAYER = 'RELAYER',           // Backend relayer executes directly
+  DIRECT = 'DIRECT',             // User's EOA executes directly
 }
 
 /**
@@ -89,16 +89,141 @@ export interface BalanceCheck {
   approvalNeeded: boolean;
 }
 
+/**
+ * Execution profile for context-specific actor resolution and checks
+ */
+interface ExecutionProfile {
+  /**
+   * Resolve the actor address for this context
+   */
+  resolveActor(userAddress: string): Promise<string>;
+  
+  /**
+   * Preflight balance and allowance checks for actor
+   */
+  preflightBalances(
+    actorAddress: string,
+    collateralAmount: bigint,
+    yesTokenId: string,
+    noTokenId: string,
+    requiredAmount: bigint,
+    context: 'split' | 'merge'
+  ): Promise<{ sufficient: boolean; error?: string }>;
+}
+
 export class SplitMergeService {
-  private proxyWalletService: any; // ProxyWalletService instance (injected later to avoid circular dependency)
+  private proxyWalletService: any;
+  private relayerService: any;
 
   constructor(private web3Service: Web3Service) {}
 
   /**
-   * Set ProxyWalletService instance (called after initialization)
+   * Set service dependencies (called after initialization to avoid circular deps)
    */
   setProxyWalletService(proxyWalletService: any) {
     this.proxyWalletService = proxyWalletService;
+  }
+
+  setRelayerService(relayerService: any) {
+    this.relayerService = relayerService;
+  }
+
+  /**
+   * Get execution profile for given context
+   */
+  private getExecutionProfile(context: ExecutionContext): ExecutionProfile {
+    switch (context) {
+      case ExecutionContext.USER_PROXY:
+        return {
+          resolveActor: async (userAddress: string) => {
+            if (!this.proxyWalletService) {
+              throw new Error('ProxyWalletService not initialized');
+            }
+            return await this.proxyWalletService.getProxyAddress(userAddress);
+          },
+          preflightBalances: async (actorAddress, collateralAmount, yesTokenId, noTokenId, requiredAmount, operation) => {
+            if (operation === 'split') {
+              const balance = await this.web3Service.mockUSDT.balanceOf(actorAddress);
+              if (balance < collateralAmount) {
+                return {
+                  sufficient: false,
+                  error: `Insufficient collateral in proxy wallet. Have: ${ethers.formatUnits(balance, 6)} USDT, Need: ${ethers.formatUnits(collateralAmount, 6)} USDT`,
+                };
+              }
+            } else {
+              const yesBalance = await this.web3Service.conditionalTokens.balanceOf(actorAddress, yesTokenId);
+              const noBalance = await this.web3Service.conditionalTokens.balanceOf(actorAddress, noTokenId);
+              const minBalance = yesBalance < noBalance ? yesBalance : noBalance;
+              if (minBalance < requiredAmount) {
+                return {
+                  sufficient: false,
+                  error: `Insufficient position tokens in proxy wallet. Have: ${ethers.formatUnits(minBalance, 6)}, Need: ${ethers.formatUnits(requiredAmount, 6)}`,
+                };
+              }
+            }
+            return { sufficient: true };
+          },
+        };
+
+      case ExecutionContext.RELAYER:
+        return {
+          resolveActor: async () => {
+            if (!this.relayerService) {
+              throw new Error('RelayerService not initialized');
+            }
+            return this.relayerService.getRelayerAddress();
+          },
+          preflightBalances: async (actorAddress, collateralAmount, yesTokenId, noTokenId, requiredAmount, operation) => {
+            if (operation === 'split') {
+              const balance = await this.web3Service.mockUSDT.balanceOf(actorAddress);
+              if (balance < collateralAmount) {
+                return {
+                  sufficient: false,
+                  error: `Insufficient collateral in relayer wallet. Have: ${ethers.formatUnits(balance, 6)} USDT, Need: ${ethers.formatUnits(collateralAmount, 6)} USDT`,
+                };
+              }
+            } else {
+              const yesBalance = await this.web3Service.conditionalTokens.balanceOf(actorAddress, yesTokenId);
+              const noBalance = await this.web3Service.conditionalTokens.balanceOf(actorAddress, noTokenId);
+              const minBalance = yesBalance < noBalance ? yesBalance : noBalance;
+              if (minBalance < requiredAmount) {
+                return {
+                  sufficient: false,
+                  error: `Insufficient position tokens in relayer wallet. Have: ${ethers.formatUnits(minBalance, 6)}, Need: ${ethers.formatUnits(requiredAmount, 6)}`,
+                };
+              }
+            }
+            return { sufficient: true };
+          },
+        };
+
+      case ExecutionContext.DIRECT:
+        return {
+          resolveActor: async (userAddress: string) => userAddress,
+          preflightBalances: async (actorAddress, collateralAmount, yesTokenId, noTokenId, requiredAmount, operation) => {
+            if (operation === 'split') {
+              const balance = await this.web3Service.mockUSDT.balanceOf(actorAddress);
+              if (balance < collateralAmount) {
+                return {
+                  sufficient: false,
+                  error: `Insufficient collateral. Have: ${ethers.formatUnits(balance, 6)} USDT, Need: ${ethers.formatUnits(collateralAmount, 6)} USDT`,
+                };
+              }
+            } else {
+              const yesBalance = await this.web3Service.conditionalTokens.balanceOf(actorAddress, yesTokenId);
+              const noBalance = await this.web3Service.conditionalTokens.balanceOf(actorAddress, noTokenId);
+              const minBalance = yesBalance < noBalance ? yesBalance : noBalance;
+              if (minBalance < requiredAmount) {
+                return {
+                  sufficient: false,
+                  error: `Insufficient position tokens. Have: ${ethers.formatUnits(minBalance, 6)}, Need: ${ethers.formatUnits(requiredAmount, 6)}`,
+                };
+              }
+            }
+            return { sufficient: true };
+          },
+        };
+    }
   }
 
   /**
@@ -185,8 +310,12 @@ export class SplitMergeService {
       const collateralAddress = await this.web3Service.mockUSDT.getAddress();
       const ctfAddress = await this.web3Service.conditionalTokens.getAddress();
 
-      // Get proxy wallet address for this user
-      if (!this.proxyWalletService) {
+      // Resolve actor address using execution profile
+      const profile = this.getExecutionProfile(context);
+      let actorAddress: string;
+      try {
+        actorAddress = await profile.resolveActor(userAddress);
+      } catch (error) {
         return {
           valid: false,
           calls: [],
@@ -194,15 +323,21 @@ export class SplitMergeService {
           noTokenId: market.noTokenId || '0',
           estimatedYesAmount: '0',
           estimatedNoAmount: '0',
-          error: 'ProxyWalletService not initialized',
+          error: error instanceof Error ? error.message : 'Failed to resolve actor address',
         };
       }
 
-      const proxyAddress = await this.proxyWalletService.getProxyAddress(userAddress);
+      // Preflight balance checks for actor
+      const balanceCheck = await profile.preflightBalances(
+        actorAddress,
+        amountBN,      // Collateral amount to check
+        '',            // YES token ID (not used for split)
+        '',            // NO token ID (not used for split)
+        BigInt(0),     // Required position token amount (not used for split)
+        'split'
+      );
 
-      // Check proxy's collateral balance (funds must be in proxy wallet for execution)
-      const proxyCollateralBalance = await this.web3Service.mockUSDT.balanceOf(proxyAddress);
-      if (proxyCollateralBalance < amountBN) {
+      if (!balanceCheck.sufficient) {
         return {
           valid: false,
           calls: [],
@@ -210,7 +345,7 @@ export class SplitMergeService {
           noTokenId: market.noTokenId,
           estimatedYesAmount: '0',
           estimatedNoAmount: '0',
-          error: `Insufficient collateral in proxy wallet. Have: ${ethers.formatUnits(proxyCollateralBalance, 6)} USDT, Need: ${amount} USDT`,
+          error: balanceCheck.error || 'Insufficient balance',
         };
       }
 
@@ -218,9 +353,8 @@ export class SplitMergeService {
       const calls: CallDescriptor[] = [];
 
       // Step 1: Approve ConditionalTokens to spend collateral (if needed)
-      // CRITICAL: Check PROXY's allowance, not user's allowance
-      const proxyAllowance = await this.web3Service.mockUSDT.allowance(proxyAddress, ctfAddress);
-      if (proxyAllowance < amountBN) {
+      const actorAllowance = await this.web3Service.mockUSDT.allowance(actorAddress, ctfAddress);
+      if (actorAllowance < amountBN) {
         const approveData = this.web3Service.mockUSDT.interface.encodeFunctionData('approve', [
           ctfAddress,
           ethers.MaxUint256,
@@ -331,30 +465,36 @@ export class SplitMergeService {
       const collateralAddress = await this.web3Service.mockUSDT.getAddress();
       const ctfAddress = await this.web3Service.conditionalTokens.getAddress();
 
-      // Get proxy wallet address for this user
-      if (!this.proxyWalletService) {
+      // Resolve actor address using execution profile
+      const profile = this.getExecutionProfile(context);
+      let actorAddress: string;
+      try {
+        actorAddress = await profile.resolveActor(userAddress);
+      } catch (error) {
         return {
           valid: false,
           calls: [],
           estimatedCollateralAmount: '0',
-          error: 'ProxyWalletService not initialized',
+          error: error instanceof Error ? error.message : 'Failed to resolve actor address',
         };
       }
 
-      const proxyAddress = await this.proxyWalletService.getProxyAddress(userAddress);
-
-      // Check proxy's token balances (batch call for efficiency)
-      const [yesBalance, noBalance] = await this.web3Service.conditionalTokens.balanceOfBatch(
-        [proxyAddress, proxyAddress],
-        [market.yesTokenId, market.noTokenId]
+      // Preflight balance checks for actor
+      const balanceCheck = await profile.preflightBalances(
+        actorAddress,
+        BigInt(0),            // Collateral amount (not used for merge)
+        market.yesTokenId,    // YES token ID
+        market.noTokenId,     // NO token ID
+        amountBN,             // Required position token amount
+        'merge'
       );
 
-      if (yesBalance < amountBN || noBalance < amountBN) {
+      if (!balanceCheck.sufficient) {
         return {
           valid: false,
           calls: [],
           estimatedCollateralAmount: '0',
-          error: `Insufficient position tokens in proxy wallet. Have: ${ethers.formatUnits(yesBalance, 6)} YES, ${ethers.formatUnits(noBalance, 6)} NO. Need: ${amount} of each`,
+          error: balanceCheck.error || 'Insufficient position tokens',
         };
       }
 
@@ -362,9 +502,8 @@ export class SplitMergeService {
       const calls: CallDescriptor[] = [];
 
       // Step 1: Approve ConditionalTokens to handle position tokens (if needed)
-      // CRITICAL: Check PROXY's approval, not user's approval
       const isApproved = await this.web3Service.conditionalTokens.isApprovedForAll(
-        proxyAddress,
+        actorAddress,
         ctfAddress
       );
 

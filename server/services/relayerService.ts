@@ -267,6 +267,13 @@ export class RelayerService {
       failed: allTxs.filter(tx => tx.status === 'failed').length,
     };
   }
+
+  /**
+   * Get relayer wallet address
+   */
+  getRelayerAddress(): string {
+    return this.relayerWallet.address;
+  }
 }
 
 // Singleton instance

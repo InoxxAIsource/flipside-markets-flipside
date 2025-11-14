@@ -4,6 +4,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import { eventIndexer } from "./services/eventIndexer";
 import { pythWorker } from "./services/pythWorker";
 import { relayerService } from "./services/relayerService";
+import { web3Service } from "./contracts/web3Service";
+import { getSplitMergeService } from "./services/splitMergeService";
+import { getProxyWalletService } from "./services/proxyWalletService";
+import { CONTRACT_ADDRESSES } from "./config/contracts";
 
 // Global BigInt serializer - converts all BigInt values to strings in JSON
 (BigInt.prototype as any).toJSON = function() {
@@ -85,6 +89,18 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
+    
+    // Initialize service dependencies
+    const proxyWalletService = getProxyWalletService(
+      web3Service,
+      CONTRACT_ADDRESSES.proxyWalletFactory,
+      CONTRACT_ADDRESSES.proxyWalletImpl
+    );
+    const splitMergeService = getSplitMergeService(web3Service);
+    
+    // Wire up service dependencies
+    splitMergeService.setProxyWalletService(proxyWalletService);
+    splitMergeService.setRelayerService(relayerService);
     
     // Start background services after server is running
     eventIndexer.start();
