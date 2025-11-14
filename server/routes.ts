@@ -706,7 +706,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proxy/balance/:address - Get user's USDT balance in ProxyWallet
   app.get('/api/proxy/balance/:address', async (req, res) => {
     try {
-      const balance = await web3Service.getProxyWalletBalance(req.params.address);
+      const userAddress = req.params.address;
+      
+      // Get proxy wallet service instance
+      if (!proxyWalletServiceInstance) {
+        return res.status(500).json({ error: 'ProxyWallet service not initialized' });
+      }
+
+      // Get the user's deployed proxy address
+      const proxyAddress = await proxyWalletServiceInstance.getProxyAddress(userAddress);
+      
+      // Get USDT balance from the proxy wallet
+      const balance = await web3Service.getUSDTBalance(proxyAddress);
       res.json({ balance: balance.toString() });
     } catch (error: any) {
       console.error('Error fetching ProxyWallet balance:', error);
@@ -717,10 +728,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proxy/positions/:address/:tokenId - Get user's position token balance in ProxyWallet
   app.get('/api/proxy/positions/:address/:tokenId', async (req, res) => {
     try {
-      const balance = await web3Service.getProxyPositionBalance(
-        req.params.address,
-        BigInt(req.params.tokenId)
-      );
+      const userAddress = req.params.address;
+      const tokenId = BigInt(req.params.tokenId);
+      
+      // Get proxy wallet service instance
+      if (!proxyWalletServiceInstance) {
+        return res.status(500).json({ error: 'ProxyWallet service not initialized' });
+      }
+
+      // Get the user's deployed proxy address
+      const proxyAddress = await proxyWalletServiceInstance.getProxyAddress(userAddress);
+      
+      // Get token balance from the proxy wallet
+      const balance = await web3Service.getTokenBalance(proxyAddress, tokenId);
       res.json({ balance: balance.toString() });
     } catch (error: any) {
       console.error('Error fetching ProxyWallet position balance:', error);
