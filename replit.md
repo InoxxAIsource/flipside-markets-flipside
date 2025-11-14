@@ -4,6 +4,24 @@
 
 This project is a full-stack prediction market platform, enabling users to create, trade, and resolve prediction markets on real-world events. Built on Ethereum's Sepolia testnet, it leverages seven deployed smart contracts and features a modern web interface inspired by Polymarket. The platform integrates blockchain technology for trustless market operations with a traditional web stack (React, Express, PostgreSQL) to offer a seamless user experience. The business vision is to provide a robust and intuitive platform for decentralized prediction markets, tapping into the growing interest in blockchain-based forecasting.
 
+## Recent Updates (November 14, 2025)
+
+### Production CLOB Infrastructure - Completed ✅
+
+Implemented production-grade Central Limit Order Book (CLOB) foundation with 7 major components:
+
+1. **On-Chain Market Creation** - Markets created via `MarketFactory.createMarket()` with real blockchain conditionId and token IDs
+2. **Token Registration** - Automatic `CTFExchange.registerToken()` for YES/NO tokens with operator authorization checks
+3. **Nonce Management** - Replay attack prevention with `user_nonces` table and validation on order submission
+4. **Price-Time Priority Matching** - Production matching algorithm (price first, then FIFO)
+5. **Market Depth Calculator** - Real-time spread, liquidity, and quality metrics with partial fill handling
+6. **WebSocket Real-Time Feeds** - Live order book updates with depth caching and invalidation (path: `/ws`)
+7. **Operator Authorization System** - Startup checks and graceful failure handling
+
+**Status:** Platform ready for testing. Relayer needs CTFExchange operator authorization from admin.
+
+**Next:** Operator execution backend to settle matched orders on-chain.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
