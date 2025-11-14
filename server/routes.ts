@@ -176,22 +176,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         signer
       );
       
-      // Check if relayer is authorized as operator before attempting token registration
-      const isOperator = await web3Service.isOperator(signer.address);
-      if (!isOperator) {
-        return res.status(500).json({ 
-          error: 'Relayer is not authorized as operator on CTFExchange. Admin must call CTFExchange.addOperator() first.' 
-        });
-      }
-      
       // Register tokens with CTFExchange for trading BEFORE storing in database
       // This ensures markets are only created if tokens can be traded
-      await web3Service.registerTokenWithExchange(
-        onChainResult.yesTokenId,
-        onChainResult.noTokenId,
-        onChainResult.conditionId,
-        signer
-      );
+      // Note: CTFExchange is permissionless, so anyone can register tokens
+      try {
+        await web3Service.registerTokenWithExchange(
+          onChainResult.yesTokenId,
+          onChainResult.noTokenId,
+          onChainResult.conditionId,
+          signer
+        );
+      } catch (error: any) {
+        console.error('Failed to register tokens with exchange:', error);
+        return res.status(500).json({ 
+          error: 'Market created on-chain but failed to register tokens with exchange. Please try again.' 
+        });
+      }
       
       // Store in database with real on-chain token IDs only after successful registration
       const market = await storage.createMarket({
