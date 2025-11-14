@@ -114,7 +114,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: error.message });
       }
 
-      const market = await storage.createMarket(validation.data);
+      const marketData = validation.data;
+      
+      // Get relayer signer to create market on-chain
+      if (!process.env.RELAYER_PRIVATE_KEY) {
+        return res.status(500).json({ error: 'Relayer private key not configured' });
+      }
+      
+      const signer = web3Service.getSigner(process.env.RELAYER_PRIVATE_KEY);
+      
+      // Create unique questionId from market question and timestamp
+      const { ethers } = await import('ethers');
+      const questionId = ethers.id(`${marketData.question}_${Date.now()}`);
+      const expiresAtTimestamp = Math.floor(marketData.expiresAt.getTime() / 1000);
+      
+      // Create market on-chain via MarketFactory
+      const onChainResult = await web3Service.createMarketOnChain(
+        questionId,
+        marketData.question,
+        expiresAtTimestamp,
+        signer
+      );
+      
+      // Check if relayer is authorized as operator before attempting token registration
+      const isOperator = await web3Service.isOperator(signer.address);
+      if (!isOperator) {
+        return res.status(500).json({ 
+          error: 'Relayer is not authorized as operator on CTFExchange. Admin must call CTFExchange.addOperator() first.' 
+        });
+      }
+      
+      // Register tokens with CTFExchange for trading BEFORE storing in database
+      // This ensures markets are only created if tokens can be traded
+      await web3Service.registerTokenWithExchange(
+        onChainResult.yesTokenId,
+        onChainResult.noTokenId,
+        onChainResult.conditionId,
+        signer
+      );
+      
+      // Store in database with real on-chain token IDs only after successful registration
+      const market = await storage.createMarket({
+        ...marketData,
+        conditionId: onChainResult.conditionId,
+        yesTokenId: onChainResult.yesTokenId,
+        noTokenId: onChainResult.noTokenId,
+      });
+      
+      console.log(`Market ${market.id} created on-chain and tokens registered`);
       res.status(201).json(market);
     } catch (error: any) {
       console.error('Error creating market:', error);

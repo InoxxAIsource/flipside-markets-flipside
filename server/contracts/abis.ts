@@ -25,8 +25,11 @@ export const CTFExchangeABI = [
   "function cancelOrder(uint256 salt)",
   "function hashOrder((address maker, address taker, address tokenId, uint256 makerAmount, uint256 takerAmount, uint256 side, uint256 feeRateBps, uint256 nonce, uint256 signer, uint256 expiration) order) view returns (bytes32)",
   "function validateOrderSignature(bytes32 orderHash, (address maker, address taker, address tokenId, uint256 makerAmount, uint256 takerAmount, uint256 side, uint256 feeRateBps, uint256 nonce, uint256 signer, uint256 expiration, bytes signature) order) view returns (bool)",
+  "function registerToken(uint256 token, uint256 complement, bytes32 conditionId)",
+  "function isOperator(address account) view returns (bool)",
   "event OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee)",
   "event OrderCancelled(bytes32 indexed orderHash)",
+  "event TokenRegistered(uint256 indexed token0, uint256 indexed token1, bytes32 indexed conditionId)",
 ] as const;
 
 export const MarketFactoryABI = [

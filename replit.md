@@ -6,9 +6,41 @@ A full-stack prediction market platform that enables users to create, trade, and
 
 The application combines blockchain technology (smart contracts for trustless market creation and trading) with a traditional web stack (React frontend, Express backend, PostgreSQL database) to deliver a seamless prediction market experience.
 
-## Recent Updates (November 13, 2025)
+## Recent Updates
 
-### New Features Added
+### November 14, 2025 - Production CLOB Infrastructure
+
+**Phase A: Foundation - On-Chain Market Lifecycle**
+1. ✅ **On-Chain Market Creation**: Markets now created via MarketFactory.createMarket()
+   - Real conditionId and token IDs from blockchain
+   - Automatic token registration with CTFExchange.registerToken()
+   - Server endpoint updated: `POST /api/markets`
+   - Implementation: `server/contracts/web3Service.ts`
+
+2. ✅ **Token Registration**: YES/NO tokens automatically registered for trading
+   - Enables trading immediately after market creation
+   - Uses relayer wallet to execute registration transaction
+
+3. ✅ **Operator Authorization Check**: Server startup verifies relayer authorization
+   - Logs warning if relayer not authorized as CTFExchange operator
+   - Admin must call `CTFExchange.addOperator(0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0)`
+
+4. ✅ **Nonce Management Schema**: Added `user_nonces` table for replay protection
+   - Tracks highest nonce per user address
+   - Prevents duplicate/replay order submissions
+   - Schema: `shared/schema.ts`
+
+**Order Matching Engine Enhancements:**
+- ✅ Price-time priority sorting (price first, then timestamp)
+- 🚧 Transactional locking for atomic fills (in progress)
+- 🚧 Self-trade prevention (in progress)
+- 🚧 Execution queue for operator backend (in progress)
+
+**Relayer Status:**
+- Address: 0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0
+- ⚠️ NOT authorized as CTFExchange operator (requires admin action)
+
+### November 13, 2025 - User Interface Enhancements
 
 **1. Public Order Book** (MarketPage)
 - Real-time order book display showing all active buy and sell orders

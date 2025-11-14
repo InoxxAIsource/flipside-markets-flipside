@@ -143,6 +143,16 @@ export const pythPriceUpdates = pgTable("pyth_price_updates", {
   publishTimeIdx: index("pyth_publish_time_idx").on(table.publishTime),
 }));
 
+// User nonces - tracks highest nonce per user to prevent replay attacks
+export const userNonces = pgTable("user_nonces", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAddress: text("user_address").notNull().unique(),
+  highestNonce: bigint("highest_nonce", { mode: 'bigint' }).notNull().default(BigInt(0)),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  userIdx: index("user_nonces_user_idx").on(table.userAddress),
+}));
+
 // Insert schemas with validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -192,6 +202,11 @@ export const insertPythPriceUpdateSchema = createInsertSchema(pythPriceUpdates).
   createdAt: true,
 });
 
+export const insertUserNonceSchema = createInsertSchema(userNonces).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -210,3 +225,6 @@ export type InsertPosition = z.infer<typeof insertPositionSchema>;
 
 export type PythPriceUpdate = typeof pythPriceUpdates.$inferSelect;
 export type InsertPythPriceUpdate = z.infer<typeof insertPythPriceUpdateSchema>;
+
+export type UserNonce = typeof userNonces.$inferSelect;
+export type InsertUserNonce = z.infer<typeof insertUserNonceSchema>;

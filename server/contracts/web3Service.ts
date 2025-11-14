@@ -327,6 +327,138 @@ export class Web3Service {
   }
 
   /**
+   * Create a market on-chain via MarketFactory
+   * Returns the conditionId and token IDs
+   */
+  async createMarketOnChain(
+    questionId: string,
+    question: string,
+    expiresAt: number,
+    signer: ethers.Wallet
+  ): Promise<{
+    conditionId: string;
+    yesTokenId: string;
+    noTokenId: string;
+    txHash: string;
+  }> {
+    const factoryWithSigner = this.marketFactory.connect(signer) as any;
+    
+    // Convert questionId to bytes32 format
+    const questionIdBytes32 = questionId.startsWith('0x') 
+      ? questionId 
+      : ethers.id(questionId);
+    
+    // Create market on-chain
+    const tx = await factoryWithSigner.createMarket(
+      questionIdBytes32,
+      question,
+      expiresAt
+    );
+    
+    const receipt = await tx.wait();
+    
+    // Find MarketCreated event
+    const event = receipt.logs
+      .map((log: any) => {
+        try {
+          return this.marketFactory.interface.parseLog(log);
+        } catch {
+          return null;
+        }
+      })
+      .find((parsed: any) => parsed && parsed.name === 'MarketCreated');
+    
+    if (!event) {
+      throw new Error('MarketCreated event not found in transaction receipt');
+    }
+    
+    const conditionId = event.args.conditionId;
+    
+    // Calculate token IDs for YES (outcome 0) and NO (outcome 1)
+    const yesTokenId = await this.getPositionId(
+      CONTRACT_ADDRESSES.MockUSDT,
+      conditionId,
+      0
+    );
+    
+    const noTokenId = await this.getPositionId(
+      CONTRACT_ADDRESSES.MockUSDT,
+      conditionId,
+      1
+    );
+    
+    return {
+      conditionId,
+      yesTokenId: yesTokenId.toString(),
+      noTokenId: noTokenId.toString(),
+      txHash: receipt.hash,
+    };
+  }
+
+  /**
+   * Register a token with CTFExchange for trading
+   * Must be called by admin/operator
+   */
+  async registerTokenWithExchange(
+    tokenId: string,
+    complementTokenId: string,
+    conditionId: string,
+    signer: ethers.Wallet
+  ): Promise<string> {
+    const exchangeWithSigner = this.ctfExchange.connect(signer) as any;
+    
+    const tx = await exchangeWithSigner.registerToken(
+      tokenId,
+      complementTokenId,
+      conditionId
+    );
+    
+    const receipt = await tx.wait();
+    return receipt.hash;
+  }
+
+  /**
+   * Check if relayer wallet is authorized as operator on CTFExchange
+   */
+  async isOperator(address: string): Promise<boolean> {
+    try {
+      return await this.ctfExchange.isOperator(address);
+    } catch (error) {
+      console.error('Error checking operator status:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get market details from MarketFactory contract
+   */
+  async getMarketFromChain(conditionId: string): Promise<{
+    conditionId: string;
+    question: string;
+    creator: string;
+    expiresAt: bigint;
+    resolved: boolean;
+    yesTokenId: bigint;
+    noTokenId: bigint;
+  } | null> {
+    try {
+      const market = await this.marketFactory.getMarket(conditionId);
+      return {
+        conditionId: market.conditionId,
+        question: market.question,
+        creator: market.creator,
+        expiresAt: market.expiresAt,
+        resolved: market.resolved,
+        yesTokenId: market.yesTokenId,
+        noTokenId: market.noTokenId,
+      };
+    } catch (error) {
+      console.error('Error fetching market from chain:', error);
+      return null;
+    }
+  }
+
+  /**
    * Stop listening to events
    */
   removeAllListeners() {

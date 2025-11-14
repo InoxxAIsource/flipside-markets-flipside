@@ -19,14 +19,18 @@ export class OrderMatcher {
         this.canMatch(newOrder, order)
     );
 
-    // Sort by best price (lowest for sells, highest for buys when we're buying)
+    // Sort by price-time priority (price first, then timestamp for same price)
     matchableOrders.sort((a, b) => {
       if (newOrder.side === 'buy') {
-        // We're buying, prefer lowest sell prices
-        return a.price - b.price;
+        // We're buying, prefer lowest sell prices, then earliest timestamp
+        const priceDiff = a.price - b.price;
+        if (Math.abs(priceDiff) > 0.0001) return priceDiff;
+        return a.createdAt.getTime() - b.createdAt.getTime();
       } else {
-        // We're selling, prefer highest buy prices
-        return b.price - a.price;
+        // We're selling, prefer highest buy prices, then earliest timestamp
+        const priceDiff = b.price - a.price;
+        if (Math.abs(priceDiff) > 0.0001) return priceDiff;
+        return a.createdAt.getTime() - b.createdAt.getTime();
       }
     });
 
