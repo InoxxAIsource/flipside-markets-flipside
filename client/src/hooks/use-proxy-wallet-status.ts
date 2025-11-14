@@ -11,12 +11,13 @@ interface ProxyWalletResponse {
 }
 
 export function useProxyWalletStatus() {
-  const { account, isConnected } = useWallet();
+  const { account } = useWallet();
   
   const { data, isLoading, error } = useQuery<ProxyWalletResponse>({
     queryKey: ['/api/proxy/status', account],
-    enabled: !!account && isConnected,
-    staleTime: 60000,
+    enabled: !!account,
+    staleTime: 30000, // Reduce stale time for faster updates
+    refetchInterval: 5000, // Poll every 5 seconds to catch deployment
     retry: 2,
   });
 

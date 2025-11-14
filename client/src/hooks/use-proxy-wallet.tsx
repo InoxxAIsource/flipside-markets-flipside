@@ -574,9 +574,18 @@ export function useDeployProxyWallet() {
     },
     onError: (error: Error) => {
       console.error('Deployment error:', error);
+      
+      // Provide user-friendly error messages
+      let errorMessage = error.message || 'Failed to deploy proxy wallet';
+      if (errorMessage.includes('user rejected')) {
+        errorMessage = 'Deployment cancelled. Click Deploy again when ready.';
+      } else if (errorMessage.includes('insufficient funds')) {
+        errorMessage = 'Insufficient ETH for deployment. Please add ETH to your wallet.';
+      }
+      
       toast({
         title: 'Deployment Failed',
-        description: error.message || 'Failed to deploy proxy wallet',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
