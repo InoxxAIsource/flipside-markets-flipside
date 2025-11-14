@@ -96,8 +96,9 @@ export class MarketDepthCalculator {
     for (const [price, ordersAtPrice] of priceMap.entries()) {
       // Calculate remaining size (size - filled)
       const size = ordersAtPrice.reduce((sum, order) => {
-        const remaining = order.size - (order.filledSize || 0);
-        return sum + remaining;
+        const remaining = order.size - (order.filled || 0);
+        // Guard against negative remaining
+        return sum + Math.max(0, remaining);
       }, 0);
       
       // Skip if no remaining size

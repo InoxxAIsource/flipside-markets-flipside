@@ -7,25 +7,65 @@ import { relayerService } from "./services/relayerService";
 import { insertMarketSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { MarketDepthCalculator } from "./services/marketDepth";
 
 // WebSocket client tracking
 const wsClients = new Map<string, Set<WebSocket>>();
 
+// Depth cache with TTL (5 seconds)
+const depthCache = new Map<string, { depth: any; quality: any; timestamp: number }>();
+const DEPTH_CACHE_TTL = 5000;
+
 // Broadcast order book updates to all clients subscribed to a market
+// Fire-and-forget pattern to prevent unhandled promise rejections
 function broadcastOrderBookUpdate(marketId: string, data: any) {
   const clients = wsClients.get(marketId);
-  if (clients) {
-    const message = JSON.stringify({
-      type: 'orderbook_update',
-      marketId,
-      data,
-    });
-    clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
-  }
+  if (!clients || clients.size === 0) return;
+
+  // Invalidate cache when order book changes
+  depthCache.delete(marketId);
+
+  // Execute async broadcast in background with error handling
+  void (async () => {
+    try {
+      // Always calculate fresh depth after invalidation
+      const now = Date.now();
+      const orders = await storage.getMarketOrders(marketId, 'open');
+      const depth = MarketDepthCalculator.calculateDepth(orders);
+      const quality = MarketDepthCalculator.calculateMarketQuality(depth);
+      
+      // Cache the fresh result
+      depthCache.set(marketId, { depth, quality, timestamp: now });
+      
+      const message = JSON.stringify({
+        type: 'orderbook_update',
+        marketId,
+        data,
+        depth: {
+          bids: depth.bids.slice(0, 10), // Top 10 price levels
+          asks: depth.asks.slice(0, 10),
+          spread: depth.spread,
+          spreadPercentage: depth.spreadPercentage,
+          midPrice: depth.midPrice,
+          bestBid: depth.bestBid,
+          bestAsk: depth.bestAsk,
+          totalBidVolume: depth.totalBidVolume,
+          totalAskVolume: depth.totalAskVolume,
+          quality,
+        },
+        timestamp: now,
+      });
+      
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    } catch (error) {
+      console.error(`Error broadcasting order book update for market ${marketId}:`, error);
+      // Continue execution - don't crash the server
+    }
+  })();
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
