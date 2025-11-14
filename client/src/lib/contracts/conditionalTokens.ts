@@ -43,12 +43,21 @@ export async function prepareMarketCondition(
   const tx = await contract.prepareCondition(oracle, questionId, outcomeSlotCount);
   const receipt = await tx.wait();
 
-  const conditionId = ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(
-      ['address', 'bytes32', 'uint256'],
-      [oracle, questionId, outcomeSlotCount]
-    )
+  if (!receipt) {
+    throw new Error('Transaction receipt not found');
+  }
+
+  const conditionPreparedEventSignature = ethers.id('ConditionPreparation(bytes32,address,bytes32,uint256)');
+  
+  const preparationLog = receipt.logs.find(
+    (log: ethers.Log) => log.topics[0] === conditionPreparedEventSignature
   );
+
+  if (!preparationLog) {
+    throw new Error('ConditionPreparation event not found in transaction receipt');
+  }
+
+  const conditionId = preparationLog.topics[1];
 
   const yesTokenId = await calculateTokenId(contract, conditionId, 0);
   const noTokenId = await calculateTokenId(contract, conditionId, 1);
