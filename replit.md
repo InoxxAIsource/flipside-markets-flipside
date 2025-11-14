@@ -6,9 +6,9 @@ This project is a full-stack prediction market platform, enabling users to creat
 
 ## Recent Updates (November 14, 2025)
 
-### Smart Contract Deployment - Phase 2 Completed ✅
+### Backend Integration - Phase 1 & 2 Completed ✅
 
-Successfully deployed complete Polymarket-style contract suite to Sepolia testnet:
+Successfully integrated deployed Sepolia contracts with backend services:
 
 **Deployed Contracts:**
 - **MockUSDT:** 0xAf24D4DDbA993F6b11372528C678edb718a097Aa (6-decimal collateral token)
@@ -16,21 +16,33 @@ Successfully deployed complete Polymarket-style contract suite to Sepolia testne
 - **ProxyWallet Impl:** 0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7 (Gasless trading template)
 - **ProxyWalletFactory:** 0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2 (CREATE2 deterministic wallets)
 - **CTFExchange:** 0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3 (CLOB with OPERATOR_ROLE)
+- **Relayer:** 0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0 (OPERATOR_ROLE granted)
 
-**Technical Achievements:**
-1. ✅ Minimal Solidity contracts (MockUSDT, ConditionalTokens, ProxyWallet, ProxyWalletFactory, CTFExchange)
-2. ✅ Hardhat v3 configuration with Node.js 22 compatibility
-3. ✅ Successful Sepolia deployment via hardhat-toolbox-mocha-ethers
-4. ✅ ProxyWalletFactory implementation configured
-5. ✅ Contract addresses exported to `server/config/contracts.ts`
+**Phase 1 - Contract Integration (✅ Complete):**
+1. ✅ Centralized contract addresses in `server/config/contracts.ts`
+2. ✅ Refactored web3Service to use deployed contracts only
+3. ✅ Removed obsolete contracts (MarketFactory, PythPriceResolver, FeeDistributor)
+4. ✅ Updated market creation to use ConditionalTokens.prepareCondition directly
+5. ✅ EventIndexer listening to ConditionalTokens events
+6. ✅ PythWorker implemented as guarded no-op (pending oracle deployment)
 
-**Status:** Production CLOB infrastructure complete. Backend integration pending.
+**Phase 2 - ExecutionContext Refactoring (✅ Complete):**
+1. ✅ Implemented ExecutionProfile pattern for three contexts:
+   - **USER_PROXY**: Gasless meta-transactions via proxy wallet
+   - **RELAYER**: Backend relayer executes directly
+   - **DIRECT**: User's EOA executes directly
+2. ✅ Fixed critical balance check bug (token IDs vs amounts)
+3. ✅ Wired up service dependencies (splitMergeService, proxyWalletService, relayerService)
+4. ✅ Added getRelayerAddress() to relayerService
+
+**Status:** Backend running successfully with deployed contracts. Ready for frontend integration.
 
 **Next Steps:**
-1. Grant OPERATOR_ROLE to relayer (0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0)
-2. Integrate deployed addresses into backend services
-3. Test split/merge operations with live contracts
-4. Enable frontend trading with proxy wallet system
+1. Frontend: Market creation form
+2. Frontend: Order book trading UI (limit/market orders)
+3. Frontend: Wallet connection with proxy wallet system
+4. Frontend: User portfolio/positions dashboard
+5. End-to-end testing on Sepolia
 
 ## User Preferences
 
