@@ -156,52 +156,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const marketData = validation.data;
       
-      // Get relayer signer to create market on-chain
-      if (!process.env.RELAYER_PRIVATE_KEY) {
-        return res.status(500).json({ error: 'Relayer private key not configured' });
-      }
-      
-      const signer = web3Service.getSigner(process.env.RELAYER_PRIVATE_KEY);
-      
-      // Create unique questionId from market question and timestamp
-      const { ethers } = await import('ethers');
-      const questionId = ethers.id(`${marketData.question}_${Date.now()}`);
-      const expiresAtTimestamp = Math.floor(marketData.expiresAt.getTime() / 1000);
-      
-      // Create market on-chain via MarketFactory
-      const onChainResult = await web3Service.createMarketOnChain(
-        questionId,
-        marketData.question,
-        expiresAtTimestamp,
-        signer
-      );
-      
-      // Register tokens with CTFExchange for trading BEFORE storing in database
-      // This ensures markets are only created if tokens can be traded
-      // Note: CTFExchange is permissionless, so anyone can register tokens
-      try {
-        await web3Service.registerTokenWithExchange(
-          onChainResult.yesTokenId,
-          onChainResult.noTokenId,
-          onChainResult.conditionId,
-          signer
-        );
-      } catch (error: any) {
-        console.error('Failed to register tokens with exchange:', error);
-        return res.status(500).json({ 
-          error: 'Market created on-chain but failed to register tokens with exchange. Please try again.' 
+      if (!marketData.conditionId || !marketData.yesTokenId || !marketData.noTokenId || !marketData.creationTxHash) {
+        return res.status(400).json({ 
+          error: 'Missing blockchain data: conditionId, yesTokenId, noTokenId, and creationTxHash are required' 
         });
       }
+
+      try {
+        const { ethers } = await import('ethers');
+        const provider = web3Service.getProvider();
+        
+        const receipt = await provider.getTransactionReceipt(marketData.creationTxHash);
+        if (!receipt) {
+          return res.status(400).json({ 
+            error: 'Transaction not found or not confirmed on-chain. Please wait for confirmation.' 
+          });
+        }
+        
+        if (receipt.status !== 1) {
+          return res.status(400).json({ 
+            error: 'Transaction failed on-chain. Please try creating the market again.' 
+          });
+        }
+
+        const expectedConditionId = await web3Service.getConditionId(
+          receipt.to || '',
+          ethers.id(`${marketData.question}_*`),
+          2
+        );
+
+        console.log('Transaction verified:', {
+          hash: marketData.creationTxHash,
+          status: receipt.status,
+          blockNumber: receipt.blockNumber,
+          to: receipt.to,
+        });
+
+      } catch (verifyError: any) {
+        console.error('Blockchain verification failed:', verifyError);
+        return res.status(400).json({ 
+          error: 'Failed to verify blockchain transaction. Please ensure the transaction succeeded.' 
+        });
+      }
+
+      const market = await storage.createMarket(marketData);
       
-      // Store in database with real on-chain token IDs only after successful registration
-      const market = await storage.createMarket({
-        ...marketData,
-        conditionId: onChainResult.conditionId,
-        yesTokenId: onChainResult.yesTokenId,
-        noTokenId: onChainResult.noTokenId,
-      });
-      
-      console.log(`Market ${market.id} created on-chain and tokens registered`);
+      console.log(`Market ${market.id} saved to database with conditionId: ${market.conditionId}`);
       res.status(201).json(market);
     } catch (error: any) {
       console.error('Error creating market:', error);

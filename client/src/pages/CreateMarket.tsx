@@ -63,6 +63,7 @@ export default function CreateMarket() {
         conditionId: result.conditionId,
         yesTokenId: result.yesTokenId,
         noTokenId: result.noTokenId,
+        creationTxHash: result.txHash,
       });
 
       return await response.json() as Market;

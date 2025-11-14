@@ -35,6 +35,7 @@ export const markets = pgTable("markets", {
   conditionId: text("condition_id"), // ConditionalTokens condition ID
   yesTokenId: text("yes_token_id"), // Token ID for YES outcome
   noTokenId: text("no_token_id"), // Token ID for NO outcome
+  creationTxHash: text("creation_tx_hash"), // Transaction hash of market creation
   
   // Pyth integration for automated resolution
   pythPriceFeedId: text("pyth_price_feed_id"), // Pyth price feed identifier
