@@ -335,10 +335,12 @@ export class Web3Service {
 
   /**
    * Check if relayer wallet is authorized as operator on CTFExchange
+   * Uses AccessControl's hasRole() with OPERATOR_ROLE
    */
   async isOperator(address: string): Promise<boolean> {
     try {
-      return await this.ctfExchange.isOperator(address);
+      const operatorRole = await this.ctfExchange.OPERATOR_ROLE();
+      return await this.ctfExchange.hasRole(operatorRole, address);
     } catch (error) {
       console.error('Error checking operator status:', error);
       return false;
