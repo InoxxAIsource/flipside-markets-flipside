@@ -93,8 +93,8 @@ app.use((req, res, next) => {
     // Initialize service dependencies
     const proxyWalletService = getProxyWalletService(
       web3Service,
-      CONTRACT_ADDRESSES.proxyWalletFactory,
-      CONTRACT_ADDRESSES.proxyWalletImpl
+      CONTRACT_ADDRESSES.PROXY_WALLET_FACTORY,
+      CONTRACT_ADDRESSES.PROXY_WALLET_IMPL
     );
     const splitMergeService = getSplitMergeService(web3Service);
     
