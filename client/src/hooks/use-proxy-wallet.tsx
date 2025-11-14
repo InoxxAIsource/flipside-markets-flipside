@@ -8,18 +8,17 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useProxyWallet as useProxyWalletStatus } from './use-proxy-wallet.ts';
 
 const ProxyWalletABI = [
-  "function deposit(uint256 amount)",
-  "function withdraw(uint256 amount)",
-  "function executeSplit(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
-  "function executeMerge(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
-  "function getBalance(address user) view returns (uint256)",
-  "function getPositionBalance(address user, uint256 tokenId) view returns (uint256)",
+  "function execute(address to, bytes data, uint256 value) returns (bytes memory)",
+  "function executeBatch((address to, bytes data, uint256 value)[] calls) returns (bytes[] memory)",
+  "function getOwner() view returns (address)",
   "function getNonce(address user) view returns (uint256)",
 ] as const;
 
 const MockUSDTABI = [
+  "function transfer(address to, uint256 amount) returns (bool)",
   "function approve(address spender, uint256 amount) returns (bool)",
   "function allowance(address owner, address spender) view returns (uint256)",
+  "function balanceOf(address account) view returns (uint256)",
 ] as const;
 
 // EIP-712 domain will be dynamically created with actual proxy address
@@ -133,49 +132,15 @@ export function useProxyWallet() {
         signer
       );
 
-      const proxyWalletContract = new ethers.Contract(
-        proxyAddress, // Use user's deployed proxy address
-        ProxyWalletABI,
-        signer
-      );
-
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
-      // Check allowance
-      const allowance = await usdtContract.allowance(account, proxyAddress);
-
-      // Approve if needed
-      if (allowance < amountWei) {
-        toast({
-          title: 'Approval Required',
-          description: 'Please approve USDT spending...',
-        });
-
-        const approveTx = await usdtContract.approve(
-          proxyAddress, // Approve user's proxy wallet
-          amountWei
-        );
-
-        toast({
-          title: 'Approval Pending',
-          description: 'Waiting for approval confirmation...',
-        });
-
-        await approveTx.wait();
-
-        toast({
-          title: 'Approval Confirmed',
-          description: 'USDT spending approved',
-        });
-      }
-
-      // Deposit to ProxyWallet
+      // Deposit to ProxyWallet by direct transfer (Polymarket-style)
       toast({
         title: 'Deposit Pending',
-        description: 'Depositing USDT to ProxyWallet...',
+        description: 'Transferring USDT to ProxyWallet...',
       });
 
-      const depositTx = await proxyWalletContract.deposit(amountWei);
+      const depositTx = await usdtContract.transfer(proxyAddress, amountWei);
       
       toast({
         title: 'Deposit Submitted',

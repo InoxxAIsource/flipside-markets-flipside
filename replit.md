@@ -9,8 +9,10 @@ This project is a full-stack prediction market platform, enabling users to creat
 ### ✅ Critical ProxyWallet Bug Fixes - Production Ready
 
 **Fixed ProxyWallet Address Resolution (November 14, 2025):**
-- **Problem:** Deposit/withdraw operations were calling the factory address instead of user's deployed proxy wallet
-- **Root Cause:** Frontend was using hardcoded factory address from `CONTRACT_ADDRESSES.ProxyWallet`
+- **Problem 1:** Deposit/withdraw operations were calling the factory address instead of user's deployed proxy wallet
+- **Root Cause 1:** Frontend was using hardcoded factory address from `CONTRACT_ADDRESSES.ProxyWallet`
+- **Problem 2:** Deposit function calling non-existent `deposit()` function on ProxyWallet contract
+- **Root Cause 2:** Frontend ABI was incorrect - ProxyWallet has `execute()` function, not `deposit()`
 - **Solution Implemented:**
   1. Created `/api/proxy/status/:address` endpoint returning user's deployed proxy address (via ProxyWalletService)
   2. Updated `useProxyWallet` hook to fetch actual proxy address and use it for all operations
@@ -18,8 +20,10 @@ This project is a full-stack prediction market platform, enabling users to creat
   4. Fixed import circular reference (`use-proxy-wallet.ts` vs `use-proxy-wallet.tsx`)
   5. Fixed service initialization race condition (moved before `registerRoutes()`)
   6. Added retry logic with exponential backoff for balance operations (USDT, ETH, tokens)
-- **Impact:** All deposit/withdraw/split/merge operations now correctly target user's deployed proxy wallet
-- **Verification:** Architect reviewed and approved all changes (3 review iterations)
+  7. **Fixed deposit mechanism:** Changed from calling non-existent `proxyWallet.deposit()` to direct ERC20 transfer `usdt.transfer(proxyAddress, amount)` (Polymarket-style)
+  8. **Fixed ProxyWallet ABI:** Updated to match actual contract interface with `execute()`, `executeBatch()`, `getOwner()`, `getNonce()`
+- **Impact:** All deposit/withdraw/split/merge operations now correctly target user's deployed proxy wallet using correct contract functions
+- **Verification:** Architect reviewed and approved all changes (3 review iterations); Polymarket implementation research confirmed direct transfer pattern
 
 ### ✅ Platform MVP Complete - Production Ready
 
