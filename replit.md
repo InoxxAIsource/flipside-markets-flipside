@@ -6,40 +6,31 @@ This project is a full-stack prediction market platform, enabling users to creat
 
 ## Recent Updates (November 14, 2025)
 
-### Production CLOB Infrastructure - Phase 1 Completed ✅
+### Smart Contract Deployment - Phase 2 Completed ✅
 
-Successfully implemented off-chain CLOB foundation (7 major components):
-1. On-chain market creation via MarketFactory
-2. Nonce management for replay protection
-3. Price-time priority matching engine
-4. Market depth calculator with quality metrics
-5. WebSocket real-time feeds
-6. Event indexer and Pyth oracle integration
-7. Database schema for orders, fills, positions
+Successfully deployed complete Polymarket-style contract suite to Sepolia testnet:
 
-**Status:** Backend CLOB engine operational. Ready for smart contract upgrade.
+**Deployed Contracts:**
+- **MockUSDT:** 0xAf24D4DDbA993F6b11372528C678edb718a097Aa (6-decimal collateral token)
+- **ConditionalTokens:** 0xdC8CB01c328795C007879B2C030AbF1c1b580D84 (Gnosis CTF for YES/NO tokens)
+- **ProxyWallet Impl:** 0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7 (Gasless trading template)
+- **ProxyWalletFactory:** 0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2 (CREATE2 deterministic wallets)
+- **CTFExchange:** 0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3 (CLOB with OPERATOR_ROLE)
 
-### Smart Contract Deployment Plan - Phase 2 (In Progress)
+**Technical Achievements:**
+1. ✅ Minimal Solidity contracts (MockUSDT, ConditionalTokens, ProxyWallet, ProxyWalletFactory, CTFExchange)
+2. ✅ Hardhat v3 configuration with Node.js 22 compatibility
+3. ✅ Successful Sepolia deployment via hardhat-toolbox-mocha-ethers
+4. ✅ ProxyWalletFactory implementation configured
+5. ✅ Contract addresses exported to `server/config/contracts.ts`
 
-**Decision:** Deploy full Polymarket-style contracts with Auth system for production CLOB.
+**Status:** Production CLOB infrastructure complete. Backend integration pending.
 
-**Current Issue:** Deployed CTFExchange (0x09E6D42eF37975968c892b60D631CFE08f299FEA) is simplified/permissionless version without Auth system needed for production operator-based trading.
-
-**Solution:** Deploy complete Polymarket contract suite:
-- **CTFExchange** (with AccessControl: admin/operator roles)
-- **NegRiskAdapter** (automatic order settlement)
-- **FeeController** (fee distribution)
-- **ProxyFactory + ProxyWallet** (meta-transactions)
-- **MarketRegistry** (auto-register markets)
-
-**Goals:**
-1. Clean CLOB execution matching Polymarket
-2. Automatic on-chain order settlement
-3. Operator authorization for relayer
-4. Seamless market creation
-5. Full production feature parity
-
-**Next Steps:** Research Polymarket contracts → Create deployment scripts → Deploy & configure roles → Update backend integration.
+**Next Steps:**
+1. Grant OPERATOR_ROLE to relayer (0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0)
+2. Integrate deployed addresses into backend services
+3. Test split/merge operations with live contracts
+4. Enable frontend trading with proxy wallet system
 
 ## User Preferences
 
