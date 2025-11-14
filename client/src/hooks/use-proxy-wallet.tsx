@@ -5,7 +5,7 @@ import { useWallet } from './use-wallet';
 import { useToast } from './use-toast';
 import { CONTRACT_ADDRESSES } from '@/lib/web3';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useProxyWallet as useProxyWalletStatus } from './use-proxy-wallet.ts';
+import { useProxyWalletStatus } from './use-proxy-wallet-status';
 
 const ProxyWalletABI = [
   "function execute(address to, bytes data, uint256 value) returns (bytes memory)",
@@ -242,8 +242,8 @@ export function useProxyWallet() {
    * Withdraw USDT from ProxyWallet (meta-transaction)
    */
   const withdraw = async (amount: string): Promise<string> => {
-    if (!account) {
-      throw new Error('Wallet not connected');
+    if (!account || !proxyAddress) {
+      throw new Error('Wallet not connected or proxy not deployed');
     }
 
     setIsWithdrawing(true);
@@ -255,17 +255,21 @@ export function useProxyWallet() {
 
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
-      // Encode withdraw function call
-      const proxyWalletInterface = new ethers.Interface(ProxyWalletABI);
-      const data = proxyWalletInterface.encodeFunctionData('withdraw', [amountWei]);
+      // Step 1: Encode USDT.transfer(user, amount)
+      const usdtInterface = new ethers.Interface(MockUSDTABI);
+      const transferData = usdtInterface.encodeFunctionData('transfer', [account, amountWei]);
 
-      if (!proxyAddress) {
-        throw new Error('Proxy wallet not deployed');
-      }
+      // Step 2: Encode ProxyWallet.execute(USDT_ADDRESS, transferData, 0)
+      const proxyInterface = new ethers.Interface(ProxyWalletABI);
+      const executeData = proxyInterface.encodeFunctionData('execute', [
+        CONTRACT_ADDRESSES.MockUSDT,
+        transferData,
+        0 // no ETH value
+      ]);
 
       const txId = await signAndSubmitMetaTransaction(
-        proxyAddress, // Use user's proxy address
-        data,
+        proxyAddress,
+        executeData,
         'Withdraw'
       );
 

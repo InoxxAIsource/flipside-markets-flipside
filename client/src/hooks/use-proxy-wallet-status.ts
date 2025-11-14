@@ -10,7 +10,7 @@ interface ProxyWalletResponse {
   nonce: number;
 }
 
-export function useProxyWallet() {
+export function useProxyWalletStatus() {
   const { account, isConnected } = useWallet();
   
   const { data, isLoading, error } = useQuery<ProxyWalletResponse>({
@@ -64,7 +64,7 @@ export function useEnsureProxyWallet() {
 
 export function useSyncProxyInfo() {
   const { setProxyInfo } = useWallet();
-  const proxyWallet = useProxyWallet();
+  const proxyWallet = useProxyWalletStatus();
 
   useEffect(() => {
     if (proxyWallet.proxyAddress) {

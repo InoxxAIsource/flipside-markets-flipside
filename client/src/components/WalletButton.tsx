@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatAddress } from '@/lib/web3';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/contexts/Web3Provider';
-import { useSyncProxyInfo } from '@/hooks/use-proxy-wallet';
+import { useSyncProxyInfo } from '@/hooks/use-proxy-wallet-status';
 
 export function WalletButton() {
   const { account: address, isConnecting, connect, disconnect, provider } = useWallet();
