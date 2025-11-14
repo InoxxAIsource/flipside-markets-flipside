@@ -5,6 +5,7 @@ import { useWallet } from './use-wallet';
 import { useToast } from './use-toast';
 import { CONTRACT_ADDRESSES } from '@/lib/web3';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useProxyWallet as useProxyWalletStatus } from './use-proxy-wallet';
 
 const ProxyWalletABI = [
   "function deposit(uint256 amount)",
@@ -75,6 +76,9 @@ export function useProxyWallet() {
   const [isSplitting, setIsSplitting] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
 
+  // Get user's deployed proxy wallet address
+  const { proxyAddress, deployed } = useProxyWalletStatus();
+
   // Query for ProxyWallet USDT balance
   const { data: proxyBalanceData, isLoading: isLoadingBalance } = useQuery<ProxyWalletBalance>({
     queryKey: ['/api/proxy/balance', account],
@@ -113,6 +117,10 @@ export function useProxyWallet() {
       throw new Error('Wallet not connected');
     }
 
+    if (!proxyAddress || !deployed) {
+      throw new Error('Proxy wallet not deployed. Please deploy your proxy wallet first.');
+    }
+
     setIsDepositing(true);
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -125,7 +133,7 @@ export function useProxyWallet() {
       );
 
       const proxyWalletContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.ProxyWallet,
+        proxyAddress, // Use user's deployed proxy address
         ProxyWalletABI,
         signer
       );
@@ -133,7 +141,7 @@ export function useProxyWallet() {
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
       // Check allowance
-      const allowance = await usdtContract.allowance(account, CONTRACT_ADDRESSES.ProxyWallet);
+      const allowance = await usdtContract.allowance(account, proxyAddress);
 
       // Approve if needed
       if (allowance < amountWei) {
@@ -143,7 +151,7 @@ export function useProxyWallet() {
         });
 
         const approveTx = await usdtContract.approve(
-          CONTRACT_ADDRESSES.ProxyWallet,
+          proxyAddress, // Approve user's proxy wallet
           amountWei
         );
 
@@ -280,8 +288,12 @@ export function useProxyWallet() {
       const proxyWalletInterface = new ethers.Interface(ProxyWalletABI);
       const data = proxyWalletInterface.encodeFunctionData('withdraw', [amountWei]);
 
+      if (!proxyAddress) {
+        throw new Error('Proxy wallet not deployed');
+      }
+
       const txId = await signAndSubmitMetaTransaction(
-        CONTRACT_ADDRESSES.ProxyWallet,
+        proxyAddress, // Use user's proxy address
         data,
         'Withdraw'
       );
@@ -339,8 +351,12 @@ export function useProxyWallet() {
         Math.floor(Date.now() / 1000) + 600
       ]);
 
+      if (!proxyAddress) {
+        throw new Error('Proxy wallet not deployed');
+      }
+
       const txId = await signAndSubmitMetaTransaction(
-        CONTRACT_ADDRESSES.ProxyWallet,
+        proxyAddress, // Use user's proxy address
         data,
         'Split'
       );
@@ -398,8 +414,12 @@ export function useProxyWallet() {
         Math.floor(Date.now() / 1000) + 600
       ]);
 
+      if (!proxyAddress) {
+        throw new Error('Proxy wallet not deployed');
+      }
+
       const txId = await signAndSubmitMetaTransaction(
-        CONTRACT_ADDRESSES.ProxyWallet,
+        proxyAddress, // Use user's proxy address
         data,
         'Merge'
       );
