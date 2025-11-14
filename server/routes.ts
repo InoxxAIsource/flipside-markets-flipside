@@ -205,6 +205,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/markets/:marketId/depth - Get order book depth and market quality metrics
+  app.get('/api/markets/:marketId/depth', async (req, res) => {
+    try {
+      const { MarketDepthCalculator } = await import('./services/marketDepth');
+      const orders = await storage.getMarketOrders(req.params.marketId, 'open');
+      
+      const depth = MarketDepthCalculator.calculateDepth(orders);
+      const quality = MarketDepthCalculator.calculateMarketQuality(depth);
+      const liquidity = MarketDepthCalculator.calculateLiquidityDistribution(
+        depth,
+        [0.01, 0.02, 0.05, 0.10] // 1%, 2%, 5%, 10% from mid price
+      );
+      
+      res.json({
+        ...depth,
+        quality,
+        liquidity,
+      });
+    } catch (error: any) {
+      console.error('Error calculating market depth:', error);
+      res.status(500).json({ error: 'Failed to calculate market depth' });
+    }
+  });
+
   // GET /api/users/:address/orders - Get orders for a user
   app.get('/api/users/:address/orders', async (req, res) => {
     try {
