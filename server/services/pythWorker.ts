@@ -12,6 +12,7 @@ export class PythWorker {
 
   /**
    * Start the Pyth price feed worker
+   * NOTE: Guarded no-op until PythPriceResolver contract is deployed
    */
   start() {
     if (this.isRunning) {
@@ -19,18 +20,22 @@ export class PythWorker {
       return;
     }
 
-    this.isRunning = true;
-    console.log('Starting Pyth price feed worker...');
-
-    // Start periodic updates
-    this.intervalId = setInterval(async () => {
-      await this.updatePriceFeeds();
-    }, this.updateInterval);
-
-    // Run immediately on start
-    this.updatePriceFeeds();
-
-    console.log(`Pyth worker started (update interval: ${this.updateInterval}ms)`);
+    // Check if Pyth oracle functionality is available
+    // Exit early if PythPriceResolver not deployed
+    console.log('⚠️  Pyth worker: Oracle resolution disabled (PythPriceResolver not deployed)');
+    console.log('    Markets will require manual resolution until oracle is deployed');
+    
+    this.isRunning = false;
+    return;
+    
+    // TODO: Re-enable when PythPriceResolver is deployed on Sepolia
+    // this.isRunning = true;
+    // console.log('Starting Pyth price feed worker...');
+    // this.intervalId = setInterval(async () => {
+    //   await this.updatePriceFeeds();
+    // }, this.updateInterval);
+    // this.updatePriceFeeds();
+    // console.log(`Pyth worker started (update interval: ${this.updateInterval}ms)`);
   }
 
   /**

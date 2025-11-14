@@ -3,32 +3,16 @@ import {
   MockUSDTABI,
   ConditionalTokensABI,
   CTFExchangeABI,
-  MarketFactoryABI,
-  PythPriceResolverABI,
-  FeeDistributorABI,
   ProxyWalletABI,
 } from './abis';
-
-// Contract addresses on Sepolia testnet
-export const CONTRACT_ADDRESSES = {
-  MockUSDT: '0x4041b89E54786F05744fCF13C1263a24164820AC',
-  FeeDistributor: '0x8A87e6610A762505408b30dcB03266ea255616D1',
-  ConditionalTokens: '0x27B0B87571e7908bAB95Dd374792bdC9634edfA4',
-  CTFExchange: '0x09E6D42eF37975968c892b60D631CFE08f299FEA', // NEW VERSION
-  PythPriceResolver: '0x244DE5a1e2c0d0e158515bF3D47ba39cc878A411',
-  MarketFactory: '0x9Ce05c79aEcfE70711A5471B562947EfdF53AD68',
-  ProxyWallet: '0x4a373C230BE7574B905A31c43317EE912D3B65c7',
-  PythOracle: '0xDd24F84d36BF92C65F92307595335bdFab5Bbd21',
-} as const;
-
-export const SEPOLIA_CHAIN_ID = 11155111;
+import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../config/contracts';
 
 // EIP-712 domain for CTFExchange
 export const EIP712_DOMAIN = {
   name: 'CTFExchange',
   version: '1',
-  chainId: SEPOLIA_CHAIN_ID,
-  verifyingContract: CONTRACT_ADDRESSES.CTFExchange,
+  chainId: NETWORK_CONFIG.chainId,
+  verifyingContract: CONTRACT_ADDRESSES.CTF_EXCHANGE,
 } as const;
 
 // EIP-712 types for limit orders
@@ -64,22 +48,18 @@ export interface Order {
 export class Web3Service {
   private provider: ethers.JsonRpcProvider;
   
-  // Contract instances
+  // Contract instances (deployed on Sepolia)
   public mockUSDT: ethers.Contract;
   public conditionalTokens: ethers.Contract;
   public ctfExchange: ethers.Contract;
-  public marketFactory: ethers.Contract;
-  public pythPriceResolver: ethers.Contract;
-  public feeDistributor: ethers.Contract;
-  public proxyWallet: ethers.Contract;
+  public proxyWalletImpl: ethers.Contract;
 
   constructor(rpcUrl?: string) {
-    // Use provided RPC or Alchemy if available, fallback to public Sepolia
-    let defaultRpcUrl = 'https://rpc.sepolia.org';
+    // Use provided RPC or Alchemy if available, fallback to config RPC
+    let defaultRpcUrl = NETWORK_CONFIG.rpcUrl;
     
     if (process.env.ALCHEMY_API_KEY) {
       const alchemyKey = process.env.ALCHEMY_API_KEY;
-      // Check if the key is already a full URL or just the API key
       if (alchemyKey.startsWith('http')) {
         defaultRpcUrl = alchemyKey;
       } else {
@@ -89,45 +69,27 @@ export class Web3Service {
     
     this.provider = new ethers.JsonRpcProvider(rpcUrl || defaultRpcUrl);
 
-    // Initialize contract instances (read-only)
+    // Initialize contract instances using deployed addresses
     this.mockUSDT = new ethers.Contract(
-      CONTRACT_ADDRESSES.MockUSDT,
+      CONTRACT_ADDRESSES.MOCK_USDT,
       MockUSDTABI,
       this.provider
     );
 
     this.conditionalTokens = new ethers.Contract(
-      CONTRACT_ADDRESSES.ConditionalTokens,
+      CONTRACT_ADDRESSES.CONDITIONAL_TOKENS,
       ConditionalTokensABI,
       this.provider
     );
 
     this.ctfExchange = new ethers.Contract(
-      CONTRACT_ADDRESSES.CTFExchange,
+      CONTRACT_ADDRESSES.CTF_EXCHANGE,
       CTFExchangeABI,
       this.provider
     );
 
-    this.marketFactory = new ethers.Contract(
-      CONTRACT_ADDRESSES.MarketFactory,
-      MarketFactoryABI,
-      this.provider
-    );
-
-    this.pythPriceResolver = new ethers.Contract(
-      CONTRACT_ADDRESSES.PythPriceResolver,
-      PythPriceResolverABI,
-      this.provider
-    );
-
-    this.feeDistributor = new ethers.Contract(
-      CONTRACT_ADDRESSES.FeeDistributor,
-      FeeDistributorABI,
-      this.provider
-    );
-
-    this.proxyWallet = new ethers.Contract(
-      CONTRACT_ADDRESSES.ProxyWallet,
+    this.proxyWalletImpl = new ethers.Contract(
+      CONTRACT_ADDRESSES.PROXY_WALLET_IMPL,
       ProxyWalletABI,
       this.provider
     );
@@ -265,11 +227,11 @@ export class Web3Service {
   }
 
   /**
-   * Listen to market creation events
+   * Listen to condition preparation events (market creation)
    */
-  onMarketCreated(callback: (conditionId: string, question: string, creator: string, expiresAt: number) => void) {
-    this.marketFactory.on('MarketCreated', (conditionId, question, creator, expiresAt) => {
-      callback(conditionId, question, creator, expiresAt);
+  onConditionPreparation(callback: (conditionId: string, oracle: string, questionId: string, outcomeSlotCount: number) => void) {
+    this.conditionalTokens.on('ConditionPreparation', (conditionId, oracle, questionId, outcomeSlotCount) => {
+      callback(conditionId, oracle, questionId, outcomeSlotCount);
     });
   }
 
@@ -283,52 +245,14 @@ export class Web3Service {
   }
 
   /**
-   * Get latest price from Pyth price feed
-   */
-  async getLatestPrice(priceFeedId: string): Promise<{ price: bigint; conf: bigint; publishTime: bigint; expo: number } | null> {
-    try {
-      // Convert price feed ID to bytes32 format if needed
-      const feedId = priceFeedId.startsWith('0x') ? priceFeedId : `0x${priceFeedId}`;
-      
-      // Get price from Pyth resolver - returns { price, conf, expo, publishTime }
-      const priceData = await this.pythPriceResolver.getLatestPrice(feedId);
-      
-      return {
-        price: priceData.price,
-        conf: priceData.conf,
-        publishTime: priceData.publishTime,
-        expo: Number(priceData.expo), // Exponent for price normalization
-      };
-    } catch (error: any) {
-      console.error(`Failed to fetch Pyth price for ${priceFeedId}:`, error.message);
-      return null;
-    }
-  }
-
-  /**
-   * Get ProxyWallet balance for a user
-   */
-  async getProxyWalletBalance(userAddress: string): Promise<bigint> {
-    return await this.proxyWallet.getBalance(userAddress);
-  }
-
-  /**
-   * Get position balance in ProxyWallet
-   */
-  async getProxyPositionBalance(userAddress: string, tokenId: bigint): Promise<bigint> {
-    return await this.proxyWallet.getPositionBalance(userAddress, tokenId);
-  }
-
-  /**
-   * Get user's nonce in ProxyWallet
-   */
-  async getProxyWalletNonce(userAddress: string): Promise<bigint> {
-    return await this.proxyWallet.getNonce(userAddress);
-  }
-
-  /**
-   * Create a market on-chain via MarketFactory
+   * Create a market on-chain via ConditionalTokens.prepareCondition
    * Returns the conditionId and token IDs
+   * 
+   * Flow:
+   * 1. Call prepareCondition on ConditionalTokens with oracle (this contract's deployer), questionId, outcomeSlotCount=2
+   * 2. Calculate conditionId from oracle, questionId, outcomeSlotCount
+   * 3. Derive YES/NO token position IDs
+   * 4. Return all IDs for database storage
    */
   async createMarketOnChain(
     questionId: string,
@@ -341,51 +265,43 @@ export class Web3Service {
     noTokenId: string;
     txHash: string;
   }> {
-    const factoryWithSigner = this.marketFactory.connect(signer) as any;
+    const conditionalTokensWithSigner = this.conditionalTokens.connect(signer) as any;
     
     // Convert questionId to bytes32 format
     const questionIdBytes32 = questionId.startsWith('0x') 
       ? questionId 
       : ethers.id(questionId);
     
-    // Create market on-chain
-    const tx = await factoryWithSigner.createMarket(
+    // Oracle is the signer (who will resolve the market later)
+    const oracle = signer.address;
+    const outcomeSlotCount = 2; // Binary market: YES/NO
+    
+    // Prepare condition on ConditionalTokens
+    const tx = await conditionalTokensWithSigner.prepareCondition(
+      oracle,
       questionIdBytes32,
-      question,
-      expiresAt
+      outcomeSlotCount
     );
     
     const receipt = await tx.wait();
     
-    // Find MarketCreated event
-    const event = receipt.logs
-      .map((log: any) => {
-        try {
-          return this.marketFactory.interface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((parsed: any) => parsed && parsed.name === 'MarketCreated');
-    
-    if (!event) {
-      throw new Error('MarketCreated event not found in transaction receipt');
-    }
-    
-    const conditionId = event.args.conditionId;
+    // Calculate condition ID deterministically
+    const conditionId = await this.getConditionId(oracle, questionIdBytes32, outcomeSlotCount);
     
     // Calculate token IDs for YES (outcome 0) and NO (outcome 1)
     const yesTokenId = await this.getPositionId(
-      CONTRACT_ADDRESSES.MockUSDT,
+      CONTRACT_ADDRESSES.MOCK_USDT,
       conditionId,
       0
     );
     
     const noTokenId = await this.getPositionId(
-      CONTRACT_ADDRESSES.MockUSDT,
+      CONTRACT_ADDRESSES.MOCK_USDT,
       conditionId,
       1
     );
+    
+    console.log(`Market created: conditionId=${conditionId}, YES=${yesTokenId}, NO=${noTokenId}`);
     
     return {
       conditionId,
@@ -430,39 +346,10 @@ export class Web3Service {
   }
 
   /**
-   * Get market details from MarketFactory contract
-   */
-  async getMarketFromChain(conditionId: string): Promise<{
-    conditionId: string;
-    question: string;
-    creator: string;
-    expiresAt: bigint;
-    resolved: boolean;
-    yesTokenId: bigint;
-    noTokenId: bigint;
-  } | null> {
-    try {
-      const market = await this.marketFactory.getMarket(conditionId);
-      return {
-        conditionId: market.conditionId,
-        question: market.question,
-        creator: market.creator,
-        expiresAt: market.expiresAt,
-        resolved: market.resolved,
-        yesTokenId: market.yesTokenId,
-        noTokenId: market.noTokenId,
-      };
-    } catch (error) {
-      console.error('Error fetching market from chain:', error);
-      return null;
-    }
-  }
-
-  /**
    * Stop listening to events
    */
   removeAllListeners() {
-    this.marketFactory.removeAllListeners();
+    this.conditionalTokens.removeAllListeners();
     this.ctfExchange.removeAllListeners();
   }
 }

@@ -19,9 +19,9 @@ export class EventIndexer {
     this.isRunning = true;
     console.log('Starting event indexer...');
 
-    // Listen to market creation events
-    web3Service.onMarketCreated(async (conditionId, question, creator, expiresAt) => {
-      console.log('Market created event:', { conditionId, question, creator, expiresAt });
+    // Listen to condition preparation events (market creation)
+    web3Service.onConditionPreparation(async (conditionId, oracle, questionId, outcomeSlotCount) => {
+      console.log('Condition prepared event:', { conditionId, oracle, questionId, outcomeSlotCount });
       
       try {
         // Check if market already exists in database
@@ -29,12 +29,11 @@ export class EventIndexer {
         const exists = existingMarket.some(m => m.conditionId === conditionId);
         
         if (!exists) {
-          console.log('New market detected on-chain, syncing to database...');
-          // Note: In production, you'd create the market here
-          // For now, markets are created via API first
+          console.log('New condition detected on-chain, syncing to database...');
+          // Markets are created via API which calls prepareCondition and stores in DB
         }
       } catch (error) {
-        console.error('Error processing market created event:', error);
+        console.error('Error processing condition preparation event:', error);
       }
     });
 
