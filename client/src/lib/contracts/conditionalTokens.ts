@@ -14,11 +14,11 @@ export interface MarketCreationResult {
   yesTokenId: string;
   noTokenId: string;
   txHash: string;
+  questionTimestamp: number;
 }
 
-export function buildQuestionId(question: string, timestamp?: number): string {
-  const ts = timestamp || Date.now();
-  return ethers.id(`${question}_${ts}`);
+export function buildQuestionId(question: string, timestamp: number): string {
+  return ethers.id(`${question}_${timestamp}`);
 }
 
 export async function getConditionalTokensContract(signerOrProvider: ethers.Signer | ethers.Provider) {
@@ -36,7 +36,8 @@ export async function prepareMarketCondition(
 ): Promise<MarketCreationResult> {
   const contract = await getConditionalTokensContract(signer);
   
-  const questionId = buildQuestionId(question);
+  const questionTimestamp = Date.now();
+  const questionId = buildQuestionId(question, questionTimestamp);
   const outcomeSlotCount = 2;
 
   const tx = await contract.prepareCondition(oracle, questionId, outcomeSlotCount);
@@ -57,6 +58,7 @@ export async function prepareMarketCondition(
     yesTokenId: yesTokenId.toString(),
     noTokenId: noTokenId.toString(),
     txHash: receipt.hash,
+    questionTimestamp,
   };
 }
 

@@ -25,8 +25,9 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, CheckCircle2, Clock, Loader2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import type { TransactionStatus } from '@/pages/CreateMarket';
 
 const formSchema = z.object({
   question: z.string().min(10, 'Question must be at least 10 characters'),
@@ -42,9 +43,11 @@ type FormData = z.infer<typeof formSchema>;
 interface CreateMarketFormProps {
   onSubmit?: (data: FormData) => void;
   isSubmitting?: boolean;
+  txStatus?: TransactionStatus;
+  txHash?: string | null;
 }
 
-export function CreateMarketForm({ onSubmit, isSubmitting = false }: CreateMarketFormProps) {
+export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'idle', txHash = null }: CreateMarketFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -58,8 +61,69 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false }: CreateMarke
     onSubmit?.(data);
   };
 
+  const getStatusBanner = () => {
+    if (txStatus === 'walletPrompt') {
+      return (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Clock className="h-5 w-5 text-blue-500 animate-pulse" />
+            <div>
+              <p className="font-medium text-blue-500">Waiting for Wallet Confirmation</p>
+              <p className="text-sm text-muted-foreground">Please confirm the transaction in MetaMask</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (txStatus === 'pending') {
+      return (
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />
+            <div className="flex-1">
+              <p className="font-medium text-yellow-500">Transaction Pending</p>
+              <p className="text-sm text-muted-foreground">
+                Waiting for blockchain confirmation...
+              </p>
+            </div>
+            {txHash && (
+              <a
+                href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600"
+                data-testid="link-etherscan"
+              >
+                View <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (txStatus === 'confirmed') {
+      return (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-md p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <div>
+              <p className="font-medium text-green-500">Transaction Confirmed</p>
+              <p className="text-sm text-muted-foreground">Saving market to database...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <Card className="p-6 max-w-3xl mx-auto">
+      {getStatusBanner()}
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="space-y-2">

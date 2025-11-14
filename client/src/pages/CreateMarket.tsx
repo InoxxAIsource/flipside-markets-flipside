@@ -64,6 +64,7 @@ export default function CreateMarket() {
         yesTokenId: result.yesTokenId,
         noTokenId: result.noTokenId,
         creationTxHash: result.txHash,
+        questionTimestamp: result.questionTimestamp.toString(),
       });
 
       return await response.json() as Market;

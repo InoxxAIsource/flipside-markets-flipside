@@ -37,6 +37,12 @@ export const markets = pgTable("markets", {
   noTokenId: text("no_token_id"), // Token ID for NO outcome
   creationTxHash: text("creation_tx_hash"), // Transaction hash of market creation
   
+  // On-chain metadata (from ConditionPreparation event)
+  questionId: text("question_id"), // Keccak256 hash of question + timestamp
+  questionTimestamp: text("question_timestamp"), // Timestamp used to generate questionId (stored as string for precision)
+  oracle: text("oracle"), // Oracle address for market resolution
+  outcomeSlotCount: integer("outcome_slot_count").default(2), // Number of outcomes (always 2 for binary)
+  
   // Pyth integration for automated resolution
   pythPriceFeedId: text("pyth_price_feed_id"), // Pyth price feed identifier
   baselinePrice: real("baseline_price"), // Reference price for resolution

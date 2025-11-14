@@ -179,17 +179,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const expectedConditionId = await web3Service.getConditionId(
-          receipt.to || '',
-          ethers.id(`${marketData.question}_*`),
-          2
+        const { CONTRACT_ADDRESSES } = await import('./config/contracts');
+        if (receipt.to?.toLowerCase() !== CONTRACT_ADDRESSES.CONDITIONAL_TOKENS.toLowerCase()) {
+          return res.status(400).json({ 
+            error: 'Transaction was not sent to ConditionalTokens contract. Invalid market creation.' 
+          });
+        }
+
+        const conditionPreparedTopic = ethers.id('ConditionPreparation(bytes32,address,bytes32,uint256)');
+        const preparationLog = receipt.logs.find(
+          log => log.topics[0] === conditionPreparedTopic && 
+                 log.address.toLowerCase() === CONTRACT_ADDRESSES.CONDITIONAL_TOKENS.toLowerCase()
         );
+
+        if (!preparationLog) {
+          return res.status(400).json({ 
+            error: 'Transaction did not emit ConditionPreparation event. Invalid market creation.' 
+          });
+        }
+
+        const eventConditionId = preparationLog.topics[1];
+        const eventOracle = ethers.getAddress('0x' + preparationLog.topics[2].slice(26));
+        const eventQuestionId = preparationLog.topics[3];
+        
+        const eventData = ethers.AbiCoder.defaultAbiCoder().decode(
+          ['uint256'],
+          preparationLog.data
+        );
+        const eventOutcomeSlotCount = Number(eventData[0]);
+
+        if (eventConditionId.toLowerCase() !== marketData.conditionId.toLowerCase()) {
+          console.error('ConditionId mismatch:', {
+            submitted: marketData.conditionId,
+            fromEvent: eventConditionId,
+          });
+          return res.status(400).json({ 
+            error: 'Submitted conditionId does not match on-chain event. Data integrity violation.' 
+          });
+        }
+
+        if (eventOutcomeSlotCount !== 2) {
+          console.error('Invalid outcome slot count:', eventOutcomeSlotCount);
+          return res.status(400).json({ 
+            error: 'Market must be binary (2 outcomes). Invalid market creation.' 
+          });
+        }
+
+        if (eventOracle.toLowerCase() !== CONTRACT_ADDRESSES.CTF_EXCHANGE.toLowerCase()) {
+          console.error('Oracle mismatch:', {
+            fromEvent: eventOracle,
+            expected: CONTRACT_ADDRESSES.CTF_EXCHANGE,
+          });
+          return res.status(400).json({ 
+            error: 'Market oracle must be CTFExchange. Invalid market creation.' 
+          });
+        }
+
+        if (!marketData.questionTimestamp) {
+          return res.status(400).json({ 
+            error: 'Missing questionTimestamp. Required for verification.' 
+          });
+        }
+
+        const expectedQuestionId = ethers.id(`${marketData.question}_${Number(marketData.questionTimestamp)}`);
+        
+        if (eventQuestionId.toLowerCase() !== expectedQuestionId.toLowerCase()) {
+          console.error('QuestionId mismatch:', {
+            submitted: expectedQuestionId,
+            fromEvent: eventQuestionId,
+            question: marketData.question,
+            timestamp: marketData.questionTimestamp,
+          });
+          return res.status(400).json({ 
+            error: 'Submitted question does not match on-chain questionId. Data integrity violation.' 
+          });
+        }
+
+        const expectedYesTokenId = await web3Service.getPositionId(
+          CONTRACT_ADDRESSES.MOCK_USDT,
+          eventConditionId,
+          0
+        );
+        const expectedNoTokenId = await web3Service.getPositionId(
+          CONTRACT_ADDRESSES.MOCK_USDT,
+          eventConditionId,
+          1
+        );
+
+        if (marketData.yesTokenId !== expectedYesTokenId.toString()) {
+          console.error('YES token ID mismatch:', {
+            submitted: marketData.yesTokenId,
+            expected: expectedYesTokenId.toString(),
+          });
+          return res.status(400).json({ 
+            error: 'Submitted yesTokenId does not match expected value. Data integrity violation.' 
+          });
+        }
+
+        if (marketData.noTokenId !== expectedNoTokenId.toString()) {
+          console.error('NO token ID mismatch:', {
+            submitted: marketData.noTokenId,
+            expected: expectedNoTokenId.toString(),
+          });
+          return res.status(400).json({ 
+            error: 'Submitted noTokenId does not match expected value. Data integrity violation.' 
+          });
+        }
 
         console.log('Transaction verified:', {
           hash: marketData.creationTxHash,
           status: receipt.status,
           blockNumber: receipt.blockNumber,
-          to: receipt.to,
+          conditionId: eventConditionId,
+          yesTokenId: expectedYesTokenId.toString(),
+          noTokenId: expectedNoTokenId.toString(),
         });
 
       } catch (verifyError: any) {
@@ -199,7 +302,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const market = await storage.createMarket(marketData);
+      const market = await storage.createMarket({
+        ...marketData,
+        questionId: eventQuestionId,
+        oracle: eventOracle,
+        outcomeSlotCount: eventOutcomeSlotCount,
+      });
       
       console.log(`Market ${market.id} saved to database with conditionId: ${market.conditionId}`);
       res.status(201).json(market);
