@@ -162,6 +162,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      let eventQuestionId: string;
+      let eventOracle: string;
+      let eventOutcomeSlotCount: number;
+
       try {
         const { ethers } = await import('ethers');
         const provider = web3Service.getProvider();
@@ -199,14 +203,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const eventConditionId = preparationLog.topics[1];
-        const eventOracle = ethers.getAddress('0x' + preparationLog.topics[2].slice(26));
-        const eventQuestionId = preparationLog.topics[3];
+        eventOracle = ethers.getAddress('0x' + preparationLog.topics[2].slice(26));
+        eventQuestionId = preparationLog.topics[3];
         
         const eventData = ethers.AbiCoder.defaultAbiCoder().decode(
           ['uint256'],
           preparationLog.data
         );
-        const eventOutcomeSlotCount = Number(eventData[0]);
+        eventOutcomeSlotCount = Number(eventData[0]);
 
         if (eventConditionId.toLowerCase() !== marketData.conditionId.toLowerCase()) {
           console.error('ConditionId mismatch:', {
