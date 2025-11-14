@@ -3,15 +3,15 @@ import { ethers } from 'ethers';
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const NETWORK_NAME = 'Sepolia';
 
+// Client-side contract addresses (matches server/config/contracts.ts)
 export const CONTRACT_ADDRESSES = {
-  MockUSDT: '0x4041b89E54786F05744fCF13C1263a24164820AC',
-  FeeDistributor: '0x8A87e6610A762505408b30dcB03266ea255616D1',
-  ConditionalTokens: '0x27B0B87571e7908bAB95Dd374792bdC9634edfA4',
-  CTFExchange: '0xA9DbBb8d093518912EE8b0f1c19d8B694B8f8d92',
-  PythPriceResolver: '0x244DE5a1e2c0d0e158515bF3D47ba39cc878A411',
-  MarketFactory: '0x9Ce05c79aEcfE70711A5471B562947EfdF53AD68',
-  ProxyWallet: '0x4a373C230BE7574B905A31c43317EE912D3B65c7',
-  PythOracle: '0xDd24F84d36BF92C65F92307595335bdFab5Bbd21',
+  MockUSDT: '0xAf24D4DDbA993F6b11372528C678edb718a097Aa',
+  ConditionalTokens: '0xdC8CB01c328795C007879B2C030AbF1c1b580D84',
+  ProxyWalletImpl: '0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7',
+  ProxyWalletFactory: '0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2',
+  CTFExchange: '0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3',
+  // Legacy alias for backward compatibility
+  ProxyWallet: '0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2', // Points to Factory
 };
 
 export async function connectWallet() {
