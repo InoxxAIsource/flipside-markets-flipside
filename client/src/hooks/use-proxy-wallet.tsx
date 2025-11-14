@@ -5,7 +5,7 @@ import { useWallet } from './use-wallet';
 import { useToast } from './use-toast';
 import { CONTRACT_ADDRESSES } from '@/lib/web3';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useProxyWallet as useProxyWalletStatus } from './use-proxy-wallet';
+import { useProxyWallet as useProxyWalletStatus } from './use-proxy-wallet.ts';
 
 const ProxyWalletABI = [
   "function deposit(uint256 amount)",
@@ -22,12 +22,13 @@ const MockUSDTABI = [
   "function allowance(address owner, address spender) view returns (uint256)",
 ] as const;
 
-const EIP712_DOMAIN = {
+// EIP-712 domain will be dynamically created with actual proxy address
+const getEIP712Domain = (proxyAddress: string) => ({
   name: 'ProxyWallet',
   version: '1',
   chainId: 11155111,
-  verifyingContract: CONTRACT_ADDRESSES.ProxyWallet,
-} as const;
+  verifyingContract: proxyAddress,
+});
 
 const META_TRANSACTION_TYPES = {
   MetaTransaction: [
@@ -217,6 +218,10 @@ export function useProxyWallet() {
       throw new Error('Wallet not connected');
     }
 
+    if (!proxyAddress) {
+      throw new Error('Proxy wallet not available');
+    }
+
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
 
@@ -235,9 +240,10 @@ export function useProxyWallet() {
       deadline: BigInt(deadline),
     };
 
-    // Sign using EIP-712
+    // Sign using EIP-712 with actual proxy address
+    const domain = getEIP712Domain(proxyAddress);
     const signature = await signer.signTypedData(
-      EIP712_DOMAIN,
+      domain,
       META_TRANSACTION_TYPES,
       message
     );

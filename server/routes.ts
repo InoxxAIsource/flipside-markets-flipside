@@ -8,6 +8,14 @@ import { insertMarketSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { MarketDepthCalculator } from "./services/marketDepth";
+import type { ProxyWalletService } from "./services/proxyWalletService";
+
+// Module-level variable for ProxyWalletService (set by server/index.ts)
+let proxyWalletServiceInstance: ProxyWalletService | null = null;
+
+export function setProxyWalletService(service: ProxyWalletService) {
+  proxyWalletServiceInstance = service;
+}
 
 // WebSocket client tracking
 const wsClients = new Map<string, Set<WebSocket>>();
@@ -592,8 +600,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const balance = await web3Service.getUSDTBalance(req.params.address);
       res.json({ balance: balance.toString() });
     } catch (error: any) {
-      console.error('Error fetching balance:', error);
-      res.status(500).json({ error: 'Failed to fetch balance' });
+      console.error('Error fetching USDT balance:', error);
+      res.status(500).json({ error: 'Failed to fetch USDT balance' });
+    }
+  });
+
+  // GET /api/web3/eth-balance/:address - Get ETH balance
+  app.get('/api/web3/eth-balance/:address', async (req, res) => {
+    try {
+      const balance = await web3Service.getETHBalance(req.params.address);
+      res.json({ balance: balance.toString() });
+    } catch (error: any) {
+      console.error('Error fetching ETH balance:', error);
+      res.status(500).json({ error: 'Failed to fetch ETH balance' });
     }
   });
 
@@ -655,6 +674,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching meta-transaction status:', error);
       res.status(500).json({ error: 'Failed to fetch meta-transaction status' });
+    }
+  });
+
+  // GET /api/proxy/status/:address - Get user's proxy wallet status
+  app.get('/api/proxy/status/:address', async (req, res) => {
+    try {
+      const userAddress = req.params.address;
+      
+      // Get proxy wallet service instance
+      if (!proxyWalletServiceInstance) {
+        return res.status(500).json({ error: 'ProxyWallet service not initialized' });
+      }
+
+      // Get the actual deployed proxy address for this user
+      const proxyAddress = await proxyWalletServiceInstance.getProxyAddress(userAddress);
+      const deployed = await proxyWalletServiceInstance.isDeployed(userAddress);
+      const nonce = await proxyWalletServiceInstance.getNonce(userAddress);
+
+      res.json({
+        proxyAddress,
+        deployed,
+        nonce: Number(nonce),
+      });
+    } catch (error: any) {
+      console.error('Error fetching proxy status:', error);
+      res.status(500).json({ error: 'Failed to fetch proxy status' });
     }
   });
 

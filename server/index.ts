@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes, setProxyWalletService } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { eventIndexer } from "./services/eventIndexer";
 import { pythWorker } from "./services/pythWorker";
@@ -59,6 +59,21 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize ProxyWalletService BEFORE registering routes (prevents race condition)
+  const proxyWalletService = getProxyWalletService(
+    web3Service,
+    CONTRACT_ADDRESSES.PROXY_WALLET_FACTORY,
+    CONTRACT_ADDRESSES.PROXY_WALLET_IMPL
+  );
+  const splitMergeService = getSplitMergeService(web3Service);
+  
+  // Wire up service dependencies
+  splitMergeService.setProxyWalletService(proxyWalletService);
+  splitMergeService.setRelayerService(relayerService);
+  
+  // Make proxyWalletService available to routes (module-level, initialized before routes)
+  setProxyWalletService(proxyWalletService);
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -89,18 +104,6 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
-    
-    // Initialize service dependencies
-    const proxyWalletService = getProxyWalletService(
-      web3Service,
-      CONTRACT_ADDRESSES.PROXY_WALLET_FACTORY,
-      CONTRACT_ADDRESSES.PROXY_WALLET_IMPL
-    );
-    const splitMergeService = getSplitMergeService(web3Service);
-    
-    // Wire up service dependencies
-    splitMergeService.setProxyWalletService(proxyWalletService);
-    splitMergeService.setRelayerService(relayerService);
     
     // Start background services after server is running
     eventIndexer.start();

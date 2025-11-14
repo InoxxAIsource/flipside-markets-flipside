@@ -214,16 +214,60 @@ export class Web3Service {
 
   /**
    * Get USDT balance for an address
+   * Includes retry logic for improved reliability
    */
-  async getUSDTBalance(address: string): Promise<bigint> {
-    return await this.mockUSDT.balanceOf(address);
+  async getUSDTBalance(address: string, retries = 3): Promise<bigint> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await this.mockUSDT.balanceOf(address);
+      } catch (error: any) {
+        if (attempt === retries) {
+          console.error(`Failed to get USDT balance after ${retries} attempts:`, error);
+          throw error;
+        }
+        // Exponential backoff: 500ms, 1000ms, 1500ms
+        await new Promise(resolve => setTimeout(resolve, attempt * 500));
+      }
+    }
+    throw new Error('Failed to get USDT balance');
   }
 
   /**
    * Get token balance for conditional tokens
+   * Includes retry logic for improved reliability
    */
-  async getTokenBalance(address: string, tokenId: bigint): Promise<bigint> {
-    return await this.conditionalTokens.balanceOf(address, tokenId);
+  async getTokenBalance(address: string, tokenId: bigint, retries = 3): Promise<bigint> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await this.conditionalTokens.balanceOf(address, tokenId);
+      } catch (error: any) {
+        if (attempt === retries) {
+          console.error(`Failed to get token balance after ${retries} attempts:`, error);
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, attempt * 500));
+      }
+    }
+    throw new Error('Failed to get token balance');
+  }
+
+  /**
+   * Get ETH balance for an address
+   * Includes retry logic for improved reliability
+   */
+  async getETHBalance(address: string, retries = 3): Promise<bigint> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await this.provider.getBalance(address);
+      } catch (error: any) {
+        if (attempt === retries) {
+          console.error(`Failed to get ETH balance after ${retries} attempts:`, error);
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, attempt * 500));
+      }
+    }
+    throw new Error('Failed to get ETH balance');
   }
 
   /**
