@@ -9,30 +9,95 @@ export const MockUSDTABI = [
   "function decimals() view returns (uint8)",
 ] as const;
 
+// Gnosis Conditional Tokens - Core ERC1155 implementation
+// Based on: https://github.com/gnosis/conditional-tokens-contracts
 export const ConditionalTokensABI = [
+  // Condition Management
   "function prepareCondition(address oracle, bytes32 questionId, uint256 outcomeSlotCount)",
   "function getConditionId(address oracle, bytes32 questionId, uint256 outcomeSlotCount) view returns (bytes32)",
-  "function getPositionId(address collateralToken, bytes32 collectionId) view returns (uint256)",
   "function getOutcomeSlotCount(bytes32 conditionId) view returns (uint256)",
-  "function balanceOf(address account, uint256 id) view returns (uint256)",
+  
+  // Position Management
+  "function getPositionId(address collateralToken, bytes32 collectionId) view returns (uint256)",
+  "function getCollectionId(bytes32 parentCollectionId, bytes32 conditionId, uint256 indexSet) pure returns (bytes32)",
+  
+  // Split/Merge Operations (Critical for trading)
+  "function splitPosition(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)",
+  "function mergePositions(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)",
+  
+  // Resolution & Redemption
   "function reportPayouts(bytes32 questionId, uint256[] memory payouts)",
   "function redeemPositions(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] memory indexSets) returns (uint256)",
+  
+  // ERC1155 Interface
+  "function balanceOf(address account, uint256 id) view returns (uint256)",
+  "function balanceOfBatch(address[] accounts, uint256[] ids) view returns (uint256[])",
+  "function setApprovalForAll(address operator, bool approved)",
+  "function isApprovedForAll(address account, address operator) view returns (bool)",
+  "function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data)",
+  "function safeBatchTransferFrom(address from, address to, uint256[] ids, uint256[] amounts, bytes data)",
+  
+  // Events
   "event ConditionPreparation(bytes32 indexed conditionId, address indexed oracle, bytes32 indexed questionId, uint256 outcomeSlotCount)",
+  "event ConditionResolution(bytes32 indexed conditionId, address indexed oracle, bytes32 indexed questionId, uint256 outcomeSlotCount, uint256[] payoutNumerators)",
+  "event PositionSplit(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)",
+  "event PositionsMerge(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)",
+  "event PayoutRedemption(address indexed redeemer, address indexed collateralToken, bytes32 indexed parentCollectionId, bytes32 conditionId, uint256[] indexSets, uint256 payout)",
+  "event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)",
+  "event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)",
+  "event ApprovalForAll(address indexed account, address indexed operator, bool approved)",
 ] as const;
 
-// Permissionless CTFExchange (Sepolia 0x09E6D42eF37975968c892b60D631CFE08f299FEA)
-// No admin/operator authorization system - anyone can call fillOrder
+// Polymarket-Style CTFExchange with Auth System
+// Based on: https://github.com/Polymarket/ctf-exchange
+// Requires OPERATOR_ROLE for fillOrder/matchOrders, ADMIN for configuration
 export const CTFExchangeABI = [
-  "function hashOrder((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order) pure returns (bytes32)",
-  "function fillOrder((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order, bytes signature, uint256 fillAmount)",
-  "function cancelOrder((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order)",
-  "function depositTokens((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order, uint256 depositAmount)",
-  "function withdrawTokens((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order)",
-  "function getPositionId(uint256 marketId, uint8 side) pure returns (uint256)",
-  "function conditionalTokens() view returns (address)",
-  "function collateralToken() view returns (address)",
-  "event OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 fillAmount)",
-  "event OrderCancelled(bytes32 indexed orderHash, address indexed maker)",
+  // Core Trading Functions (onlyOperator)
+  "function fillOrder((address maker,address makerAsset,address takerAsset,uint256 makerAmount,uint256 takerAmount,uint256 salt,uint256 expiry,uint8 side,bytes signature) order, uint256 fillAmount)",
+  "function fillOrders((address maker,address makerAsset,address takerAsset,uint256 makerAmount,uint256 takerAmount,uint256 salt,uint256 expiry,uint8 side,bytes signature)[] orders, uint256[] fillAmounts)",
+  "function matchOrders((address maker,address makerAsset,address takerAsset,uint256 makerAmount,uint256 takerAmount,uint256 salt,uint256 expiry,uint8 side,bytes signature) takerOrder, (address maker,address makerAsset,address takerAsset,uint256 makerAmount,uint256 takerAmount,uint256 salt,uint256 expiry,uint8 side,bytes signature)[] makerOrders, uint256 takerFillAmount, uint256[] makerFillAmounts)",
+  
+  // Token Registration (onlyAdmin)
+  "function registerToken(uint256 token, uint256 complement, bytes32 conditionId)",
+  "function getComplement(uint256 token) view returns (uint256)",
+  "function getConditionId(uint256 token) view returns (bytes32)",
+  
+  // Role Management (AccessControl)
+  "function grantRole(bytes32 role, address account)",
+  "function revokeRole(bytes32 role, address account)",
+  "function hasRole(bytes32 role, address account) view returns (bool)",
+  "function getRoleAdmin(bytes32 role) view returns (bytes32)",
+  "function DEFAULT_ADMIN_ROLE() view returns (bytes32)",
+  "function OPERATOR_ROLE() view returns (bytes32)",
+  
+  // Pause/Unpause (onlyAdmin)
+  "function pauseTrading()",
+  "function unpauseTrading()",
+  "function paused() view returns (bool)",
+  
+  // Configuration (onlyAdmin)
+  "function setProxyFactory(address _newProxyFactory)",
+  "function setSafeFactory(address _newSafeFactory)",
+  
+  // View Functions
+  "function getCollateral() view returns (address)",
+  "function getCtf() view returns (address)",
+  "function getProxyFactory() view returns (address)",
+  "function getSafeFactory() view returns (address)",
+  
+  // Order Status
+  "function isOrderFilled(bytes32 orderHash) view returns (bool)",
+  "function getOrderStatus(bytes32 orderHash) view returns (uint256)",
+  
+  // Events
+  "event OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee)",
+  "event OrdersMatched(bytes32 indexed takerOrderHash, bytes32[] makerOrderHashes, uint256 takerFilled, uint256[] makerFilled)",
+  "event OrderCancelled(bytes32 indexed orderHash)",
+  "event TokenRegistered(uint256 indexed token0, uint256 indexed token1, bytes32 indexed conditionId)",
+  "event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)",
+  "event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)",
+  "event TradingPaused()",
+  "event TradingUnpaused()",
 ] as const;
 
 export const MarketFactoryABI = [
@@ -56,20 +121,42 @@ export const FeeDistributorABI = [
   "event FeesDistributed(bytes32 indexed conditionId, uint256 platformFee, uint256 creatorFee)",
 ] as const;
 
+// ProxyWalletFactory - Creates deterministic proxy wallets for gasless trading
+// Based on: https://github.com/Polymarket/proxy-factories
+export const ProxyWalletFactoryABI = [
+  // Main entry point for gasless transactions
+  "function proxy((address to, bytes data, uint256 value)[] calls) payable returns (bytes[] memory)",
+  
+  // Wallet Management
+  "function getInstanceAddress(address implementation, address user) view returns (address)",
+  "function maybeMakeWallet(address implementation, address instanceAddress, address user) returns (address)",
+  
+  // Configuration (Ownable)
+  "function setImplementation(address _newImplementation)",
+  "function getImplementation() view returns (address)",
+  "function setGSNModule(address _newGSNModule)",
+  
+  // Events
+  "event ProxyCreation(address indexed instance, address indexed user)",
+  "event ImplementationUpdated(address indexed newImplementation)",
+] as const;
+
+// ProxyWallet - Individual user's proxy wallet (created by factory)
 export const ProxyWalletABI = [
-  "function deposit(uint256 amount)",
-  "function withdraw(uint256 amount)",
-  "function executeSplit(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
-  "function executeMerge(bytes32 conditionId, uint256 amount, bytes memory signature, uint256 deadline)",
-  "function executeFill((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order, bytes memory signature, uint256 fillAmount, bytes memory metaSignature, uint256 deadline)",
-  "function executeMetaTransaction(bytes memory signature, address user, bytes memory data)",
-  "function getBalance(address user) view returns (uint256)",
-  "function getPositionBalance(address user, uint256 tokenId) view returns (uint256)",
-  "function getNonce(address user) view returns (uint256)",
-  "event Deposited(address indexed user, uint256 amount)",
-  "event Withdrawn(address indexed user, uint256 amount)",
-  "event SplitExecuted(address indexed user, bytes32 indexed conditionId, uint256 amount)",
-  "event MergeExecuted(address indexed user, bytes32 indexed conditionId, uint256 amount)",
-  "event FillExecuted(address indexed user, bytes32 orderHash, uint256 fillAmount)",
-  "event MetaTransactionExecuted(address indexed user, address indexed target, bool success)",
+  // Batch execution
+  "function executeBatch((address to, bytes data, uint256 value)[] calls) returns (bytes[] memory)",
+  
+  // Single execution
+  "function execute(address to, bytes data, uint256 value) returns (bytes memory)",
+  
+  // Ownership
+  "function getOwner() view returns (address)",
+  
+  // ERC1155 Receiver (to hold CTF tokens)
+  "function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes data) returns (bytes4)",
+  "function onERC1155BatchReceived(address operator, address from, uint256[] ids, uint256[] values, bytes data) returns (bytes4)",
+  
+  // Events
+  "event ExecutionSuccess(address indexed to, uint256 value, bytes data, bytes returnData)",
+  "event ExecutionFailure(address indexed to, uint256 value, bytes data)",
 ] as const;
