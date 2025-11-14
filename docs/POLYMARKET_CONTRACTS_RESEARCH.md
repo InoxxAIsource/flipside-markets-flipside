@@ -221,13 +221,32 @@ User Signs Order → Backend Matches → Relayer Calls fillOrder/matchOrders →
 
 ## Decision for Our Platform
 
-✅ **Deploy:**
-- CTFExchange (with full Auth system)
-- ProxyFactory (gasless trading)
-- ConditionalTokens (if fresh start needed)
+✅ **Deploy (Revised):**
+1. **MockUSDT** - Collateral token (already deployed)
+2. **ConditionalTokens** - Fresh deployment on Sepolia for full control
+3. **ProxyWallet Implementation** - Required for ProxyFactory to instantiate user wallets
+4. **ProxyFactory** - Points to ProxyWallet implementation, enables gasless trading
+5. **CTFExchange** - Main exchange with full Auth system
+
+**Deployment Order:**
+```
+1. MockUSDT (collateral) - verify existing or deploy fresh
+2. ConditionalTokens - fresh deployment for condition lifecycle control
+3. ProxyWallet implementation - base contract for user wallets
+4. ProxyFactory - configured with ProxyWallet implementation address
+5. CTFExchange - constructor(MockUSDT, ConditionalTokens, ProxyFactory, address(0))
+6. Role Configuration - DEFAULT_ADMIN, OPERATOR_ROLE to relayer
+7. Token Registration - registerToken() for each market's YES/NO tokens
+```
 
 ❌ **Skip for Now:**
-- NegRiskAdapter (only for multi-outcome)
-- SafeProxyFactory (can add later for browser wallets)
+- NegRiskAdapter (only for multi-outcome markets, not binary YES/NO)
+- SafeProxyFactory (can add later for browser wallet support)
+
+**Critical Post-Deployment:**
+- Grant OPERATOR_ROLE to relayer address immediately
+- Grant DEFAULT_ADMIN_ROLE to owner address
+- Approve CTFExchange to spend collateral tokens
+- Register market tokens before trading
 
 **Goal:** Clean CLOB execution with limit/market orders, split/merge, proxy wallets, free gas, and automatic settlement - exactly like Polymarket!
