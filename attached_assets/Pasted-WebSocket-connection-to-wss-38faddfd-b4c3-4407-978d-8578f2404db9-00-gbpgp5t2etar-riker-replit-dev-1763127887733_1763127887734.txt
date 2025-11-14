@@ -1,0 +1,30 @@
+WebSocket connection to 'wss://38faddfd-b4c3-4407-978d-8578f2404db9-00-gbpgp5t2etar.riker.replit.dev/?token=_rvugYI5ByTJ' failed: 
+setupWebSocket @ client:536Understand this error
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=_rvugYI5ByTJ' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)Understand this error
+injected.js:27 Error fetching YES balance: TypeError: getPositionBalance is not a function
+    at fetchYesBalance (TradingPanel.tsx:95:33)
+    at TradingPanel.tsx:102:5
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=c1f723eb:16915:34)
+    at commitPassiveMountOnFiber (chunk-RPCDYKBN.js?v=c1f723eb:18156:19)
+    at commitPassiveMountEffects_complete (chunk-RPCDYKBN.js?v=c1f723eb:18129:17)
+    at commitPassiveMountEffects_begin (chunk-RPCDYKBN.js?v=c1f723eb:18119:15)
+    at commitPassiveMountEffects (chunk-RPCDYKBN.js?v=c1f723eb:18109:11)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=c1f723eb:19490:11)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=c1f723eb:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=c1f723eb:18868:11)
+(anonymous) @ injected.js:27Understand this error
+injected.js:27 Error fetching NO balance: TypeError: getPositionBalance is not a function
+    at fetchNoBalance (TradingPanel.tsx:109:33)
+    at TradingPanel.tsx:116:5
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=c1f723eb:16915:34)
+    at commitPassiveMountOnFiber (chunk-RPCDYKBN.js?v=c1f723eb:18156:19)
+    at commitPassiveMountEffects_complete (chunk-RPCDYKBN.js?v=c1f723eb:18129:17)
+    at commitPassiveMountEffects_begin (chunk-RPCDYKBN.js?v=c1f723eb:18119:15)
+    at commitPassiveMountEffects (chunk-RPCDYKBN.js?v=c1f723eb:18109:11)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=c1f723eb:19490:11)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=c1f723eb:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=c1f723eb:18868:11)
+(anonymous) @ injected.js:27
