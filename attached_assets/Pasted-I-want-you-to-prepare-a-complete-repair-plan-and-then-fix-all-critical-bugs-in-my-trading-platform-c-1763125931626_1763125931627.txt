@@ -1,0 +1,75 @@
+I want you to prepare a complete repair plan and then fix all critical bugs in my trading platform codebase.
+You must inspect every file and correct broken logic, missing API connections, wallet reading issues, and faulty function calls.
+Focus on backend, frontend, smart contract interactions, order execution, and database syncing.
+Here are the exact issues you must fix:
+
+1. Deposit function is not working
+
+Locate every deposit handler (frontend button → backend route → smart contract call).
+
+Confirm ERC20 approve → deposit flow is implemented correctly.
+
+Repair wrong contract address, ABI, or function names.
+
+Ensure user wallet correctly triggers the transaction.
+
+Add proper error logs so deposit failures are visible.
+
+2. Wallet balance is not showing
+
+Add Alchemy API integration (Ethereum + Sepolia) for live balance reading.
+Steps the agent must follow:
+
+Add Alchemy endpoint and API key in env.
+
+Add new balance fetcher using alchemy_getTokenBalances or eth_getBalance.
+
+Replace all existing broken balance functions.
+
+Display balances correctly in UI and refresh after transactions.
+
+3. Orders are malfunctioning
+
+Fix all trading operations:
+
+Limit Order: already appears in orderbook → verify contract → DB → frontend sync.
+
+Market Order: repair price impact logic, order matching engine, and settlement.
+
+Split Order: test the full path; fix any broken math, API calls, or triggers.
+
+Repair all POST/GET routes related to orders.
+
+Confirm database writes succeed and match on-chain events.
+
+Confirm orders sync correctly in user profile + orderbook UI.
+
+4. Check backend & frontend for mismatches
+
+Fix any incorrect names: createMarket, submitOrder, placeLimitOrder, etc.
+
+Check for missing await, wrong async handlers, or unhandled promises.
+
+Validate every response format from backend so frontend doesn’t break.
+
+Verify database schema for all trading tables.
+
+5. Fix “Failed to Save Market” error
+
+Event shows transaction success but DB write failure.
+
+Repair DB client config, schema, and insert function.
+
+Add retry logic.
+
+Add logging to identify exact failure.
+
+6. Perform full refactor where needed
+
+Clean up Web3 provider logic.
+
+Replace deprecated functions.
+
+Ensure every smart contract call uses correct signer/provider.
+
+Patch any CORS / CSP / WebSocket issues.
