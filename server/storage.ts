@@ -9,6 +9,7 @@ import {
   orderFills,
   positions,
   pythPriceUpdates,
+  userNonces,
   type User,
   type InsertUser,
   type Market,
@@ -21,6 +22,7 @@ import {
   type InsertPosition,
   type PythPriceUpdate,
   type InsertPythPriceUpdate,
+  type UserNonce,
 } from "@shared/schema";
 
 // Initialize database connection
@@ -64,6 +66,10 @@ export interface IStorage {
   createPriceUpdate(update: InsertPythPriceUpdate): Promise<PythPriceUpdate>;
   getLatestPriceUpdate(priceFeedId: string): Promise<PythPriceUpdate | undefined>;
   getPriceUpdates(priceFeedId: string, limit?: number): Promise<PythPriceUpdate[]>;
+  
+  // Nonce management methods
+  getUserNonce(userAddress: string): Promise<bigint>;
+  validateAndUpdateNonce(userAddress: string, nonce: bigint): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -309,6 +315,52 @@ export class DatabaseStorage implements IStorage {
       .where(eq(pythPriceUpdates.priceFeedId, priceFeedId))
       .orderBy(desc(pythPriceUpdates.publishTime))
       .limit(limit);
+  }
+
+  // Nonce management methods
+  async getUserNonce(userAddress: string): Promise<bigint> {
+    const result = await db
+      .select()
+      .from(userNonces)
+      .where(eq(userNonces.userAddress, userAddress))
+      .limit(1);
+    
+    return result[0]?.highestNonce ?? 0n;
+  }
+
+  async validateAndUpdateNonce(userAddress: string, nonce: bigint): Promise<boolean> {
+    const currentNonce = await this.getUserNonce(userAddress);
+    
+    // Nonce must be strictly greater than current highest nonce
+    if (nonce <= currentNonce) {
+      return false;
+    }
+    
+    // Update or insert the new highest nonce
+    const existing = await db
+      .select()
+      .from(userNonces)
+      .where(eq(userNonces.userAddress, userAddress))
+      .limit(1);
+    
+    if (existing[0]) {
+      await db
+        .update(userNonces)
+        .set({ 
+          highestNonce: nonce,
+          updatedAt: new Date()
+        })
+        .where(eq(userNonces.userAddress, userAddress));
+    } else {
+      await db
+        .insert(userNonces)
+        .values({
+          userAddress,
+          highestNonce: nonce,
+        });
+    }
+    
+    return true;
   }
 }
 

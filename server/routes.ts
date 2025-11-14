@@ -216,6 +216,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/users/:address/nonce - Get current nonce for a user
+  app.get('/api/users/:address/nonce', async (req, res) => {
+    try {
+      const nonce = await storage.getUserNonce(req.params.address);
+      res.json({ nonce: nonce.toString() });
+    } catch (error: any) {
+      console.error('Error fetching user nonce:', error);
+      res.status(500).json({ error: 'Failed to fetch user nonce' });
+    }
+  });
+
   // POST /api/orders - Create a new order
   app.post('/api/orders', async (req, res) => {
     try {
@@ -252,6 +263,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!isValid) {
         return res.status(400).json({ error: 'Invalid order signature' });
+      }
+
+      // Validate and update nonce to prevent replay attacks
+      const nonceValid = await storage.validateAndUpdateNonce(
+        orderData.makerAddress,
+        BigInt(orderData.nonce)
+      );
+      
+      if (!nonceValid) {
+        return res.status(400).json({ 
+          error: 'Invalid nonce. Nonce must be greater than the last used nonce.' 
+        });
       }
 
       const order = await storage.createOrder(validation.data);
