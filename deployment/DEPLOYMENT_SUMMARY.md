@@ -7,13 +7,13 @@
 
 ## Deployed Contracts
 
-| Contract | Address | Explorer |
-|----------|---------|----------|
-| MockUSDT | `0xAf24D4DDbA993F6b11372528C678edb718a097Aa` | [View](https://sepolia.etherscan.io/address/0xAf24D4DDbA993F6b11372528C678edb718a097Aa) |
-| ConditionalTokens | `0xdC8CB01c328795C007879B2C030AbF1c1b580D84` | [View](https://sepolia.etherscan.io/address/0xdC8CB01c328795C007879B2C030AbF1c1b580D84) |
-| ProxyWallet (Impl) | `0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7` | [View](https://sepolia.etherscan.io/address/0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7) |
-| ProxyWalletFactory | `0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2` | [View](https://sepolia.etherscan.io/address/0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2) |
-| CTFExchange | `0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3` | [View](https://sepolia.etherscan.io/address/0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3) |
+| Contract | Address | Verified | Explorer |
+|----------|---------|----------|----------|
+| MockUSDT | `0xAf24D4DDbA993F6b11372528C678edb718a097Aa` | ✅ | [Blockscout](https://eth-sepolia.blockscout.com/address/0xAf24D4DDbA993F6b11372528C678edb718a097Aa#code) · [Sourcify](https://sourcify.dev/server/repo-ui/11155111/0xAf24D4DDbA993F6b11372528C678edb718a097Aa) |
+| ConditionalTokens | `0xdC8CB01c328795C007879B2C030AbF1c1b580D84` | ✅ | [Blockscout](https://eth-sepolia.blockscout.com/address/0xdC8CB01c328795C007879B2C030AbF1c1b580D84#code) · [Sourcify](https://sourcify.dev/server/repo-ui/11155111/0xdC8CB01c328795C007879B2C030AbF1c1b580D84) |
+| ProxyWallet (Impl) | `0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7` | ✅ | [Blockscout](https://eth-sepolia.blockscout.com/address/0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7#code) · [Sourcify](https://sourcify.dev/server/repo-ui/11155111/0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7) |
+| ProxyWalletFactory | `0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2` | ✅ | [Blockscout](https://eth-sepolia.blockscout.com/address/0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2#code) · [Sourcify](https://sourcify.dev/server/repo-ui/11155111/0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2) |
+| CTFExchange | `0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3` | ✅ | [Blockscout](https://eth-sepolia.blockscout.com/address/0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3#code) · [Sourcify](https://sourcify.dev/server/repo-ui/11155111/0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3) |
 
 ## Deployment Details
 
@@ -46,14 +46,11 @@
 1. Contract compilation with Hardhat + Solidity 0.8.24
 2. Deployment to Sepolia testnet
 3. ProxyWalletFactory implementation set
+4. **All contracts verified** on Blockscout and Sourcify
+5. **OPERATOR_ROLE granted** to relayer (0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0)
 
-### ⏳ Pending
-1. **Grant OPERATOR_ROLE to relayer**
-   ```bash
-   npx hardhat run scripts/grant-operator-role.ts --network sepolia
-   ```
-
-2. **Token Registration** (per market):
+### 🔄 Ready for Integration
+1. **Token Registration** (per market):
    ```typescript
    await ctfExchange.registerToken(
      token0Id,    // YES token position ID
@@ -62,32 +59,30 @@
    );
    ```
 
-3. **Backend Integration**:
-   - Update imports to use `server/config/contracts.ts`
-   - Replace hardcoded addresses in services
-   - Update ABIs if needed
+2. **Backend Integration**:
+   - Import CONTRACT_ADDRESSES from `server/config/contracts.ts`
+   - Update backend services to use deployed contracts
+   - Test split/merge operations with live contracts
+   - Enable frontend trading with proxy wallet system
 
 ## Next Steps
 
-1. **Run Role Grant Script:**
-   ```bash
-   npx hardhat run scripts/grant-operator-role.ts --network sepolia
-   ```
+1. **Test Split/Merge Operations:**
+   - Create a test market
+   - Split USDT into YES/NO tokens via ConditionalTokens
+   - Register tokens in CTFExchange
+   - Test merge operations
 
-2. **Test Split/Merge Operations:**
-   - Create a test market via MarketFactory
-   - Split USDT into YES/NO tokens
-   - Verify token registration in CTFExchange
-
-3. **Integrate with Backend:**
+2. **Integrate with Backend:**
    - Import CONTRACT_ADDRESSES from `server/config/contracts.ts`
-   - Update ProxyWalletService to use deployed factory
-   - Update MetaTxBuilder for proxy execution
-   - Configure relayer with RELAYER_PRIVATE_KEY
+   - Update backend services to use deployed contracts
+   - Test proxy wallet creation and meta-transactions
+   - Verify relayer can execute trades via OPERATOR_ROLE
 
-4. **Frontend Updates:**
+3. **Frontend Updates:**
    - Update contract addresses in frontend config
    - Test wallet connection and trading flow
+   - Enable gasless trading UI
 
 ## Architecture Overview
 
