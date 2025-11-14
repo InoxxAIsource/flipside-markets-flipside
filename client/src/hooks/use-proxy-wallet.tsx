@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ethers } from 'ethers';
-import { useWallet } from './use-wallet';
+import { useWallet } from '@/contexts/Web3Provider';
 import { useToast } from './use-toast';
 import { CONTRACT_ADDRESSES } from '@/lib/web3';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -19,6 +19,11 @@ const MockUSDTABI = [
   "function approve(address spender, uint256 amount) returns (bool)",
   "function allowance(address owner, address spender) view returns (uint256)",
   "function balanceOf(address account) view returns (uint256)",
+] as const;
+
+const ProxyWalletFactoryABI = [
+  "function maybeMakeWallet(address implementation, address proxyAddress, address owner) returns (address)",
+  "function getProxyAddress(address owner) view returns (address)",
 ] as const;
 
 // EIP-712 domain will be dynamically created with actual proxy address
@@ -82,6 +87,12 @@ export function useProxyWallet() {
   // Query for ProxyWallet USDT balance
   const { data: proxyBalanceData, isLoading: isLoadingBalance } = useQuery<ProxyWalletBalance>({
     queryKey: ['/api/proxy/balance', account],
+    queryFn: async () => {
+      if (!account) throw new Error('Account not connected');
+      const response = await fetch(`/api/proxy/balance/${account}`);
+      if (!response.ok) throw new Error('Failed to fetch proxy balance');
+      return response.json();
+    },
     enabled: !!account,
     refetchInterval: 10000, // Refresh every 10 seconds
   });
@@ -440,5 +451,134 @@ export function useProxyWallet() {
     isWithdrawing,
     isSplitting,
     isMerging,
+    
+    // Proxy wallet deployment status
+    proxyAddress,
+    deployed,
   };
+}
+
+/**
+ * Hook for deploying proxy wallet via MetaMask (one-time operation)
+ */
+export function useDeployProxyWallet() {
+  const { account } = useWallet();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!account || !window.ethereum) {
+        throw new Error('Wallet not connected');
+      }
+
+      toast({
+        title: 'Checking ETH Balance',
+        description: 'Verifying you have enough ETH for deployment...',
+      });
+
+      // Get user's signer from MetaMask
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // Check user's ETH balance
+      const ethBalance = await provider.getBalance(account);
+      
+      // Create ProxyWalletFactory contract instance
+      const factory = new ethers.Contract(
+        CONTRACT_ADDRESSES.ProxyWalletFactory,
+        ProxyWalletFactoryABI,
+        signer
+      );
+
+      // Calculate the proxy address from the factory
+      const proxyAddress = await factory.getProxyAddress(account);
+      
+      if (!proxyAddress || proxyAddress === ethers.ZeroAddress) {
+        throw new Error('Unable to calculate proxy wallet address');
+      }
+
+      // Estimate gas for deployment
+      toast({
+        title: 'Estimating Gas',
+        description: 'Calculating deployment cost...',
+      });
+
+      const gasEstimate = await factory.maybeMakeWallet.estimateGas(
+        CONTRACT_ADDRESSES.ProxyWalletImpl,
+        proxyAddress,
+        account
+      );
+
+      const feeData = await provider.getFeeData();
+      const defaultMaxFee = ethers.parseUnits('50', 'gwei');
+      const maxFeePerGas = feeData.maxFeePerGas ?? defaultMaxFee;
+      const estimatedCost = gasEstimate * maxFeePerGas;
+
+      // Check if user has enough ETH
+      if (ethBalance < estimatedCost) {
+        const costEth = ethers.formatEther(estimatedCost);
+        const balanceEth = ethers.formatEther(ethBalance);
+        const shortfall = ethers.formatEther(estimatedCost - ethBalance);
+        throw new Error(
+          `Insufficient ETH for deployment. You need ~${costEth} ETH but have ${balanceEth} ETH. Please add ${shortfall} more ETH to your wallet.`
+        );
+      }
+
+      const costEth = ethers.formatEther(estimatedCost);
+      toast({
+        title: 'Deploying Proxy Wallet',
+        description: `Estimated cost: ~${costEth.substring(0, 10)} ETH. Please confirm in MetaMask...`,
+      });
+
+      // Deploy the proxy wallet
+      const tx = await factory.maybeMakeWallet(
+        CONTRACT_ADDRESSES.ProxyWalletImpl,
+        proxyAddress,
+        account
+      );
+
+      toast({
+        title: 'Transaction Submitted',
+        description: 'Waiting for confirmation...',
+      });
+
+      const receipt = await tx.wait();
+
+      if (!receipt || receipt.status !== 1) {
+        throw new Error('Deployment transaction failed');
+      }
+
+      return {
+        txHash: receipt.hash,
+        proxyAddress,
+      };
+    },
+    onSuccess: async (data) => {
+      // Optimistically update the proxy status in cache so UI flips immediately
+      queryClient.setQueryData(['/api/proxy/status', account], {
+        proxyAddress: data.proxyAddress,
+        deployed: true,
+        nonce: 0,
+      });
+      
+      // Invalidate and refetch all proxy-related queries to refresh with actual data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['/api/proxy/status', account] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] }),
+      ]);
+      
+      toast({
+        title: 'Proxy Wallet Deployed',
+        description: `Your gasless trading wallet is ready. View transaction: https://sepolia.etherscan.io/tx/${data.txHash}`,
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Deployment error:', error);
+      toast({
+        title: 'Deployment Failed',
+        description: error.message || 'Failed to deploy proxy wallet',
+        variant: 'destructive',
+      });
+    },
+  });
 }

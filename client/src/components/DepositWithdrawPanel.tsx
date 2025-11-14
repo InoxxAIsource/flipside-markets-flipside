@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wallet, ArrowDownToLine, ArrowUpFromLine, Loader2 } from 'lucide-react';
-import { useWallet } from '@/hooks/use-wallet';
-import { useProxyWallet } from '@/hooks/use-proxy-wallet';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Wallet, ArrowDownToLine, ArrowUpFromLine, Loader2, Rocket, AlertCircle } from 'lucide-react';
+import { useWallet } from '@/contexts/Web3Provider';
+import { useProxyWallet, useDeployProxyWallet } from '@/hooks/use-proxy-wallet';
 import { useToast } from '@/hooks/use-toast';
 import { formatUnits } from 'ethers';
 
 export function DepositWithdrawPanel() {
   const { account } = useWallet();
-  const { proxyBalance, deposit, withdraw, isDepositing, isWithdrawing } = useProxyWallet();
+  const { proxyBalance, deposit, withdraw, isDepositing, isWithdrawing, deployed, proxyAddress } = useProxyWallet();
+  const { mutate: deployProxy, isPending: isDeploying } = useDeployProxyWallet();
   const { toast } = useToast();
   
   const [depositAmount, setDepositAmount] = useState('');
@@ -91,6 +93,64 @@ export function DepositWithdrawPanel() {
   const proxyBalanceFormatted = proxyBalance 
     ? formatUnits(proxyBalance, 6)
     : '0.00';
+
+  // Show deploy prompt if wallet not deployed
+  if (isConnected && !deployed) {
+    return (
+      <Card data-testid="card-deposit-withdraw-panel">
+        <CardHeader>
+          <CardTitle className="text-lg">ProxyWallet Setup Required</CardTitle>
+          <CardDescription>Deploy your gasless trading wallet to start trading</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert data-testid="alert-proxy-not-deployed">
+            <Rocket className="h-4 w-4" />
+            <AlertTitle>One-Time Setup</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>
+                Deploy your ProxyWallet to enable gasless trading. This is a one-time transaction
+                that will cost a small amount of ETH (~0.001-0.003 ETH on Sepolia).
+              </p>
+              <p className="text-xs text-muted-foreground">
+                After deployment, all trading operations will be gasless via our relayer.
+              </p>
+            </AlertDescription>
+          </Alert>
+
+          {proxyAddress && (
+            <div className="rounded-md bg-muted p-3 space-y-1">
+              <p className="text-xs text-muted-foreground">Your Proxy Address</p>
+              <p className="text-xs font-mono break-all">{proxyAddress}</p>
+            </div>
+          )}
+
+          <Button
+            onClick={() => deployProxy()}
+            disabled={isDeploying}
+            className="w-full"
+            size="lg"
+            data-testid="button-deploy-proxy"
+          >
+            {isDeploying ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deploying...
+              </>
+            ) : (
+              <>
+                <Rocket className="mr-2 h-4 w-4" />
+                Deploy ProxyWallet
+              </>
+            )}
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            You'll be prompted to confirm the deployment transaction in MetaMask
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card data-testid="card-deposit-withdraw-panel">

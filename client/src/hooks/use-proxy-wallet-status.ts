@@ -29,32 +29,18 @@ export function useProxyWalletStatus() {
   };
 }
 
+// Deployment is now handled by useDeployProxyWallet in use-proxy-wallet.tsx
+// This hook is kept for backward compatibility but redirects to the new implementation
 export function useEnsureProxyWallet() {
-  const { account } = useWallet();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-
+  
   return useMutation({
     mutationFn: async () => {
-      if (!account) {
-        throw new Error('Wallet not connected');
-      }
-
-      const res = await apiRequest('POST', '/api/proxy/deploy', { ownerAddress: account });
-      const data = await res.json() as ProxyWalletResponse;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(['/api/proxy/status', account], data);
-      
-      toast({
-        title: 'Proxy Wallet Ready',
-        description: `Your gasless trading wallet has been ${data.deployed ? 'deployed' : 'prepared'} successfully`,
-      });
+      throw new Error('Please use the Deploy button in the trading interface to deploy your proxy wallet');
     },
     onError: (error: Error) => {
       toast({
-        title: 'Proxy Wallet Error',
+        title: 'Deployment Error',
         description: error.message,
         variant: 'destructive',
       });
