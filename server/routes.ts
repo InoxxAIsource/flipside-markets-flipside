@@ -306,15 +306,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const market = await storage.createMarket({
-        ...marketData,
-        questionId: eventQuestionId,
-        oracle: eventOracle,
-        outcomeSlotCount: eventOutcomeSlotCount,
-      });
-      
-      console.log(`Market ${market.id} saved to database with conditionId: ${market.conditionId}`);
-      res.status(201).json(market);
+      try {
+        const market = await storage.createMarket({
+          ...marketData,
+          questionId: eventQuestionId,
+          oracle: eventOracle,
+          outcomeSlotCount: eventOutcomeSlotCount,
+        });
+        
+        console.log(`Market ${market.id} saved to database with conditionId: ${market.conditionId}`);
+        res.status(201).json(market);
+      } catch (dbError: any) {
+        console.error('Database save error:', dbError);
+        console.error('Market data:', {
+          ...marketData,
+          questionId: eventQuestionId,
+          oracle: eventOracle,
+          outcomeSlotCount: eventOutcomeSlotCount,
+        });
+        return res.status(500).json({ 
+          error: 'Market created on-chain but failed to save to database. Please contact support.',
+          txHash: marketData.creationTxHash 
+        });
+      }
     } catch (error: any) {
       console.error('Error creating market:', error);
       res.status(500).json({ error: 'Failed to create market' });

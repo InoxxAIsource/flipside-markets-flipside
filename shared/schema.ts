@@ -178,6 +178,7 @@ export const insertMarketSchema = createInsertSchema(markets).omit({
   outcome: true,
 }).extend({
   expiresAt: z.coerce.date(),
+  questionTimestamp: z.string().optional(),
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
