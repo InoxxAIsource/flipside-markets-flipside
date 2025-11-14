@@ -6,21 +6,40 @@ This project is a full-stack prediction market platform, enabling users to creat
 
 ## Recent Updates (November 14, 2025)
 
-### Production CLOB Infrastructure - Completed ✅
+### Production CLOB Infrastructure - Phase 1 Completed ✅
 
-Implemented production-grade Central Limit Order Book (CLOB) foundation with 7 major components:
+Successfully implemented off-chain CLOB foundation (7 major components):
+1. On-chain market creation via MarketFactory
+2. Nonce management for replay protection
+3. Price-time priority matching engine
+4. Market depth calculator with quality metrics
+5. WebSocket real-time feeds
+6. Event indexer and Pyth oracle integration
+7. Database schema for orders, fills, positions
 
-1. **On-Chain Market Creation** - Markets created via `MarketFactory.createMarket()` with real blockchain conditionId and token IDs
-2. **Token Registration** - Automatic `CTFExchange.registerToken()` for YES/NO tokens with operator authorization checks
-3. **Nonce Management** - Replay attack prevention with `user_nonces` table and validation on order submission
-4. **Price-Time Priority Matching** - Production matching algorithm (price first, then FIFO)
-5. **Market Depth Calculator** - Real-time spread, liquidity, and quality metrics with partial fill handling
-6. **WebSocket Real-Time Feeds** - Live order book updates with depth caching and invalidation (path: `/ws`)
-7. **Operator Authorization System** - Startup checks and graceful failure handling
+**Status:** Backend CLOB engine operational. Ready for smart contract upgrade.
 
-**Status:** Platform ready for testing. Relayer needs CTFExchange operator authorization from admin.
+### Smart Contract Deployment Plan - Phase 2 (In Progress)
 
-**Next:** Operator execution backend to settle matched orders on-chain.
+**Decision:** Deploy full Polymarket-style contracts with Auth system for production CLOB.
+
+**Current Issue:** Deployed CTFExchange (0x09E6D42eF37975968c892b60D631CFE08f299FEA) is simplified/permissionless version without Auth system needed for production operator-based trading.
+
+**Solution:** Deploy complete Polymarket contract suite:
+- **CTFExchange** (with AccessControl: admin/operator roles)
+- **NegRiskAdapter** (automatic order settlement)
+- **FeeController** (fee distribution)
+- **ProxyFactory + ProxyWallet** (meta-transactions)
+- **MarketRegistry** (auto-register markets)
+
+**Goals:**
+1. Clean CLOB execution matching Polymarket
+2. Automatic on-chain order settlement
+3. Operator authorization for relayer
+4. Seamless market creation
+5. Full production feature parity
+
+**Next Steps:** Research Polymarket contracts → Create deployment scripts → Deploy & configure roles → Update backend integration.
 
 ## User Preferences
 
