@@ -6,32 +6,35 @@ This project is a full-stack prediction market platform, enabling users to creat
 
 ## Recent Updates (November 14, 2025)
 
-### ✅ Critical ProxyWallet Bug Fixes - Production Ready
+### ✅ Proxy Wallet System - Fully Operational
 
-**Fixed ProxyWallet Address Resolution & Hook Architecture (November 14, 2025):**
-- **Problem 1:** Circular import causing all hook functions to be undefined (`getPositionBalance is not a function`)
-- **Root Cause 1:** `use-proxy-wallet.tsx` importing from itself (`import { useProxyWallet } from './use-proxy-wallet.ts'`)
-- **Problem 2:** Deposit calling non-existent `deposit()` function on ProxyWallet contract
-- **Root Cause 2:** ProxyWallet only has `execute()` function, no `deposit()` or `withdraw()`
-- **Problem 3:** Withdraw calling non-existent `withdraw()` function
-- **Root Cause 3:** Frontend ABI mismatch - contract doesn't expose withdraw directly
-- **Solution Implemented:**
-  1. **Hook Architecture Fix:**
-     - Renamed `use-proxy-wallet.ts` → `use-proxy-wallet-status.ts` (exports `useProxyWalletStatus`)
-     - Kept `use-proxy-wallet.tsx` (exports `useProxyWallet` for operations)
-     - Fixed all imports to use renamed file
-     - Removed circular dependency
-  2. **Deposit Fix:**
-     - Changed from `proxyWallet.deposit()` to direct ERC20 transfer: `usdt.transfer(proxyAddress, amount)`
-     - Follows Polymarket's implementation pattern
-  3. **Withdraw Fix:**
-     - Encode `USDT.transfer(user, amount)` as inner call
-     - Wrap in `ProxyWallet.execute(USDT_ADDRESS, transferData, 0)`
-     - Submit as gasless meta-transaction via relayer
-  4. **TypeScript Declarations:**
-     - Added `global.d.ts` with `window.ethereum` interface for MetaMask
-- **Impact:** All deposit/withdraw/split/merge operations now use correct contract functions and hook exports are stable
-- **Verification:** Architect confirmed fix pattern correct (2 review iterations); browser console clean of "not a function" errors
+**ProxyWallet Deployment Flow & Operations (November 14, 2025):**
+
+1. **Hook Architecture:**
+   - `use-proxy-wallet-status.ts`: Status polling with 5s refetchInterval, tracks deployment state
+   - `use-proxy-wallet.tsx`: All operations (deploy, deposit, withdraw, split, merge, trading)
+   - Removed circular dependency, fixed undefined function errors
+
+2. **Deployment UI:**
+   - Status query polls every 5 seconds to catch deployment immediately
+   - Removes `isConnected` check to maintain polling during MetaMask interactions
+   - Deploy button auto-resets after MetaMask cancel (TanStack Query resets `isPending`)
+   - User-friendly error messages for rejection and insufficient funds
+   - Optimistic cache updates flip UI to deposit/withdraw view instantly
+
+3. **Backend Routes:**
+   - `/api/proxy/status/:address`: Returns proxy address, deployment status, nonce
+   - `/api/proxy/balance/:address`: Resolves user → proxy → USDT balance
+   - `/api/proxy/positions/:address`: Resolves user → proxy → position balances
+   - All routes use `proxyWalletService.getProxyAddress()` first
+
+4. **Operations:**
+   - **Deposit:** Direct ERC20 transfer: `usdt.transfer(proxyAddress, amount)`
+   - **Withdraw:** Gasless via relayer: `ProxyWallet.execute(USDT, transferData)` as meta-tx
+   - **Split/Merge:** Gasless via relayer using EIP-712 signatures
+   - **Trading:** CLOB orders signed and submitted via proxy
+
+- **Current Status:** Fully operational. User proxy wallets deployed, deposit/withdraw functional, gasless trading enabled.
 
 ### ✅ Platform MVP Complete - Production Ready
 
