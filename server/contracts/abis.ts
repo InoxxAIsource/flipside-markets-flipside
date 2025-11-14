@@ -20,25 +20,19 @@ export const ConditionalTokensABI = [
   "event ConditionPreparation(bytes32 indexed conditionId, address indexed oracle, bytes32 indexed questionId, uint256 outcomeSlotCount)",
 ] as const;
 
+// Permissionless CTFExchange (Sepolia 0x09E6D42eF37975968c892b60D631CFE08f299FEA)
+// No admin/operator authorization system - anyone can call fillOrder
 export const CTFExchangeABI = [
-  "function fillOrder((address maker, address taker, address tokenId, uint256 makerAmount, uint256 takerAmount, uint256 side, uint256 feeRateBps, uint256 nonce, uint256 signer, uint256 expiration, bytes signature) order, uint256 fillAmount)",
-  "function cancelOrder(uint256 salt)",
-  "function hashOrder((address maker, address taker, address tokenId, uint256 makerAmount, uint256 takerAmount, uint256 side, uint256 feeRateBps, uint256 nonce, uint256 signer, uint256 expiration) order) view returns (bytes32)",
-  "function validateOrderSignature(bytes32 orderHash, (address maker, address taker, address tokenId, uint256 makerAmount, uint256 takerAmount, uint256 side, uint256 feeRateBps, uint256 nonce, uint256 signer, uint256 expiration, bytes signature) order) view returns (bool)",
-  "function registerToken(uint256 token, uint256 complement, bytes32 conditionId)",
-  "function isOperator(address account) view returns (bool)",
-  "function isAdmin(address account) view returns (bool)",
-  "function addOperator(address operator)",
-  "function removeOperator(address operator)",
-  "function addAdmin(address admin)",
-  "function removeAdmin(address admin)",
-  "event OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee)",
-  "event OrderCancelled(bytes32 indexed orderHash)",
-  "event TokenRegistered(uint256 indexed token0, uint256 indexed token1, bytes32 indexed conditionId)",
-  "event NewOperator(address indexed operator, address indexed admin)",
-  "event RemovedOperator(address indexed operator, address indexed admin)",
-  "event NewAdmin(address indexed admin, address indexed caller)",
-  "event RemovedAdmin(address indexed admin, address indexed caller)",
+  "function hashOrder((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order) pure returns (bytes32)",
+  "function fillOrder((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order, bytes signature, uint256 fillAmount)",
+  "function cancelOrder((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order)",
+  "function depositTokens((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order, uint256 depositAmount)",
+  "function withdrawTokens((address maker, uint256 marketId, uint8 side, uint256 price, uint256 amount, uint256 salt, uint256 expiry) order)",
+  "function getPositionId(uint256 marketId, uint8 side) pure returns (uint256)",
+  "function conditionalTokens() view returns (address)",
+  "function collateralToken() view returns (address)",
+  "event OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 fillAmount)",
+  "event OrderCancelled(bytes32 indexed orderHash, address indexed maker)",
 ] as const;
 
 export const MarketFactoryABI = [

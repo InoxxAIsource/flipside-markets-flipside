@@ -93,16 +93,7 @@ app.use((req, res, next) => {
     // Relayer service starts automatically on initialization
     const relayerAddress = (relayerService as any).relayerWallet.address;
     log(`Relayer service initialized (address: ${relayerAddress})`);
-    
-    // Check if relayer is authorized as operator on CTFExchange
-    const { web3Service } = await import('./contracts/web3Service');
-    const isOperator = await web3Service.isOperator(relayerAddress);
-    if (isOperator) {
-      log(`✓ Relayer is authorized as operator on CTFExchange`);
-    } else {
-      log(`⚠ WARNING: Relayer is NOT authorized as operator on CTFExchange`);
-      log(`  Admin must call CTFExchange.addOperator(${relayerAddress})`);
-    }
+    log(`✓ CTFExchange is permissionless - anyone can call fillOrder()`);
   });
 
   // Graceful shutdown
