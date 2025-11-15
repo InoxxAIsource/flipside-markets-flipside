@@ -13,12 +13,15 @@ export declare namespace ProxyWallet {
     }
 
   export interface ProxyWalletInterface extends Interface {
-    getFunction(nameOrSignature: "execute" | "executeBatch" | "getNonce" | "getOwner" | "nonces" | "onERC1155BatchReceived" | "onERC1155Received" | "owner" | "supportsInterface"): FunctionFragment;
+    getFunction(nameOrSignature: "DOMAIN_SEPARATOR" | "META_TRANSACTION_TYPEHASH" | "execute" | "executeBatch" | "executeMetaTransaction" | "getNonce" | "getOwner" | "nonces" | "onERC1155BatchReceived" | "onERC1155Received" | "owner" | "supportsInterface"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "ExecutionFailure" | "ExecutionSuccess"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "ExecutionFailure" | "ExecutionSuccess" | "MetaTransactionExecuted"): EventFragment;
 
-    encodeFunctionData(functionFragment: 'execute', values: [AddressLike, BytesLike, BigNumberish]): string;
+    encodeFunctionData(functionFragment: 'DOMAIN_SEPARATOR', values?: undefined): string;
+encodeFunctionData(functionFragment: 'META_TRANSACTION_TYPEHASH', values?: undefined): string;
+encodeFunctionData(functionFragment: 'execute', values: [AddressLike, BytesLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'executeBatch', values: [ProxyWallet.CallStruct[]]): string;
+encodeFunctionData(functionFragment: 'executeMetaTransaction', values: [AddressLike, AddressLike, BytesLike, BytesLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getNonce', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'getOwner', values?: undefined): string;
 encodeFunctionData(functionFragment: 'nonces', values: [AddressLike]): string;
@@ -27,8 +30,11 @@ encodeFunctionData(functionFragment: 'onERC1155Received', values: [AddressLike, 
 encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
 encodeFunctionData(functionFragment: 'supportsInterface', values: [BytesLike]): string;
 
-    decodeFunctionResult(functionFragment: 'execute', data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: 'DOMAIN_SEPARATOR', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'META_TRANSACTION_TYPEHASH', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'execute', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'executeBatch', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'executeMetaTransaction', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getNonce', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getOwner', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'nonces', data: BytesLike): Result;
@@ -55,6 +61,18 @@ decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Re
       export type InputTuple = [to: AddressLike, value: BigNumberish, data: BytesLike, returnData: BytesLike];
       export type OutputTuple = [to: string, value: bigint, data: string, returnData: string];
       export interface OutputObject {to: string, value: bigint, data: string, returnData: string };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace MetaTransactionExecutedEvent {
+      export type InputTuple = [user: AddressLike, target: AddressLike, nonce: BigNumberish];
+      export type OutputTuple = [user: string, target: string, nonce: bigint];
+      export interface OutputObject {user: string, target: string, nonce: bigint };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -97,6 +115,22 @@ decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Re
 
     
     
+    DOMAIN_SEPARATOR: TypedContractMethod<
+      [],
+      [string],
+      'view'
+    >
+    
+
+    
+    META_TRANSACTION_TYPEHASH: TypedContractMethod<
+      [],
+      [string],
+      'view'
+    >
+    
+
+    
     execute: TypedContractMethod<
       [to: AddressLike, data: BytesLike, value: BigNumberish, ],
       [string],
@@ -108,6 +142,14 @@ decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Re
     executeBatch: TypedContractMethod<
       [calls: ProxyWallet.CallStruct[], ],
       [string[]],
+      'payable'
+    >
+    
+
+    
+    executeMetaTransaction: TypedContractMethod<
+      [user: AddressLike, target: AddressLike, data: BytesLike, signature: BytesLike, deadline: BigNumberish, ],
+      [string],
       'payable'
     >
     
@@ -171,7 +213,17 @@ decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Re
 
     getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
-    getFunction(nameOrSignature: 'execute'): TypedContractMethod<
+    getFunction(nameOrSignature: 'DOMAIN_SEPARATOR'): TypedContractMethod<
+      [],
+      [string],
+      'view'
+    >;
+getFunction(nameOrSignature: 'META_TRANSACTION_TYPEHASH'): TypedContractMethod<
+      [],
+      [string],
+      'view'
+    >;
+getFunction(nameOrSignature: 'execute'): TypedContractMethod<
       [to: AddressLike, data: BytesLike, value: BigNumberish, ],
       [string],
       'payable'
@@ -179,6 +231,11 @@ decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Re
 getFunction(nameOrSignature: 'executeBatch'): TypedContractMethod<
       [calls: ProxyWallet.CallStruct[], ],
       [string[]],
+      'payable'
+    >;
+getFunction(nameOrSignature: 'executeMetaTransaction'): TypedContractMethod<
+      [user: AddressLike, target: AddressLike, data: BytesLike, signature: BytesLike, deadline: BigNumberish, ],
+      [string],
       'payable'
     >;
 getFunction(nameOrSignature: 'getNonce'): TypedContractMethod<
@@ -219,6 +276,7 @@ getFunction(nameOrSignature: 'supportsInterface'): TypedContractMethod<
 
     getEvent(key: 'ExecutionFailure'): TypedContractEvent<ExecutionFailureEvent.InputTuple, ExecutionFailureEvent.OutputTuple, ExecutionFailureEvent.OutputObject>;
 getEvent(key: 'ExecutionSuccess'): TypedContractEvent<ExecutionSuccessEvent.InputTuple, ExecutionSuccessEvent.OutputTuple, ExecutionSuccessEvent.OutputObject>;
+getEvent(key: 'MetaTransactionExecuted'): TypedContractEvent<MetaTransactionExecutedEvent.InputTuple, MetaTransactionExecutedEvent.OutputTuple, MetaTransactionExecutedEvent.OutputObject>;
 
     filters: {
       
@@ -228,6 +286,10 @@ getEvent(key: 'ExecutionSuccess'): TypedContractEvent<ExecutionSuccessEvent.Inpu
 
       'ExecutionSuccess(address,uint256,bytes,bytes)': TypedContractEvent<ExecutionSuccessEvent.InputTuple, ExecutionSuccessEvent.OutputTuple, ExecutionSuccessEvent.OutputObject>;
       ExecutionSuccess: TypedContractEvent<ExecutionSuccessEvent.InputTuple, ExecutionSuccessEvent.OutputTuple, ExecutionSuccessEvent.OutputObject>;
+    
+
+      'MetaTransactionExecuted(address,address,uint256)': TypedContractEvent<MetaTransactionExecutedEvent.InputTuple, MetaTransactionExecutedEvent.OutputTuple, MetaTransactionExecutedEvent.OutputObject>;
+      MetaTransactionExecuted: TypedContractEvent<MetaTransactionExecutedEvent.InputTuple, MetaTransactionExecutedEvent.OutputTuple, MetaTransactionExecutedEvent.OutputObject>;
     
     };
   }

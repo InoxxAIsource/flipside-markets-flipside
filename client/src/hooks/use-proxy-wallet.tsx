@@ -10,6 +10,7 @@ import { useProxyWalletStatus } from './use-proxy-wallet-status';
 const ProxyWalletABI = [
   "function execute(address to, bytes data, uint256 value) returns (bytes memory)",
   "function executeBatch((address to, bytes data, uint256 value)[] calls) returns (bytes[] memory)",
+  "function executeMetaTransaction(address user, address target, bytes data, bytes signature, uint256 deadline) returns (bytes memory)",
   "function getOwner() view returns (address)",
   "function getNonce(address user) view returns (uint256)",
 ] as const;
@@ -63,19 +64,20 @@ interface MetaTransactionResponse {
   error?: string;
 }
 
-// Local nonce tracking helpers (contract doesn't have getNonce)
-const getNonce = (address: string): number => {
-  const key = `proxy_wallet_nonce_${address.toLowerCase()}`;
-  const stored = localStorage.getItem(key);
-  return stored ? parseInt(stored, 10) : 0;
-};
-
-const incrementNonce = (address: string): number => {
-  const currentNonce = getNonce(address);
-  const nextNonce = currentNonce + 1;
-  const key = `proxy_wallet_nonce_${address.toLowerCase()}`;
-  localStorage.setItem(key, nextNonce.toString());
-  return currentNonce; // Return current nonce for use
+// Fetch nonce from backend (which reads from blockchain)
+const fetchNonceFromBackend = async (address: string): Promise<number> => {
+  try {
+    const response = await fetch(`/api/proxy/status/${address}`);
+    if (!response.ok) {
+      console.warn('Failed to fetch nonce, defaulting to 0');
+      return 0;
+    }
+    const data = await response.json();
+    return data.nonce || 0;
+  } catch (error) {
+    console.error('Error fetching nonce:', error);
+    return 0;
+  }
 };
 
 export function useProxyWallet() {
@@ -209,8 +211,8 @@ export function useProxyWallet() {
     // Create deadline (10 minutes from now)
     const deadline = Math.floor(Date.now() / 1000) + 600;
 
-    // Get current nonce (don't increment yet - wait for success)
-    const currentNonce = getNonce(account);
+    // Get current nonce from blockchain
+    const currentNonce = await fetchNonceFromBackend(account);
 
     // Create meta-transaction message
     const message = {
@@ -248,8 +250,7 @@ export function useProxyWallet() {
       throw new Error(result.error || 'Failed to submit meta-transaction');
     }
 
-    // Only increment nonce after successful submission
-    incrementNonce(account);
+    // Nonce is managed on-chain, no need to increment locally
 
     return result.txId;
   };

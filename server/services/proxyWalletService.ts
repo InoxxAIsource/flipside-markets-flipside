@@ -37,32 +37,15 @@ export function getProxyWalletDomain(chainId: number, proxyWalletAddress: string
 }
 
 /**
- * EIP-712 types for single meta-transaction
+ * EIP-712 types for meta-transaction (matching ProxyWallet.sol)
  */
 export const META_TX_TYPES = {
-  MetaTx: [
-    { name: 'from', type: 'address' },
-    { name: 'to', type: 'address' },
-    { name: 'value', type: 'uint256' },
+  MetaTransaction: [
+    { name: 'user', type: 'address' },
+    { name: 'target', type: 'address' },
     { name: 'data', type: 'bytes' },
     { name: 'nonce', type: 'uint256' },
     { name: 'deadline', type: 'uint256' },
-    { name: 'gasLimit', type: 'uint256' },
-  ],
-};
-
-/**
- * EIP-712 types for batched meta-transaction
- */
-export const BATCH_META_TX_TYPES = {
-  BatchMetaTx: [
-    { name: 'from', type: 'address' },
-    { name: 'targets', type: 'address[]' },
-    { name: 'values', type: 'uint256[]' },
-    { name: 'datas', type: 'bytes[]' },
-    { name: 'nonce', type: 'uint256' },
-    { name: 'deadline', type: 'uint256' },
-    { name: 'gasLimit', type: 'uint256' },
   ],
 };
 
@@ -226,6 +209,7 @@ export class ProxyWalletService {
         'function getNonce(address user) view returns (uint256)',
         'function executeBatch((address to, bytes data, uint256 value)[] calls) returns (bytes[] memory)',
         'function execute(address to, bytes data, uint256 value) returns (bytes memory)',
+        'function executeMetaTransaction(address user, address target, bytes data, bytes signature, uint256 deadline) returns (bytes memory)',
         'function getOwner() view returns (address)',
       ],
       this.web3Service.getProvider()

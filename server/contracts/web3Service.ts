@@ -4,6 +4,7 @@ import {
   ConditionalTokensABI,
   CTFExchangeABI,
   ProxyWalletABI,
+  ProxyWalletFactoryABI,
 } from './abis';
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../config/contracts';
 
@@ -53,6 +54,7 @@ export class Web3Service {
   public conditionalTokens: ethers.Contract;
   public ctfExchange: ethers.Contract;
   public proxyWalletImpl: ethers.Contract;
+  public proxyWalletFactory: ethers.Contract;
 
   constructor(rpcUrl?: string) {
     // Use provided RPC or Alchemy if available, fallback to config RPC
@@ -91,6 +93,12 @@ export class Web3Service {
     this.proxyWalletImpl = new ethers.Contract(
       CONTRACT_ADDRESSES.PROXY_WALLET_IMPL,
       ProxyWalletABI,
+      this.provider
+    );
+
+    this.proxyWalletFactory = new ethers.Contract(
+      CONTRACT_ADDRESSES.PROXY_WALLET_FACTORY,
+      ProxyWalletFactoryABI,
       this.provider
     );
   }

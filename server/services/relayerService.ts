@@ -88,7 +88,10 @@ export class RelayerService {
    */
   private async getUserNonce(userAddress: string): Promise<number> {
     try {
-      const proxyWalletService = getProxyWalletService(web3Service, '', '');
+      const { proxyWalletFactory, proxyWalletImpl } = web3Service;
+      const factoryAddress = await proxyWalletFactory.getAddress();
+      const implAddress = await proxyWalletImpl.getAddress();
+      const proxyWalletService = getProxyWalletService(web3Service, factoryAddress, implAddress);
       const nonce = await proxyWalletService.getNonce(userAddress);
       return Number(nonce);
     } catch (error) {
@@ -207,14 +210,37 @@ export class RelayerService {
     metaTx.status = 'relayed';
 
     try {
-      // Get ProxyWallet contract with relayer signer
-      const proxyWallet = web3Service.proxyWallet.connect(this.relayerWallet);
+      // Get user's proxy wallet address
+      const { proxyWalletFactory, proxyWalletImpl } = web3Service;
+      const factoryAddress = await proxyWalletFactory.getAddress();
+      const implAddress = await proxyWalletImpl.getAddress();
+      const proxyWalletService = getProxyWalletService(web3Service, factoryAddress, implAddress);
+      const proxyAddress = await proxyWalletService.getProxyAddress(metaTx.user);
 
-      // Execute the meta-transaction
+      // Check if proxy wallet is deployed
+      const isDeployed = await proxyWalletService.isDeployed(metaTx.user);
+      if (!isDeployed) {
+        throw new Error(`Proxy wallet not deployed for user ${metaTx.user}`);
+      }
+
+      // Create ProxyWallet contract instance for this specific user's proxy
+      const proxyWallet = new ethers.Contract(
+        proxyAddress,
+        [
+          'function executeMetaTransaction(address user, address target, bytes data, bytes signature, uint256 deadline) returns (bytes memory)',
+        ],
+        this.relayerWallet
+      );
+
+      console.log(`Executing meta-tx on proxy: ${proxyAddress} for user: ${metaTx.user}`);
+
+      // Execute the meta-transaction with correct parameter order
       const tx = await proxyWallet.executeMetaTransaction(
-        metaTx.signature,
         metaTx.user,
-        metaTx.data
+        metaTx.target,
+        metaTx.data,
+        metaTx.signature,
+        metaTx.deadline
       );
 
       metaTx.txHash = tx.hash;
