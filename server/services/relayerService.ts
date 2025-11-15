@@ -223,6 +223,11 @@ export class RelayerService {
 
       // Get user's proxy wallet address using the shared service
       const proxyAddress = await this.proxyWalletService.getProxyAddress(metaTx.user);
+      
+      console.log(`🔍 Relayer executing meta-tx ${metaTx.id}:`);
+      console.log(`   User: ${metaTx.user}`);
+      console.log(`   Proxy: ${proxyAddress}`);
+      console.log(`   Target: ${metaTx.target}`);
 
       // Check if proxy wallet is deployed
       const isDeployed = await this.proxyWalletService.isDeployed(metaTx.user);
@@ -238,8 +243,6 @@ export class RelayerService {
         ],
         this.relayerWallet
       );
-
-      console.log(`Executing meta-tx on proxy: ${proxyAddress} for user: ${metaTx.user}`);
 
       // Execute the meta-transaction with correct parameter order
       const tx = await proxyWallet.executeMetaTransaction(
