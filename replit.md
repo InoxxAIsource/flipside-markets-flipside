@@ -8,6 +8,36 @@ This project is a full-stack prediction market platform on the Ethereum Sepolia 
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Updates (November 15, 2025)
+
+### ✅ Sell Order EIP-712 Signature Bug Fixed
+
+**Critical Bug:**
+- Sell orders were failing with "Invalid order signature" error
+- Root cause: EIP-712 signature hardcoded `side: 0` (buy) on line 218 of TradingPanel.tsx
+- When placing sell orders, signature was signed with `side: 0` but backend expected `side: 1`
+- Backend signature verification failed due to mismatch
+
+**Fix Applied:**
+- Changed line 221: `side: orderSide === 'buy' ? 0 : 1`
+- Now correctly signs:
+  - Buy orders with `side: 0`
+  - Sell orders with `side: 1`
+- EIP-712 signature now matches backend validation expectations
+
+**Impact:**
+- Users can now successfully place both buy AND sell limit orders
+- Order matching fully functional: Buy YES + Sell YES can match at same price
+- Complete CLOB (Central Limit Order Book) functionality restored
+
+### ✅ Buy/Sell Toggle UI Added
+
+**Enhancement:**
+- Added two-button toggle for Buy/Sell action selection
+- Logical two-tier selection: Action (Buy/Sell) → Outcome (YES/NO)
+- Submit button dynamically updates: "Buy YES", "Sell NO", etc.
+- Matches Polymarket's UX pattern for improved clarity
+
 ## System Architecture
 
 ### Frontend Architecture
