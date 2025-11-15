@@ -21,6 +21,11 @@ const MockUSDTABI = [
   "function balanceOf(address account) view returns (uint256)",
 ] as const;
 
+const ConditionalTokensABI = [
+  "function splitPosition(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)",
+  "function mergePositions(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)",
+] as const;
+
 const ProxyWalletFactoryABI = [
   "function maybeMakeWallet(address implementation, address proxyAddress, address owner) returns (address)",
   "function getInstanceAddress(address implementation, address user) view returns (address)",
@@ -316,6 +321,10 @@ export function useProxyWallet() {
       throw new Error('Wallet not connected');
     }
 
+    if (!proxyAddress) {
+      throw new Error('Proxy wallet not deployed');
+    }
+
     setIsSplitting(true);
     try {
       toast({
@@ -325,25 +334,34 @@ export function useProxyWallet() {
 
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
-      // Encode executeSplit function call
-      const proxyWalletInterface = new ethers.Interface(ProxyWalletABI);
-      
-      // For split, we pass empty signature and current timestamp as deadline
-      // The actual signature is the meta-transaction signature
-      const data = proxyWalletInterface.encodeFunctionData('executeSplit', [
-        conditionId,
-        amountWei,
-        '0x',
-        Math.floor(Date.now() / 1000) + 600
+      // Encode approve USDT for ConditionalTokens
+      const usdtInterface = new ethers.Interface(MockUSDTABI);
+      const approveData = usdtInterface.encodeFunctionData('approve', [
+        CONTRACT_ADDRESSES.ConditionalTokens,
+        amountWei
       ]);
 
-      if (!proxyAddress) {
-        throw new Error('Proxy wallet not deployed');
-      }
+      // Encode splitPosition call for ConditionalTokens
+      const ctInterface = new ethers.Interface(ConditionalTokensABI);
+      const splitData = ctInterface.encodeFunctionData('splitPosition', [
+        CONTRACT_ADDRESSES.MockUSDT,
+        ethers.ZeroHash, // parentCollectionId (0x0 for base collateral)
+        conditionId,
+        [1, 2], // partition for binary outcome (YES=1, NO=2)
+        amountWei
+      ]);
+
+      // Encode batch execution through ProxyWallet
+      // Must use positional tuple arrays, not objects
+      const proxyInterface = new ethers.Interface(ProxyWalletABI);
+      const batchData = proxyInterface.encodeFunctionData('executeBatch', [[
+        [CONTRACT_ADDRESSES.MockUSDT, approveData, 0],
+        [CONTRACT_ADDRESSES.ConditionalTokens, splitData, 0]
+      ]]);
 
       const txId = await signAndSubmitMetaTransaction(
-        proxyAddress, // Use user's proxy address
-        data,
+        proxyAddress,
+        batchData,
         'Split'
       );
 
@@ -379,6 +397,10 @@ export function useProxyWallet() {
       throw new Error('Wallet not connected');
     }
 
+    if (!proxyAddress) {
+      throw new Error('Proxy wallet not deployed');
+    }
+
     setIsMerging(true);
     try {
       toast({
@@ -388,25 +410,27 @@ export function useProxyWallet() {
 
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
-      // Encode executeMerge function call
-      const proxyWalletInterface = new ethers.Interface(ProxyWalletABI);
-      
-      // For merge, we pass empty signature and current timestamp as deadline
-      // The actual signature is the meta-transaction signature
-      const data = proxyWalletInterface.encodeFunctionData('executeMerge', [
+      // Encode mergePositions call for ConditionalTokens
+      const ctInterface = new ethers.Interface(ConditionalTokensABI);
+      const mergeData = ctInterface.encodeFunctionData('mergePositions', [
+        CONTRACT_ADDRESSES.MockUSDT,
+        ethers.ZeroHash, // parentCollectionId (0x0 for base collateral)
         conditionId,
-        amountWei,
-        '0x',
-        Math.floor(Date.now() / 1000) + 600
+        [1, 2], // partition for binary outcome (YES=1, NO=2)
+        amountWei
       ]);
 
-      if (!proxyAddress) {
-        throw new Error('Proxy wallet not deployed');
-      }
+      // Encode execute call through ProxyWallet
+      const proxyInterface = new ethers.Interface(ProxyWalletABI);
+      const executeData = proxyInterface.encodeFunctionData('execute', [
+        CONTRACT_ADDRESSES.ConditionalTokens,
+        mergeData,
+        0 // no ETH value
+      ]);
 
       const txId = await signAndSubmitMetaTransaction(
-        proxyAddress, // Use user's proxy address
-        data,
+        proxyAddress,
+        executeData,
         'Merge'
       );
 
