@@ -92,6 +92,7 @@ export function useProxyWallet() {
   const { proxyAddress, deployed } = useProxyWalletStatus();
 
   // Query for ProxyWallet USDT balance
+  // NOTE: This can run even without wallet connection - uses address from URL or state
   const { data: proxyBalanceData, isLoading: isLoadingBalance } = useQuery<ProxyWalletBalance>({
     queryKey: ['/api/proxy/balance', account],
     queryFn: async () => {
@@ -100,8 +101,8 @@ export function useProxyWallet() {
       if (!response.ok) throw new Error('Failed to fetch proxy balance');
       return response.json();
     },
-    enabled: !!account,
-    refetchInterval: 10000, // Refresh every 10 seconds
+    enabled: !!account, // Only fetch when account is available
+    refetchInterval: !!account ? 10000 : false, // Refresh every 10 seconds when connected
   });
 
   const proxyBalance = proxyBalanceData?.balance || '0';
