@@ -11,6 +11,8 @@ import { MarketStats } from '@/components/MarketStats';
 import { MarketDetails } from '@/components/MarketDetails';
 import { DepositWithdrawPanel } from '@/components/DepositWithdrawPanel';
 import { OrderBook } from '@/components/OrderBook';
+import { CountdownTimer } from '@/components/CountdownTimer';
+import { OracleInfo } from '@/components/OracleInfo';
 import type { Market } from '@shared/schema';
 
 export default function MarketPage() {
@@ -69,12 +71,19 @@ export default function MarketPage() {
               Resolved: {market.outcome ? 'YES' : 'NO'}
             </Badge>
           )}
+          {market.pythPriceFeedId && (
+            <Badge variant="outline" className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
+              Pyth Oracle
+            </Badge>
+          )}
         </div>
 
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <h1 className="text-3xl md:text-4xl font-bold flex-1">
             {market.question}
           </h1>
+          <CountdownTimer expiresAt={market.expiresAt} className="text-base" />
         </div>
 
         <MarketStats 
@@ -96,7 +105,11 @@ export default function MarketPage() {
                   <Button variant="ghost" size="sm">1M</Button>
                 </div>
               </div>
-              <PriceChart height={400} />
+              <PriceChart 
+                height={400} 
+                showBaseline={!!market.baselinePrice}
+                baselinePrice={market.baselinePrice || undefined}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -137,6 +150,11 @@ export default function MarketPage() {
           <div className="space-y-6">
             <DepositWithdrawPanel />
             <TradingPanel marketId={market.id} />
+            <OracleInfo 
+              pythPriceFeedId={market.pythPriceFeedId}
+              baselinePrice={market.baselinePrice}
+              question={market.question}
+            />
             <MarketDetails market={market} />
           </div>
         </div>

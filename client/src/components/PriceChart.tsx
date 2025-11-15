@@ -1,45 +1,55 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface PriceChartProps {
-  data?: Array<{ time: string; yes: number; no: number }>;
+  data?: Array<{ time: string; price: number }>;
   height?: number;
+  showBaseline?: boolean;
+  baselinePrice?: number;
 }
 
-export function PriceChart({ data, height = 200 }: PriceChartProps) {
-  // TODO: Remove mock data when real data is available
+export function PriceChart({ data, height = 200, showBaseline = false, baselinePrice }: PriceChartProps) {
   const mockData = data || [
-    { time: '12:00', yes: 45, no: 55 },
-    { time: '13:00', yes: 48, no: 52 },
-    { time: '14:00', yes: 52, no: 48 },
-    { time: '15:00', yes: 58, no: 42 },
-    { time: '16:00', yes: 62, no: 38 },
-    { time: '17:00', yes: 65, no: 35 },
-    { time: '18:00', yes: 68, no: 32 },
+    { time: '7:30', price: 0.45 },
+    { time: '7:50', price: 0.48 },
+    { time: '8:20', price: 0.52 },
+    { time: '9:00', price: 0.58 },
+    { time: '10:15', price: 0.62 },
+    { time: '11:30', price: 0.65 },
+    { time: '12:45', price: 0.68 },
   ];
 
+  const displayData = mockData.map(d => ({
+    ...d,
+    displayPrice: d.price * 100
+  }));
+
   return (
-    <div className="w-full" style={{ height }}>
+    <div className="w-full" style={{ height }} data-testid="price-chart">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={mockData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+        <LineChart data={displayData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="yesGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+            <linearGradient id="polyPurple" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.8} />
+              <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.3} />
             </linearGradient>
           </defs>
           <XAxis 
             dataKey="time" 
             stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
+            tick={{ fill: 'hsl(var(--muted-foreground))' }}
           />
           <YAxis 
             stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `${value}¢`}
+            domain={[0, 100]}
+            ticks={[0, 25, 50, 75, 100]}
+            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+            tickFormatter={(value) => `$${(value / 100).toFixed(2)}`}
           />
           <Tooltip 
             contentStyle={{
@@ -47,17 +57,35 @@ export function PriceChart({ data, height = 200 }: PriceChartProps) {
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
               fontSize: '12px',
+              padding: '8px 12px',
             }}
-            formatter={(value: any) => [`${value}¢`, 'YES']}
+            labelStyle={{ color: 'hsl(var(--foreground))' }}
+            formatter={(value: any) => [`$${(value / 100).toFixed(2)}`, 'Price']}
+            cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '3 3' }}
           />
-          <Area
+          {showBaseline && baselinePrice && (
+            <ReferenceLine 
+              y={baselinePrice * 100} 
+              stroke="hsl(var(--muted-foreground))" 
+              strokeDasharray="3 3" 
+              strokeWidth={1}
+              label={{ 
+                value: `Baseline: $${baselinePrice.toFixed(2)}`, 
+                position: 'right',
+                fill: 'hsl(var(--muted-foreground))',
+                fontSize: 11
+              }}
+            />
+          )}
+          <Line
             type="monotone"
-            dataKey="yes"
-            stroke="hsl(var(--primary))"
-            strokeWidth={2}
-            fill="url(#yesGradient)"
+            dataKey="displayPrice"
+            stroke="url(#polyPurple)"
+            strokeWidth={2.5}
+            dot={false}
+            activeDot={{ r: 4, fill: '#8b5cf6' }}
           />
-        </AreaChart>
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );

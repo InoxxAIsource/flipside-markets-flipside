@@ -38,6 +38,26 @@ Preferred communication style: Simple, everyday language.
 - Submit button dynamically updates: "Buy YES", "Sell NO", etc.
 - Matches Polymarket's UX pattern for improved clarity
 
+### ✅ Polymarket-Inspired UI/UX Enhancements
+
+**New Components:**
+- **CountdownTimer**: Real-time expiry countdown in HH:MM:SS format, turns red when < 1 hour remaining
+- **Enhanced PriceChart**: Purple gradient line chart (Polymarket style) with optional baseline reference for Pyth markets
+- **OracleInfo**: Displays Pyth oracle details (feed ID, baseline price, resolver link) similar to Polymarket's Binance resolver
+- **Enhanced MarketCard**: Cleaner layout with countdown timer, volume display, oracle badge, and improved price display
+
+**Integration:**
+- Market detail page now shows countdown timer in header
+- Price chart displays baseline reference line for Pyth oracle markets
+- Oracle information prominently displayed in sidebar
+- Market cards show live countdown, volume, and oracle status badges
+
+**Design Impact:**
+- Matches Polymarket's clean, professional aesthetic
+- Better information hierarchy and readability
+- Real-time updates improve user engagement
+- Oracle transparency builds trust in automated resolution
+
 ## System Architecture
 
 ### Frontend Architecture
