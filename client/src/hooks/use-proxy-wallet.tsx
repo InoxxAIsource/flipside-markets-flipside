@@ -23,7 +23,7 @@ const MockUSDTABI = [
 
 const ProxyWalletFactoryABI = [
   "function maybeMakeWallet(address implementation, address proxyAddress, address owner) returns (address)",
-  "function getProxyAddress(address owner) view returns (address)",
+  "function getInstanceAddress(address implementation, address user) view returns (address)",
 ] as const;
 
 // EIP-712 domain will be dynamically created with actual proxy address
@@ -491,7 +491,10 @@ export function useDeployProxyWallet() {
       );
 
       // Calculate the proxy address from the factory
-      const proxyAddress = await factory.getProxyAddress(account);
+      const proxyAddress = await factory.getInstanceAddress(
+        CONTRACT_ADDRESSES.ProxyWalletImpl,
+        account
+      );
       
       if (!proxyAddress || proxyAddress === ethers.ZeroAddress) {
         throw new Error('Unable to calculate proxy wallet address');

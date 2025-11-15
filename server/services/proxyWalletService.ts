@@ -235,16 +235,26 @@ export class ProxyWalletService {
   /**
    * Get on-chain nonce for a user's proxy wallet
    * Always fetches from chain to avoid desync
+   * Returns 0 if proxy wallet is not deployed yet
    */
   async getNonce(userAddress: string): Promise<bigint> {
     try {
       const proxyAddress = await this.getProxyAddress(userAddress);
+      
+      // Check if proxy wallet is deployed first
+      const isDeployed = await this.isDeployed(userAddress);
+      if (!isDeployed) {
+        // Proxy wallet not deployed yet, nonce is 0
+        return BigInt(0);
+      }
+      
       const proxyWallet = this.getProxyWalletContract(proxyAddress);
       
       // Get per-user nonce from the proxy wallet contract
       const nonce = await proxyWallet.getNonce(userAddress);
       return BigInt(nonce.toString());
     } catch (error) {
+      // If any error occurs (including BAD_DATA when wallet not deployed), return 0
       console.error(`Failed to fetch nonce for ${userAddress}:`, error);
       return BigInt(0);
     }

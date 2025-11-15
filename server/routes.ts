@@ -751,7 +751,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proxy/nonce/:address - Get user's current nonce for meta-transaction signing
   app.get('/api/proxy/nonce/:address', async (req, res) => {
     try {
-      const nonce = await web3Service.getProxyWalletNonce(req.params.address);
+      if (!proxyWalletServiceInstance) {
+        return res.status(500).json({ error: 'ProxyWallet service not initialized' });
+      }
+      
+      const nonce = await proxyWalletServiceInstance.getNonce(req.params.address);
       res.json({ nonce: Number(nonce) });
     } catch (error: any) {
       console.error('Error fetching ProxyWallet nonce:', error);
