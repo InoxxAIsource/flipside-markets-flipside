@@ -74,9 +74,3 @@ export function formatEther(value: bigint): string {
 export function parseEther(value: string): bigint {
   return ethers.parseEther(value);
 }
-
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
