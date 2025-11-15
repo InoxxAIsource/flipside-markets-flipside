@@ -17,7 +17,16 @@ export function CountdownTimer({ expiresAt, className = '' }: CountdownTimerProp
   useEffect(() => {
     const calculateTimeRemaining = () => {
       const now = new Date().getTime();
-      const expiry = new Date(expiresAt).getTime();
+      const expiryDate = new Date(expiresAt);
+      
+      // Handle invalid date
+      if (isNaN(expiryDate.getTime())) {
+        console.warn('CountdownTimer: Invalid date format', expiresAt);
+        setTimeRemaining({ hours: 0, minutes: 0, seconds: 0, total: -1 });
+        return;
+      }
+
+      const expiry = expiryDate.getTime();
       const difference = expiry - now;
 
       if (difference <= 0) {
@@ -39,7 +48,17 @@ export function CountdownTimer({ expiresAt, className = '' }: CountdownTimerProp
   }, [expiresAt]);
 
   const isExpiringSoon = timeRemaining.total > 0 && timeRemaining.total < 3600000; // Less than 1 hour
-  const isExpired = timeRemaining.total <= 0;
+  const isExpired = timeRemaining.total === 0;
+  const isInvalid = timeRemaining.total === -1;
+
+  if (isInvalid) {
+    return (
+      <div className={`flex items-center gap-2 text-muted-foreground ${className}`} data-testid="countdown-invalid">
+        <Clock className="h-4 w-4" />
+        <span className="text-sm">--:--:--</span>
+      </div>
+    );
+  }
 
   if (isExpired) {
     return (
