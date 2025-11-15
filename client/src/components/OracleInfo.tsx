@@ -1,6 +1,7 @@
 import { ExternalLink, Shield } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { TradingViewWidget } from './TradingViewWidget';
 
 interface OracleInfoProps {
   pythPriceFeedId?: string | null;
@@ -8,18 +9,25 @@ interface OracleInfoProps {
   question: string;
 }
 
-const PYTH_PRICE_FEEDS: Record<string, { name: string; url: string }> = {
-  'ETH/USD': {
+// Mapping of Pyth price feed IDs to their display info and TradingView symbols
+const PYTH_PRICE_FEEDS: Record<string, { name: string; url: string; symbol: string }> = {
+  // ETH/USD - Sepolia testnet feed ID
+  '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace': {
     name: 'ETH/USD',
     url: 'https://pyth.network/price-feeds/crypto-eth-usd',
+    symbol: 'ETHUSD',
   },
-  'BTC/USD': {
+  // BTC/USD - Sepolia testnet feed ID
+  '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43': {
     name: 'BTC/USD',
     url: 'https://pyth.network/price-feeds/crypto-btc-usd',
+    symbol: 'BTCUSD',
   },
-  'SOL/USD': {
+  // SOL/USD - Sepolia testnet feed ID
+  '0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d': {
     name: 'SOL/USD',
     url: 'https://pyth.network/price-feeds/crypto-sol-usd',
+    symbol: 'SOLUSD',
   },
 };
 
@@ -59,19 +67,26 @@ export function OracleInfo({ pythPriceFeedId, baselinePrice, question }: OracleI
           </p>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between py-2 border-t">
-            <span className="text-sm text-muted-foreground">Resolution Source</span>
-            <a
-              href={pythUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-sm font-medium hover-elevate active-elevate-2 rounded px-2 py-1"
-              data-testid="link-pyth-feed"
-            >
-              <span>{feedInfo?.name || pythPriceFeedId}</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
+        <div className="space-y-3">
+          <div className="pt-2 border-t">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium">Resolution Source</span>
+              <a
+                href={pythUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover-elevate active-elevate-2 rounded px-2 py-1"
+                data-testid="link-pyth-feed"
+              >
+                <span>{feedInfo?.name || pythPriceFeedId}</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+            {feedInfo?.symbol && (
+              <div className="mb-3">
+                <TradingViewWidget symbol={feedInfo.symbol} height={250} />
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between py-2 border-t">
