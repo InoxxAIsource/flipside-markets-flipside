@@ -4,11 +4,53 @@
 
 This project is a full-stack prediction market platform, enabling users to create, trade, and resolve prediction markets on real-world events. Built on Ethereum's Sepolia testnet, it leverages seven deployed smart contracts and features a modern web interface inspired by Polymarket. The platform integrates blockchain technology for trustless market operations with a traditional web stack (React, Express, PostgreSQL) to offer a seamless user experience. The business vision is to provide a robust and intuitive platform for decentralized prediction markets, tapping into the growing interest in blockchain-based forecasting.
 
-## Recent Updates (November 14, 2025)
+## Recent Updates (November 15, 2025)
+
+### 🏗️ Proxy Wallet Architecture Explained
+
+**IMPORTANT: Understanding the Three Contract Types**
+
+The proxy wallet system uses a **minimal proxy pattern** with three distinct contract types:
+
+1. **ProxyWalletImpl (Implementation Contract)**: `0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7`
+   - Contains the shared logic and code for all proxy wallets
+   - **Users NEVER interact with this address directly**
+   - Think of it as the "blueprint" that all user proxies delegate to
+   - Deployed once and shared by all users (gas efficient)
+
+2. **ProxyWalletFactory (Factory Contract)**: `0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2`
+   - Creates individual proxy wallet instances for each user
+   - Uses CREATE2 for deterministic address generation
+   - **Users NEVER interact with this address directly**
+   - Computes each user's proxy address based on their EOA
+
+3. **User-Specific Proxy Wallets** (e.g., `0x67ccA9e2fA82C43BD9d4dF720567Cd5E420859Db`)
+   - **THIS is where users deposit USDT and interact**
+   - Each user gets their own unique proxy wallet address
+   - Deterministically computed: same user address → same proxy address
+   - Delegates all calls to the implementation contract
+   - Holds user's actual USDT and token balances
+
+**Example Flow:**
+- User wallet: `0x73eB...Aab7`
+- Factory computes proxy via CREATE2: `0x67cc...59Db` (deterministic, unique to this user)
+- User deposits 350 USDT → **proxy address** `0x67cc...59Db`
+- All operations (split, merge, trade) happen through this proxy
+- Proxy delegates logic to implementation `0xc50c...b5A7`
+
+**How Users Find Their Proxy Address:**
+- **Backend API**: Call `/api/proxy/status/:userAddress` to get your proxy address and deployment status
+- **Frontend**: useProxyWallet hook automatically fetches and caches your proxy address
+- **Direct Computation**: Advanced users can compute via factory's `getInstanceAddress(implementation, userAddress)` function
+
+**Why This Design?**
+- **Gas Efficient**: Share one implementation across all users (saves ~2M gas per user)
+- **Upgradeable**: Can point proxies to new implementation without moving funds
+- **Deterministic**: User's proxy address is always predictable via CREATE2 (same user → same address)
 
 ### ✅ Proxy Wallet System - Fully Operational
 
-**ProxyWallet Deployment Flow & Operations (November 14, 2025):**
+**ProxyWallet Deployment Flow & Operations (November 15, 2025):**
 
 1. **Hook Architecture:**
    - `use-proxy-wallet-status.ts`: Status polling with 5s refetchInterval, tracks deployment state
@@ -41,13 +83,41 @@ This project is a full-stack prediction market platform, enabling users to creat
 **Full-Stack Implementation Status:**
 
 **Backend Services (✅ Complete):**
-- **Deployed Contracts Integration:**
-  - MockUSDT: 0xAf24D4DDbA993F6b11372528C678edb718a097Aa (6-decimal collateral)
-  - ConditionalTokens: 0xdC8CB01c328795C007879B2C030AbF1c1b580D84 (Gnosis CTF)
-  - ProxyWalletImpl: 0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7
-  - ProxyWalletFactory: 0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2
-  - CTFExchange: 0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3 (Permissionless CLOB)
-  - Relayer: 0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0 (0.115 ETH balance)
+- **Deployed Contract Addresses (Sepolia Testnet):**
+  
+  **Master Contracts** (Users do NOT interact with these directly):
+  - **ProxyWalletImpl**: `0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7`
+    - Implementation contract with shared proxy wallet logic
+    - Verified on Etherscan
+  - **ProxyWalletFactory**: `0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2`
+    - Factory that creates deterministic proxy wallets per user
+    - Uses CREATE2 for address generation
+    - Verified on Etherscan
+  
+  **Token & Trading Contracts** (Users interact via their proxy wallets):
+  - **MockUSDT**: `0xAf24D4DDbA993F6b11372528C678edb718a097Aa`
+    - ERC20 collateral token with 6 decimals
+    - Users deposit this to their proxy wallets
+    - Verified on Etherscan
+  - **ConditionalTokens**: `0xdC8CB01c328795C007879B2C030AbF1c1b580D84`
+    - Gnosis CTF implementation for outcome tokens
+    - Handles split/merge operations
+    - Verified on Etherscan
+  - **CTFExchange**: `0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3`
+    - Permissionless CLOB (Central Limit Order Book)
+    - Anyone can call fillOrder()
+    - Verified on Etherscan
+  
+  **Service Accounts**:
+  - **Relayer**: `0x0FE96eFbb8aDE6996F36D76d05478b0fCaAB11A0`
+    - Executes gasless meta-transactions
+    - Current balance: 0.115 ETH
+    - Has OPERATOR_ROLE on ProxyWallet contracts
+  
+  **Configuration Synchronization**:
+  - ✅ Frontend (`client/src/lib/web3.ts`) and Backend (`server/config/contracts.ts`) use **identical contract addresses**
+  - Last synchronized: November 15, 2025
+  - All addresses verified on Sepolia Etherscan
 
 - **Background Services:**
   - EventIndexer running (syncing ConditionalTokens events)
