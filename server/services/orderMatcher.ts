@@ -11,6 +11,9 @@ export class OrderMatcher {
     const oppositeSide = newOrder.side === 'buy' ? 'sell' : 'buy';
     const existingOrders = await storage.getMarketOrders(newOrder.marketId, 'open');
     
+    console.log(`[OrderMatcher] New ${newOrder.side} order: price=${newOrder.price}, size=${newOrder.size}`);
+    console.log(`[OrderMatcher] Found ${existingOrders.length} existing open orders`);
+    
     // Filter for opposite side with same outcome
     const matchableOrders = existingOrders.filter(
       (order) => 
@@ -18,6 +21,8 @@ export class OrderMatcher {
         order.outcome === newOrder.outcome &&
         this.canMatch(newOrder, order)
     );
+    
+    console.log(`[OrderMatcher] Found ${matchableOrders.length} matchable ${oppositeSide} orders`);
 
     // Sort by price-time priority (price first, then timestamp for same price)
     matchableOrders.sort((a, b) => {
@@ -46,10 +51,13 @@ export class OrderMatcher {
       const fillSize = Math.min(remainingSize, matchingOrderRemaining);
 
       if (fillSize > 0) {
+        console.log(`[OrderMatcher] Executing fill: ${fillSize} @ ${matchingOrder.price}`);
         await this.executeFill(newOrder, matchingOrder, fillSize);
         totalFilled += fillSize;
       }
     }
+    
+    console.log(`[OrderMatcher] Total filled: ${totalFilled}/${newOrder.size}`);
 
     // Re-query the order from database to get latest state after all fills
     const updatedOrder = await storage.getOrder(newOrder.id);

@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { web3Service } from "./contracts/web3Service";
 import { relayerService } from "./services/relayerService";
+import { orderMatcher } from "./services/orderMatcher";
 import { insertMarketSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -476,6 +477,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const order = await storage.createOrder(validation.data);
+
+      // Automatically match the order against existing opposite-side orders
+      console.log(`[OrderMatcher] Attempting to match order ${order.id}...`);
+      await orderMatcher.matchOrder(order);
 
       // Broadcast order book update
       broadcastOrderBookUpdate(order.marketId, { type: 'new_order', order });
