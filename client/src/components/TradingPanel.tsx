@@ -47,6 +47,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
   const { proxyBalance, split, merge, isSplitting, isMerging, getPositionBalance } = useProxyWallet();
   const { toast } = useToast();
 
+  const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
   const [limitSide, setLimitSide] = useState<'yes' | 'no'>('yes');
   const [limitPrice, setLimitPrice] = useState('');
   const [limitSize, setLimitSize] = useState('');
@@ -232,7 +233,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
         marketId,
         tokenId,
         makerAddress: account,
-        side: 'buy',
+        side: orderSide,
         outcome: limitSide === 'yes',
         price,
         size,
@@ -256,7 +257,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
       toast({
         title: 'Order Placed',
-        description: `Limit order for ${size} ${limitSide.toUpperCase()} shares at $${price.toFixed(2)}`,
+        description: `${orderSide.toUpperCase()} ${size} ${limitSide.toUpperCase()} shares at $${price.toFixed(2)}`,
       });
 
       setLimitPrice('');
@@ -481,7 +482,29 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
         <TabsContent value="limit" className="space-y-4 mt-4">
           <div>
-            <Label className="mb-2 block">Side</Label>
+            <Label className="mb-2 block">Action</Label>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <Button
+                variant={orderSide === 'buy' ? 'default' : 'outline'}
+                onClick={() => setOrderSide('buy')}
+                data-testid="button-order-buy"
+                className="w-full"
+              >
+                Buy
+              </Button>
+              <Button
+                variant={orderSide === 'sell' ? 'default' : 'outline'}
+                onClick={() => setOrderSide('sell')}
+                data-testid="button-order-sell"
+                className="w-full"
+              >
+                Sell
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Outcome</Label>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant={limitSide === 'yes' ? 'default' : 'outline'}
@@ -490,7 +513,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
                 className="w-full"
               >
                 <TrendingUp className="mr-2 h-4 w-4" />
-                BUY YES
+                YES
               </Button>
               <Button
                 variant={limitSide === 'no' ? 'destructive' : 'outline'}
@@ -499,7 +522,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
                 className="w-full"
               >
                 <TrendingDown className="mr-2 h-4 w-4" />
-                BUY NO
+                NO
               </Button>
             </div>
           </div>
@@ -572,7 +595,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
             data-testid="button-place-limit-order"
             variant={limitSide === 'yes' ? 'default' : 'destructive'}
           >
-            {isPlacingLimit ? 'Placing Order...' : 'Place Limit Order'}
+            {isPlacingLimit ? 'Placing Order...' : `${orderSide === 'buy' ? 'Buy' : 'Sell'} ${limitSide.toUpperCase()}`}
           </Button>
 
           <div className="flex items-start gap-2 text-xs text-muted-foreground p-3 bg-muted/50 rounded-md">
