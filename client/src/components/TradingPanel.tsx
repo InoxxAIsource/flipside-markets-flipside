@@ -90,13 +90,16 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
   useEffect(() => {
     const fetchYesBalance = async () => {
-      if (account && yesTokenId !== '0') {
+      if (account && yesTokenId && yesTokenId !== '0' && yesTokenId !== 'undefined') {
         try {
           const balance = await getPositionBalance(yesTokenId);
           setYesBalance(ethers.formatUnits(balance, 6));
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error fetching YES balance:', error);
+          setYesBalance('0');
         }
+      } else {
+        setYesBalance('0');
       }
     };
     fetchYesBalance();
@@ -104,13 +107,16 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
   useEffect(() => {
     const fetchNoBalance = async () => {
-      if (account && noTokenId !== '0') {
+      if (account && noTokenId && noTokenId !== '0' && noTokenId !== 'undefined') {
         try {
           const balance = await getPositionBalance(noTokenId);
           setNoBalance(ethers.formatUnits(balance, 6));
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error fetching NO balance:', error);
+          setNoBalance('0');
         }
+      } else {
+        setNoBalance('0');
       }
     };
     fetchNoBalance();

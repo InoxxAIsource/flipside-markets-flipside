@@ -70,13 +70,26 @@ The proxy wallet system uses a **minimal proxy pattern** with three distinct con
    - `/api/proxy/positions/:address`: Resolves user → proxy → position balances
    - All routes use `proxyWalletService.getProxyAddress()` first
 
-4. **Operations:**
-   - **Deposit:** Direct ERC20 transfer: `usdt.transfer(proxyAddress, amount)`
-   - **Withdraw:** Gasless via relayer: `ProxyWallet.execute(USDT, transferData)` as meta-tx
-   - **Split/Merge:** Gasless via relayer using EIP-712 signatures
-   - **Trading:** CLOB orders signed and submitted via proxy
+4. **Operations (Hybrid Gas Model - Updated Nov 15, 2025):**
+   
+   **User-Pays-Gas Operations** (Direct execution):
+   - **Deposit:** User calls `USDT.transfer(proxyAddress, amount)` → User pays gas
+   - **Withdraw:** User calls `proxyWallet.execute(USDT, transferCalldata)` → User pays gas
+   - **Split:** User calls `proxyWallet.executeBatch([approve, split])` → User pays gas
+   - **Merge:** User calls `proxyWallet.execute(ConditionalTokens, mergeCalldata)` → User pays gas
+   
+   **Gasless Operations** (Relayer-subsidized):
+   - **Limit Orders:** User signs EIP-712 order → Relayer calls `CTFExchange.fillOrder()` → FREE
+   - **Market Orders:** Same flow as limit orders → FREE
+   
+   **How User-Pays-Gas Works:**
+   - User's EOA calls `proxyWallet.execute()` or `proxyWallet.executeBatch()`
+   - Contract verifies `msg.sender == owner` (user's address)
+   - **User's EOA pays transaction gas**, NOT the proxy wallet contract
+   - Proxy wallet uses its USDT/token balance for internal operations
+   - No ETH needed in proxy wallet - user's EOA pays all gas
 
-- **Current Status:** Fully operational. User proxy wallets deployed, deposit/withdraw functional, gasless trading enabled.
+- **Current Status:** Hybrid gas model operational. Deposit/withdraw/split/merge require user gas payment (via MetaMask confirmation). Trading (limit/market orders) remains fully gasless via relayer.
 
 ### ✅ Platform MVP Complete - Production Ready
 
