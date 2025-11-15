@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { web3Service } from '../contracts/web3Service';
+import { getProxyWalletService } from './proxyWalletService';
 
 interface MetaTransaction {
   id: string;
@@ -87,7 +88,8 @@ export class RelayerService {
    */
   private async getUserNonce(userAddress: string): Promise<number> {
     try {
-      const nonce = await web3Service.proxyWallet.getNonce(userAddress);
+      const proxyWalletService = getProxyWalletService(web3Service, '', '');
+      const nonce = await proxyWalletService.getNonce(userAddress);
       return Number(nonce);
     } catch (error) {
       console.error(`Failed to fetch nonce for ${userAddress}, using 0:`, error);
