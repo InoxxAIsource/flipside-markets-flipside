@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { web3Service } from '../contracts/web3Service';
-import { getProxyWalletService } from './proxyWalletService';
+import type { ProxyWalletService } from './proxyWalletService';
 
 interface MetaTransaction {
   id: string;
@@ -24,6 +24,7 @@ export class RelayerService {
   private userNonces: Map<string, number> = new Map();
   private readonly RATE_LIMIT = 10; // Max 10 transactions per user per minute
   private userTxTimestamps: Map<string, number[]> = new Map();
+  private proxyWalletService: ProxyWalletService | null = null;
 
   constructor() {
     if (!process.env.RELAYER_PRIVATE_KEY) {
@@ -38,6 +39,13 @@ export class RelayerService {
     
     // Start processing queue
     this.processQueue();
+  }
+
+  /**
+   * Set shared ProxyWalletService instance (called after initialization to avoid circular deps)
+   */
+  setProxyWalletService(service: ProxyWalletService) {
+    this.proxyWalletService = service;
   }
 
   /**
@@ -88,11 +96,10 @@ export class RelayerService {
    */
   private async getUserNonce(userAddress: string): Promise<number> {
     try {
-      const { proxyWalletFactory, proxyWalletImpl } = web3Service;
-      const factoryAddress = await proxyWalletFactory.getAddress();
-      const implAddress = await proxyWalletImpl.getAddress();
-      const proxyWalletService = getProxyWalletService(web3Service, factoryAddress, implAddress);
-      const nonce = await proxyWalletService.getNonce(userAddress);
+      if (!this.proxyWalletService) {
+        throw new Error('ProxyWalletService not initialized in RelayerService');
+      }
+      const nonce = await this.proxyWalletService.getNonce(userAddress);
       return Number(nonce);
     } catch (error) {
       console.error(`Failed to fetch nonce for ${userAddress}, using 0:`, error);
@@ -210,15 +217,15 @@ export class RelayerService {
     metaTx.status = 'relayed';
 
     try {
-      // Get user's proxy wallet address
-      const { proxyWalletFactory, proxyWalletImpl } = web3Service;
-      const factoryAddress = await proxyWalletFactory.getAddress();
-      const implAddress = await proxyWalletImpl.getAddress();
-      const proxyWalletService = getProxyWalletService(web3Service, factoryAddress, implAddress);
-      const proxyAddress = await proxyWalletService.getProxyAddress(metaTx.user);
+      if (!this.proxyWalletService) {
+        throw new Error('ProxyWalletService not initialized in RelayerService');
+      }
+
+      // Get user's proxy wallet address using the shared service
+      const proxyAddress = await this.proxyWalletService.getProxyAddress(metaTx.user);
 
       // Check if proxy wallet is deployed
-      const isDeployed = await proxyWalletService.isDeployed(metaTx.user);
+      const isDeployed = await this.proxyWalletService.isDeployed(metaTx.user);
       if (!isDeployed) {
         throw new Error(`Proxy wallet not deployed for user ${metaTx.user}`);
       }

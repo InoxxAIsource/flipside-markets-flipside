@@ -70,6 +70,7 @@ app.use((req, res, next) => {
   // Wire up service dependencies
   splitMergeService.setProxyWalletService(proxyWalletService);
   splitMergeService.setRelayerService(relayerService);
+  relayerService.setProxyWalletService(proxyWalletService); // Critical: Use shared service instance
   
   // Make proxyWalletService available to routes (module-level, initialized before routes)
   setProxyWalletService(proxyWalletService);
