@@ -76,7 +76,11 @@ export class ProxyWalletService {
     private web3Service: Web3Service,
     private proxyFactoryAddress: string,
     private proxyImplementationAddress: string
-  ) {}
+  ) {
+    console.log(`🔧 ProxyWalletService initialized:`);
+    console.log(`  Factory: ${this.proxyFactoryAddress}`);
+    console.log(`  Implementation: ${this.proxyImplementationAddress}`);
+  }
 
   /**
    * Get deterministic proxy wallet address for a user
