@@ -257,10 +257,10 @@ export function useProxyWallet() {
   };
 
   /**
-   * Withdraw USDT from ProxyWallet (meta-transaction)
+   * Withdraw USDT from ProxyWallet (user pays gas directly)
    */
   const withdraw = async (amount: string): Promise<string> => {
-    if (!account || !proxyAddress) {
+    if (!account || !window.ethereum || !proxyAddress) {
       throw new Error('Wallet not connected or proxy not deployed');
     }
 
@@ -268,45 +268,54 @@ export function useProxyWallet() {
     try {
       toast({
         title: 'Withdrawal Pending',
-        description: 'Signing withdrawal transaction...',
+        description: 'Please confirm the transaction in MetaMask...',
       });
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
-      // Step 1: Encode USDT.transfer(user, amount)
+      // Encode USDT.transfer(user, amount)
       const usdtInterface = new ethers.Interface(MockUSDTABI);
       const transferData = usdtInterface.encodeFunctionData('transfer', [account, amountWei]);
 
-      // Step 2: Encode ProxyWallet.execute(USDT_ADDRESS, transferData, 0)
-      const proxyInterface = new ethers.Interface(ProxyWalletABI);
-      const executeData = proxyInterface.encodeFunctionData('execute', [
+      // Call ProxyWallet.execute directly (user pays gas)
+      const proxyWallet = new ethers.Contract(proxyAddress, ProxyWalletABI, signer);
+      
+      const tx = await proxyWallet.execute(
         CONTRACT_ADDRESSES.MockUSDT,
         transferData,
         0 // no ETH value
-      ]);
-
-      const txId = await signAndSubmitMetaTransaction(
-        proxyAddress,
-        executeData,
-        'Withdraw'
       );
 
       toast({
         title: 'Withdrawal Submitted',
-        description: `Withdrawing ${amount} USDT from ProxyWallet`,
+        description: `Withdrawing ${amount} USDT from ProxyWallet. Waiting for confirmation...`,
       });
 
-      // Refresh balance after a delay
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
-      }, 5000);
+      const receipt = await tx.wait();
 
-      return txId;
+      toast({
+        title: 'Withdrawal Successful',
+        description: `Successfully withdrew ${amount} USDT to your wallet`,
+      });
+
+      // Refresh balance
+      await queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
+
+      return receipt.hash;
     } catch (error: any) {
       console.error('Withdraw error:', error);
+      
+      let errorMessage = error.message || 'Failed to withdraw USDT';
+      if (errorMessage.includes('user rejected')) {
+        errorMessage = 'Transaction cancelled by user';
+      }
+      
       toast({
         title: 'Withdrawal Failed',
-        description: error.message || 'Failed to withdraw USDT',
+        description: errorMessage,
         variant: 'destructive',
       });
       throw error;
@@ -316,10 +325,10 @@ export function useProxyWallet() {
   };
 
   /**
-   * Split USDT into YES+NO tokens (meta-transaction)
+   * Split USDT into YES+NO tokens (user pays gas directly)
    */
   const split = async (conditionId: string, amount: string): Promise<string> => {
-    if (!account) {
+    if (!account || !window.ethereum) {
       throw new Error('Wallet not connected');
     }
 
@@ -346,8 +355,11 @@ export function useProxyWallet() {
 
       toast({
         title: 'Split Pending',
-        description: 'Signing split transaction...',
+        description: 'Please confirm the transaction in MetaMask...',
       });
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
@@ -368,36 +380,41 @@ export function useProxyWallet() {
         amountWei
       ]);
 
-      // Encode batch execution through ProxyWallet
-      // Must use positional tuple arrays, not objects
-      const proxyInterface = new ethers.Interface(ProxyWalletABI);
-      const batchData = proxyInterface.encodeFunctionData('executeBatch', [[
+      // Call ProxyWallet.executeBatch directly (user pays gas)
+      const proxyWallet = new ethers.Contract(proxyAddress, ProxyWalletABI, signer);
+      
+      const tx = await proxyWallet.executeBatch([
         [CONTRACT_ADDRESSES.MockUSDT, approveData, 0],
         [CONTRACT_ADDRESSES.ConditionalTokens, splitData, 0]
-      ]]);
-
-      const txId = await signAndSubmitMetaTransaction(
-        proxyAddress,
-        batchData,
-        'Split'
-      );
+      ]);
 
       toast({
         title: 'Split Submitted',
-        description: `Splitting ${amount} USDT into YES+NO tokens`,
+        description: `Splitting ${amount} USDT into YES+NO tokens. Waiting for confirmation...`,
       });
 
-      // Refresh balances after a delay
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
-      }, 5000);
+      const receipt = await tx.wait();
 
-      return txId;
+      toast({
+        title: 'Split Successful',
+        description: `Successfully split ${amount} USDT into YES+NO tokens`,
+      });
+
+      // Refresh balances
+      await queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
+
+      return receipt.hash;
     } catch (error: any) {
       console.error('Split error:', error);
+      
+      let errorMessage = error.message || 'Failed to split tokens';
+      if (errorMessage.includes('user rejected')) {
+        errorMessage = 'Transaction cancelled by user';
+      }
+      
       toast({
         title: 'Split Failed',
-        description: error.message || 'Failed to split tokens',
+        description: errorMessage,
         variant: 'destructive',
       });
       throw error;
@@ -407,10 +424,10 @@ export function useProxyWallet() {
   };
 
   /**
-   * Merge YES+NO tokens back to USDT (meta-transaction)
+   * Merge YES+NO tokens back to USDT (user pays gas directly)
    */
   const merge = async (conditionId: string, amount: string): Promise<string> => {
-    if (!account) {
+    if (!account || !window.ethereum) {
       throw new Error('Wallet not connected');
     }
 
@@ -422,8 +439,11 @@ export function useProxyWallet() {
     try {
       toast({
         title: 'Merge Pending',
-        description: 'Signing merge transaction...',
+        description: 'Please confirm the transaction in MetaMask...',
       });
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
       const amountWei = ethers.parseUnits(amount, 6); // USDT has 6 decimals
 
@@ -437,36 +457,42 @@ export function useProxyWallet() {
         amountWei
       ]);
 
-      // Encode execute call through ProxyWallet
-      const proxyInterface = new ethers.Interface(ProxyWalletABI);
-      const executeData = proxyInterface.encodeFunctionData('execute', [
+      // Call ProxyWallet.execute directly (user pays gas)
+      const proxyWallet = new ethers.Contract(proxyAddress, ProxyWalletABI, signer);
+      
+      const tx = await proxyWallet.execute(
         CONTRACT_ADDRESSES.ConditionalTokens,
         mergeData,
         0 // no ETH value
-      ]);
-
-      const txId = await signAndSubmitMetaTransaction(
-        proxyAddress,
-        executeData,
-        'Merge'
       );
 
       toast({
         title: 'Merge Submitted',
-        description: `Merging ${amount} YES+NO tokens to USDT`,
+        description: `Merging ${amount} YES+NO tokens to USDT. Waiting for confirmation...`,
       });
 
-      // Refresh balances after a delay
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
-      }, 5000);
+      const receipt = await tx.wait();
 
-      return txId;
+      toast({
+        title: 'Merge Successful',
+        description: `Successfully merged ${amount} YES+NO tokens to USDT`,
+      });
+
+      // Refresh balances
+      await queryClient.invalidateQueries({ queryKey: ['/api/proxy/balance', account] });
+
+      return receipt.hash;
     } catch (error: any) {
       console.error('Merge error:', error);
+      
+      let errorMessage = error.message || 'Failed to merge tokens';
+      if (errorMessage.includes('user rejected')) {
+        errorMessage = 'Transaction cancelled by user';
+      }
+      
       toast({
         title: 'Merge Failed',
-        description: error.message || 'Failed to merge tokens',
+        description: errorMessage,
         variant: 'destructive',
       });
       throw error;
