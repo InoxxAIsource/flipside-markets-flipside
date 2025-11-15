@@ -328,6 +328,21 @@ export function useProxyWallet() {
 
     setIsSplitting(true);
     try {
+      // Check proxy USDT balance before splitting
+      const balanceResponse = await fetch(`/api/proxy/balance/${account}`);
+      
+      if (!balanceResponse.ok) {
+        throw new Error('Failed to check USDT balance');
+      }
+      
+      const { balance } = await balanceResponse.json();
+      const proxyBalance = parseFloat(balance);
+      const requestedAmount = parseFloat(amount);
+      
+      if (isNaN(proxyBalance) || proxyBalance < requestedAmount) {
+        throw new Error(`Insufficient USDT balance. You have ${proxyBalance.toFixed(2)} USDT but trying to split ${requestedAmount.toFixed(2)} USDT. Please deposit more USDT to your proxy wallet first.`);
+      }
+
       toast({
         title: 'Split Pending',
         description: 'Signing split transaction...',
