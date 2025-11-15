@@ -215,7 +215,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
         tokenId: tokenId,
         makerAmount: ethers.parseUnits(size.toString(), 6).toString(),
         takerAmount: ethers.parseUnits(price.toString(), 6).toString(),
-        side: 0,
+        side: orderSide === 'buy' ? 0 : 1,
         feeRateBps: 250,
         nonce: BigInt(nonce),
         signer: account,
