@@ -9,8 +9,8 @@ const MockUSDTABI = [
 ];
 
 const ProxyWalletFactoryABI = [
-  'function getInstanceAddress(address user) view returns (address)',
-  'function deployProxyWallet() returns (address)',
+  'function getInstanceAddress(address implementation, address user) view returns (address)',
+  'function maybeMakeWallet(address implementation, address instanceAddress, address user) returns (address)',
 ];
 
 const ProxyWalletABI = [
@@ -55,7 +55,10 @@ async function main() {
 
   // Step 1: Check if proxy wallet is deployed
   console.log('\n📍 Step 1: Check proxy wallet deployment');
-  const proxyAddress = await factory.getInstanceAddress(userAddress);
+  const proxyAddress = await factory.getInstanceAddress(
+    CONTRACT_ADDRESSES.PROXY_WALLET_IMPL,
+    userAddress
+  );
   console.log(`   Proxy address (deterministic): ${proxyAddress}`);
 
   const proxyCode = await provider.getCode(proxyAddress);
@@ -63,7 +66,11 @@ async function main() {
 
   if (!isDeployed) {
     console.log('   ⚠️  Proxy not deployed yet - deploying now...');
-    const deployTx = await factory.deployProxyWallet();
+    const deployTx = await factory.maybeMakeWallet(
+      CONTRACT_ADDRESSES.PROXY_WALLET_IMPL,
+      proxyAddress,
+      userAddress
+    );
     console.log(`   Transaction: ${deployTx.hash}`);
     await deployTx.wait();
     console.log('   ✅ Proxy wallet deployed!');
@@ -107,6 +114,18 @@ async function main() {
   console.log('\n📍 Step 4: Split USDT into YES+NO tokens (gasless)');
   const splitAmount = ethers.parseUnits('5', 6);
   
+  // First approve ConditionalTokens to spend proxy's USDT
+  console.log('   Approving ConditionalTokens to spend proxy USDT...');
+  const proxyAsOwner = new ethers.Contract(proxyAddress, ProxyWalletABI, wallet);
+  const usdtInterface = new ethers.Interface(MockUSDTABI);
+  const approveData = usdtInterface.encodeFunctionData('approve', [
+    CONTRACT_ADDRESSES.CONDITIONAL_TOKENS,
+    ethers.MaxUint256,
+  ]);
+  const ctApproveTx = await proxyAsOwner.execute(CONTRACT_ADDRESSES.MOCK_USDT, approveData, 0);
+  await ctApproveTx.wait();
+  console.log('   ✅ Approval complete');
+  
   // Get a sample market's conditionId (we'll use the first market from API)
   const marketResponse = await fetch('http://localhost:5000/api/markets');
   const markets = await marketResponse.json();
@@ -119,7 +138,7 @@ async function main() {
     console.log(`   Using market: ${market.question}`);
     console.log(`   ConditionId: ${conditionId}`);
 
-    // Encode splitPosition call
+    // Encode splitPosition call (call ConditionalTokens directly, not through execute)
     const ctInterface = new ethers.Interface(ConditionalTokensABI);
     const splitData = ctInterface.encodeFunctionData('splitPosition', [
       CONTRACT_ADDRESSES.MOCK_USDT,
@@ -127,14 +146,6 @@ async function main() {
       conditionId,
       [1, 2], // partition for binary outcome
       splitAmount,
-    ]);
-
-    // Encode proxy execute call
-    const proxyInterface = new ethers.Interface(ProxyWalletABI);
-    const executeData = proxyInterface.encodeFunctionData('execute', [
-      CONTRACT_ADDRESSES.CONDITIONAL_TOKENS,
-      splitData,
-      0, // no ETH value
     ]);
 
     // Get nonce from contract
@@ -161,8 +172,8 @@ async function main() {
 
     const value = {
       user: userAddress,
-      target: proxyAddress,
-      data: executeData,
+      target: CONTRACT_ADDRESSES.CONDITIONAL_TOKENS,
+      data: splitData,
       nonce,
       deadline,
     };
@@ -178,8 +189,8 @@ async function main() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user: userAddress,
-        target: proxyAddress,
-        data: executeData,
+        target: CONTRACT_ADDRESSES.CONDITIONAL_TOKENS,
+        data: splitData,
         signature,
         deadline: deadline.toString(),
       }),
@@ -220,17 +231,8 @@ async function main() {
   console.log('\n📍 Step 5: Withdraw USDT from proxy (gasless)');
   const withdrawAmount = ethers.parseUnits('2', 6);
 
-  // Encode USDT transfer
-  const usdtInterface = new ethers.Interface(MockUSDTABI);
+  // Encode USDT transfer (call USDT directly, not through execute)
   const transferData = usdtInterface.encodeFunctionData('transfer', [userAddress, withdrawAmount]);
-
-  // Encode proxy execute
-  const proxyInterface = new ethers.Interface(ProxyWalletABI);
-  const withdrawExecuteData = proxyInterface.encodeFunctionData('execute', [
-    CONTRACT_ADDRESSES.MOCK_USDT,
-    transferData,
-    0,
-  ]);
 
   // Get updated nonce
   const withdrawNonce = await proxy.nonces(userAddress);
@@ -255,8 +257,8 @@ async function main() {
 
   const withdrawValue = {
     user: userAddress,
-    target: proxyAddress,
-    data: withdrawExecuteData,
+    target: CONTRACT_ADDRESSES.MOCK_USDT,
+    data: transferData,
     nonce: withdrawNonce,
     deadline: withdrawDeadline,
   };
@@ -270,8 +272,8 @@ async function main() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       user: userAddress,
-      target: proxyAddress,
-      data: withdrawExecuteData,
+      target: CONTRACT_ADDRESSES.MOCK_USDT,
+      data: transferData,
       signature: withdrawSignature,
       deadline: withdrawDeadline.toString(),
     }),
