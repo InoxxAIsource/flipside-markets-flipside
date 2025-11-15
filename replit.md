@@ -45,18 +45,21 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced PriceChart**: Purple gradient line chart (Polymarket style) with optional baseline reference for Pyth markets
 - **OracleInfo**: Displays Pyth oracle details (feed ID, baseline price, resolver link) similar to Polymarket's Binance resolver
 - **Enhanced MarketCard**: Cleaner layout with countdown timer, volume display, oracle badge, and improved price display
+- **TradingView Widget**: Embedded live price chart showing real-time Binance prices for oracle resolution sources
 
 **Integration:**
 - Market detail page now shows countdown timer in header
 - Price chart displays baseline reference line for Pyth oracle markets
-- Oracle information prominently displayed in sidebar
+- Oracle information prominently displayed in sidebar with embedded TradingView chart
 - Market cards show live countdown, volume, and oracle status badges
+- Resolution Source displays live Binance price chart (ETH/USD, BTC/USD, SOL/USD) instead of simple link
 
 **Design Impact:**
 - Matches Polymarket's clean, professional aesthetic
 - Better information hierarchy and readability
 - Real-time updates improve user engagement
 - Oracle transparency builds trust in automated resolution
+- Live price charts provide context for market resolution criteria
 
 ## System Architecture
 
