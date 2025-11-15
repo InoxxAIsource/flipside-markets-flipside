@@ -441,7 +441,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
     }
   };
 
-  const proxyBalanceFormatted = parseFloat(proxyBalance || '0');
+  const proxyBalanceFormatted = parseFloat(ethers.formatUnits(proxyBalance || '0', 6));
 
   return (
     <Card className="p-6">
