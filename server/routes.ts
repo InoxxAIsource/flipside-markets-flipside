@@ -444,9 +444,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const makerAmountWei = ethers.parseUnits(orderData.size.toString(), 6).toString();
       const takerAmountWei = ethers.parseUnits(orderData.price.toString(), 6).toString();
       
-      // Convert nonce to BigInt for signature verification
-      // Frontend signs with BigInt but JSON converts to string
+      // Convert nonce and expiration to BigInt for signature verification
+      // Frontend signs with BigInt but JSON converts to string/Date
       const nonceBigInt = BigInt(orderData.nonce);
+      const expirationBigInt = BigInt(Math.floor(orderData.expiration.getTime() / 1000));
       
       const isValid = await web3Service.verifyOrderSignature(
         {
@@ -459,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           feeRateBps: 250, // 2.5%
           nonce: nonceBigInt,
           signer: orderData.makerAddress,
-          expiration: Math.floor(orderData.expiration.getTime() / 1000),
+          expiration: expirationBigInt,
         },
         orderData.signature
       );

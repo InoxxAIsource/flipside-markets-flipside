@@ -42,7 +42,7 @@ export interface Order {
   feeRateBps: number; // basis points (e.g., 250 = 2.5%)
   nonce: bigint;
   signer: string;
-  expiration: number; // Unix timestamp
+  expiration: bigint | number; // Unix timestamp (BigInt for signing, number for storage)
   signature?: string;
 }
 
