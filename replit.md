@@ -24,17 +24,17 @@ The proxy wallet system uses a **minimal proxy pattern** with three distinct con
    - **Users NEVER interact with this address directly**
    - Computes each user's proxy address based on their EOA
 
-3. **User-Specific Proxy Wallets** (e.g., `0x67ccA9e2fA82C43BD9d4dF720567Cd5E420859Db`)
+3. **User-Specific Proxy Wallets** (e.g., `0x5310f3e87C94c57846404654AB7C16De3A35d0d7`)
    - **THIS is where users deposit USDT and interact**
    - Each user gets their own unique proxy wallet address
-   - Deterministically computed: same user address → same proxy address
-   - Delegates all calls to the implementation contract
+   - Deterministically computed via CREATE2: `keccak256(0xff, factory, salt, keccak256(ProxyWallet.creationCode + args))`
+   - **IMPORTANT**: Address changes if ProxyWallet.sol bytecode changes
    - Holds user's actual USDT and token balances
 
 **Example Flow:**
 - User wallet: `0x73eB...Aab7`
-- Factory computes proxy via CREATE2: `0x67cc...59Db` (deterministic, unique to this user)
-- User deposits 350 USDT → **proxy address** `0x67cc...59Db`
+- Factory computes proxy via CREATE2: `0x5310...0d7` (deterministic for current ProxyWallet bytecode)
+- User deposits USDT → **proxy address** `0x5310...0d7`
 - All operations (split, merge, trade) happen through this proxy
 - Proxy delegates logic to implementation `0xc50c...b5A7`
 
