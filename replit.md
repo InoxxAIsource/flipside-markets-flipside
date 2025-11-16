@@ -7,6 +7,12 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 16, 2025
+- **Polymarket-Style Share Price Formatting**: Updated all share price displays to use cents (50¢) instead of decimals ($0.50)
+  - MarketCard buy buttons now show "Buy Yes 50¢" instead of "Buy Yes 50%"
+  - Order book displays share prices as "50¢" instead of "$0.50"
+  - Trading interface, charts, and all portfolio/profile pages use cent formatting
+  - Oracle markets continue to show full dollar prices (e.g., $95,432.18 for BTC)
+  - Implemented via new `formatSharePrice()` utility function in `client/src/lib/priceParser.ts`
 - **Oracle Price Display Enhancement**: Added Polymarket-style live price display for all oracle markets (crypto, gold, silver)
   - Market cards now show current asset price vs target price instead of YES/NO percentages for oracle markets
   - Detail pages display real-time prices with "PRICE TO BEAT" vs "CURRENT PRICE" layout

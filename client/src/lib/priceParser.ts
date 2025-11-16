@@ -63,7 +63,7 @@ export function formatPrice(price: number, decimals?: number): string {
  * @returns Formatted price as cents (e.g., "50¢" instead of "$0.50")
  */
 export function formatSharePrice(price: number): string {
-  // Convert price to cents and round
-  const cents = Math.round(price * 100);
+  // Convert price to cents and round, capping at 99¢ to match Polymarket
+  const cents = Math.min(Math.round(price * 100), 99);
   return `${cents}¢`;
 }
