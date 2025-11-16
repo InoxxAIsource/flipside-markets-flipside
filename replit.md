@@ -194,6 +194,92 @@ The platform operates on the Ethereum Sepolia testnet, utilizing seven key smart
 
 The UI/UX is inspired by Polymarket and other trading platforms, utilizing shadcn/ui (Radix UI) and Tailwind CSS for a modern, responsive design. Features include a market browse page with filtering, a comprehensive trading interface with order books and price charts, a market creation form, and a portfolio dashboard with order history and position tracking. A hybrid gas model is implemented for transactions, with user-pays-gas for deposits/withdrawals/splits/merges and gasless (relayer-subsidized) operations for limit/market orders.
 
+## Planned Features
+
+### 🚰 MockUSDT Faucet System (To Be Implemented)
+
+**Overview:**
+A smart faucet system to help new users test the platform by automatically offering free test USDT when they need it.
+
+**Smart UX Flow:**
+```
+User clicks "Buy YES/NO" on market card
+  ↓
+Is wallet connected? → NO → Show "Connect Wallet" message
+  ↓ YES
+Check MockUSDT balance in ProxyWallet
+  ↓
+Balance < 10 USDT? → YES → Show faucet claim dialog
+  ↓ NO
+Proceed directly to trading panel (no popup)
+```
+
+**Key Features:**
+- ✅ Only users with **connected wallets** see faucet option
+- ✅ Only users with **low/zero MockUSDT** see faucet popup (balance < 10 USDT)
+- ✅ Users with **sufficient balance** skip directly to trading
+- ✅ Smart blockchain balance detection from ProxyWallet
+- ✅ After claiming, balance refreshes and trading continues seamlessly
+
+**Technical Implementation:**
+
+**Smart Contract:** (`contracts/MockUSDTFaucet.sol`)
+- ✅ **Completed**: Contract created with 24-hour rate limiting
+- Rate limiting: Each wallet can claim **10 USDT every 24 hours**
+- Lifetime limit: 100 USDT per wallet maximum
+- Security: ReentrancyGuard, CEI pattern, owner controls
+- Functions:
+  - `requestTokens()`: Main claim function
+  - `getTimeUntilNextRequest(address)`: Check cooldown remaining
+  - `canRequest(address)`: Check if user is eligible now
+  - `getRemainingAllowance(address)`: Check lifetime remaining
+
+**Contract Configuration:**
+- Withdrawal amount: 10 USDT (10_000_000 with 6 decimals)
+- Lock time: 24 hours (86400 seconds)
+- Max total withdrawal: 100 USDT per address
+- Connected to: MockUSDT at `0xAf24D4DDbA993F6b11372528C678edb718a097Aa`
+
+**Deployment Steps (Pending):**
+1. Deploy `MockUSDTFaucet.sol` to Sepolia testnet
+   - Script ready: `deployment/scripts/deployFaucet.ts`
+   - Run: `tsx deployment/scripts/deployFaucet.ts`
+2. Verify contract on Etherscan
+3. Fund faucet with MockUSDT from deployer wallet
+4. Add faucet address to `server/config/contracts.ts`
+
+**Frontend Integration (Pending):**
+1. Create `useMockUSDTBalance` hook to check ProxyWallet USDT balance
+2. Create `FaucetDialog` component with:
+   - Claim button
+   - Countdown timer showing time until next claim
+   - Current balance display
+   - Transaction status handling
+3. Integrate balance check into `MarketCard.tsx`:
+   - Before opening trade panel, check balance
+   - If balance < 10 USDT, show faucet dialog
+   - If balance >= 10 USDT, open trade panel directly
+4. Auto-refresh balance after successful claim
+
+**User Experience:**
+- Zero friction for users with tokens
+- One-click claim for new users
+- No separate faucet page needed
+- Contextual help exactly when needed
+- Clear countdown timer prevents spam
+
+**Files Created:**
+- `contracts/MockUSDTFaucet.sol` - Faucet smart contract
+- `deployment/scripts/deployFaucet.ts` - Deployment script
+
+**Next Steps When Resuming:**
+1. Deploy faucet contract to Sepolia
+2. Fund it with initial MockUSDT supply
+3. Build frontend balance detection hook
+4. Create faucet dialog UI component
+5. Integrate into market card click flow
+6. Test end-to-end user experience
+
 ## External Dependencies
 
 ### Third-Party Services
