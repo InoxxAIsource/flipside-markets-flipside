@@ -4,6 +4,19 @@
 
 Flipside is a full-stack prediction market platform on the Ethereum Sepolia testnet. It allows users to create, trade, and resolve prediction markets on crypto and real-world events. Inspired by Polymarket, Flipside combines trustless blockchain operations with a modern web interface and a seamless traditional web stack (React, Express, PostgreSQL). The project aims to provide a robust and intuitive platform for decentralized prediction markets.
 
+## Recent Changes
+
+### November 16, 2025
+- **Oracle Price Display Enhancement**: Added Polymarket-style live price display for all oracle markets (crypto, gold, silver)
+  - Market cards now show current asset price vs target price instead of YES/NO percentages for oracle markets
+  - Detail pages display real-time prices with "PRICE TO BEAT" vs "CURRENT PRICE" layout
+  - Charts show actual asset price history with target reference lines
+  - Prices auto-refresh every 30 seconds on cards, 10 seconds on detail pages
+- **New Pyth Price Feeds Added**:
+  - XRP/USD: `0xec5d399846a9209f3fe5881d70aae9268c94339ff9817e8d18ff19fa05eea1c8`
+  - BNB/USD: `0x2f95862b045670cd22bee3114c39763a4a08beeb663b145d283c31d7d1101c4f`
+  - Silver (XAG/USD): `0xf2fb02c32b055c805e7238d628e5e9dadef274376114eb1f012337cabe93871e`
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
