@@ -1,4 +1,4 @@
-# Design Guidelines: Prediction Market Platform
+# Design Guidelines: Flipside
 
 ## Design Approach
 

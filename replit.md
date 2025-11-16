@@ -1,8 +1,8 @@
-# Prediction Market Platform
+# Flipside
 
 ## Overview
 
-This project is a full-stack prediction market platform on the Ethereum Sepolia testnet, enabling users to create, trade, and resolve prediction markets on real-world events. It features a modern web interface inspired by Polymarket, integrated with a blockchain backend. The platform's purpose is to offer a robust and intuitive decentralized prediction market experience, combining trustless blockchain operations with a seamless traditional web stack (React, Express, PostgreSQL).
+Flipside is a full-stack prediction market platform on the Ethereum Sepolia testnet. Users can create, trade, and resolve prediction markets on crypto and real-world events. With a modern web interface inspired by Polymarket and crypto-native UX patterns, Flipside combines trustless blockchain operations with a seamless traditional web stack (React, Express, PostgreSQL). The name "Flipside" captures the essence of trading - every market has two sides, and users profit by picking the right one.
 
 ## User Preferences
 

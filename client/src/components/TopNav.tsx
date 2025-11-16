@@ -15,9 +15,9 @@ export function TopNav({ onSearch }: TopNavProps) {
       <div className="container flex h-16 items-center gap-4 px-4">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">P</span>
+            <span className="text-primary-foreground font-bold text-lg">F</span>
           </div>
-          <span className="font-bold text-xl hidden sm:inline">PredictMarket</span>
+          <span className="font-bold text-xl hidden sm:inline">Flipside</span>
         </div>
         
         <div className="flex-1 flex items-center justify-center max-w-2xl mx-auto">
