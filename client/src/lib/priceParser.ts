@@ -56,3 +56,14 @@ export function formatPrice(price: number, decimals?: number): string {
     maximumFractionDigits: decimals,
   });
 }
+
+/**
+ * Formats a prediction market share price as cents (Polymarket-style)
+ * @param price - Share price (between 0 and 1)
+ * @returns Formatted price as cents (e.g., "50¢" instead of "$0.50")
+ */
+export function formatSharePrice(price: number): string {
+  // Convert price to cents and round
+  const cents = Math.round(price * 100);
+  return `${cents}¢`;
+}
