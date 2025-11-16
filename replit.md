@@ -12,6 +12,35 @@ Preferred communication style: Simple, everyday language.
 
 ### November 16, 2025
 
+#### ✅ Image Upload Feature with Automatic Resizing
+
+**New Features:**
+- **File Upload System**: Users can now upload custom images directly from their device
+- **Automatic Image Processing**: All uploaded images are automatically resized to 800x450px (16:9 aspect ratio)
+- **Image Preview**: Live preview of uploaded images before creating market
+- **Format Optimization**: Images automatically converted to WebP format for optimal performance
+
+**Technical Implementation:**
+- **Backend**: 
+  - POST /api/markets/upload-image endpoint with multer middleware
+  - Sharp library for high-quality image resizing and format conversion
+  - File validation: 5MB max, JPG/PNG/WebP accepted
+  - Unique filename generation with timestamp and random suffix
+  - Stored in attached_assets/market_images/ directory
+- **Frontend**:
+  - File upload UI with clear size/format guidance
+  - Real-time image preview at 192px height (matches card display)
+  - Upload progress indicator with loading states
+  - Error handling with toast notifications for invalid files
+  - Form schema updated to accept both absolute URLs and relative paths
+
+**User Experience:**
+- Click "Upload Image" button to select file from device
+- Instant preview after successful upload
+- Clear "Remove" button to change selection
+- Automatic form field population after upload
+- No manual URL entry needed for uploaded images
+
 #### ✅ CallMyBluff-Style Market Cards with Featured Images
 
 **New Features:**
@@ -34,7 +63,7 @@ Preferred communication style: Simple, everyday language.
   - Buy buttons navigate to market detail with pre-configured action and outcome
 
 **User Experience:**
-- Users can add custom images when creating markets
+- Users can upload custom images when creating markets OR paste image URLs
 - Crypto-related markets automatically get brand logos without manual configuration
 - One-click trading directly from market cards
 - Cleaner, more visual market browsing experience
