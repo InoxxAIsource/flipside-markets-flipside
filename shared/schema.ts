@@ -47,6 +47,7 @@ export const markets = pgTable("markets", {
   // Pyth integration for automated resolution
   pythPriceFeedId: text("pyth_price_feed_id"), // Pyth price feed identifier
   baselinePrice: real("baseline_price"), // Reference price for resolution
+  targetPrice: real("target_price"), // Target price threshold extracted from question (e.g., 97000 for "Will BTC hit $97,000?")
   
   // Social media integration
   tweetUrl: text("tweet_url"), // URL of auto-posted tweet on X (Twitter)
