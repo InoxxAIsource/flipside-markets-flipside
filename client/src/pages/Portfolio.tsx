@@ -10,6 +10,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { DepositWithdrawPanel } from "@/components/DepositWithdrawPanel";
+import { formatSharePrice } from "@/lib/priceParser";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -243,12 +244,12 @@ export default function Portfolio() {
                           <Badge variant="outline">{position.market.category}</Badge>
                           {position.yesShares > 0 && (
                             <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20">
-                              YES: {position.yesShares.toFixed(2)} @ ${position.market.yesPrice.toFixed(3)}
+                              YES: {position.yesShares.toFixed(2)} @ {formatSharePrice(position.market.yesPrice)}
                             </Badge>
                           )}
                           {position.noShares > 0 && (
                             <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20">
-                              NO: {position.noShares.toFixed(2)} @ ${position.market.noPrice.toFixed(3)}
+                              NO: {position.noShares.toFixed(2)} @ {formatSharePrice(position.market.noPrice)}
                             </Badge>
                           )}
                         </div>
@@ -304,7 +305,7 @@ export default function Portfolio() {
                             {order.outcome ? 'YES' : 'NO'}
                           </Badge>
                           <Badge variant="outline">
-                            ${order.price.toFixed(3)} × {order.size.toFixed(2)}
+                            {formatSharePrice(order.price)} × {order.size.toFixed(2)}
                           </Badge>
                           {order.filled > 0 && (
                             <Badge variant="outline">
@@ -386,7 +387,7 @@ export default function Portfolio() {
                             {order.outcome ? 'YES' : 'NO'}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            ${order.price.toFixed(3)} × {order.size.toFixed(2)}
+                            {formatSharePrice(order.price)} × {order.size.toFixed(2)}
                           </span>
                           {order.status === 'filled' && (
                             <CheckCircle2 className="w-4 h-4 text-green-500" />

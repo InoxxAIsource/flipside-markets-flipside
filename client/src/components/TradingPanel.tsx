@@ -14,6 +14,7 @@ import { useProxyWallet } from '@/hooks/use-proxy-wallet';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CONTRACT_ADDRESSES } from '@/lib/web3';
+import { formatSharePrice } from '@/lib/priceParser';
 import type { Order } from '@shared/schema';
 
 interface TradingPanelProps {
@@ -257,7 +258,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
       toast({
         title: 'Order Placed',
-        description: `${orderSide.toUpperCase()} ${size} ${limitSide.toUpperCase()} shares at $${price.toFixed(2)}`,
+        description: `${orderSide.toUpperCase()} ${size} ${limitSide.toUpperCase()} shares at ${formatSharePrice(price)}`,
       });
 
       setLimitPrice('');
@@ -533,13 +534,13 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
               <div className="flex justify-between text-sm">
                 <span>Best {limitSide === 'yes' ? 'YES' : 'NO'} Bid:</span>
                 <span className="font-mono">
-                  ${(limitSide === 'yes' ? bestPrices.yesBid : bestPrices.noBid).toFixed(2)}
+                  {formatSharePrice(limitSide === 'yes' ? bestPrices.yesBid : bestPrices.noBid)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Best {limitSide === 'yes' ? 'YES' : 'NO'} Ask:</span>
                 <span className="font-mono">
-                  ${(limitSide === 'yes' ? bestPrices.yesAsk : bestPrices.noAsk).toFixed(2)}
+                  {formatSharePrice(limitSide === 'yes' ? bestPrices.yesAsk : bestPrices.noAsk)}
                 </span>
               </div>
             </div>
@@ -637,7 +638,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
             <div className="flex justify-between text-sm">
               <span>Estimated Price:</span>
               <span className="font-mono font-semibold" data-testid="text-market-price">
-                ${marketEstimatedPrice.toFixed(2)} USDT
+                {formatSharePrice(marketEstimatedPrice)}
               </span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">

@@ -7,6 +7,7 @@ import { useWallet } from '@/hooks/use-wallet';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
+import { formatSharePrice } from '@/lib/priceParser';
 import type { Order, Position, Market } from '@shared/schema';
 
 export default function Profile() {
@@ -128,7 +129,7 @@ export default function Profile() {
                         </div>
                         <div className="text-right">
                           <div className="font-mono text-sm" data-testid={`order-price-${order.id}`}>
-                            ${order.price.toFixed(2)}
+                            {formatSharePrice(order.price)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
@@ -239,7 +240,7 @@ export default function Profile() {
                             {position.yesShares.toFixed(2)}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            @ ${market?.yesPrice.toFixed(2) || '0.00'}
+                            @ {market ? formatSharePrice(market.yesPrice) : '0¢'}
                           </div>
                         </div>
 
@@ -249,7 +250,7 @@ export default function Profile() {
                             {position.noShares.toFixed(2)}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            @ ${market?.noPrice.toFixed(2) || '0.00'}
+                            @ {market ? formatSharePrice(market.noPrice) : '0¢'}
                           </div>
                         </div>
                       </div>

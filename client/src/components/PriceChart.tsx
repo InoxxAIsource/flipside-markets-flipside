@@ -1,5 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { formatPrice } from '@/lib/priceParser';
+import { formatPrice, formatSharePrice } from '@/lib/priceParser';
 
 interface PriceChartProps {
   data?: Array<{ time: string; price: number }>;
@@ -77,7 +77,7 @@ export function PriceChart({
             tick={{ fill: 'hsl(var(--muted-foreground))' }}
             tickFormatter={(value) => 
               mode === 'probability' 
-                ? `$${(value / 100).toFixed(2)}`
+                ? formatSharePrice(value / 100)
                 : `$${formatPrice(value)}`
             }
           />
@@ -92,7 +92,7 @@ export function PriceChart({
             labelStyle={{ color: 'hsl(var(--foreground))' }}
             formatter={(value: any) => [
               mode === 'probability' 
-                ? `$${(value / 100).toFixed(2)}` 
+                ? formatSharePrice(value / 100)
                 : `$${formatPrice(value)}`,
               mode === 'probability' ? 'YES Price' : 'Asset Price'
             ]}
@@ -106,7 +106,7 @@ export function PriceChart({
               strokeDasharray="3 3" 
               strokeWidth={1}
               label={{ 
-                value: `Baseline: $${baselinePrice.toFixed(2)}`, 
+                value: `Baseline: ${formatSharePrice(baselinePrice)}`, 
                 position: 'right',
                 fill: 'hsl(var(--muted-foreground))',
                 fontSize: 11
