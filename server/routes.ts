@@ -784,5 +784,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Portfolio Routes ==========
+
+  // GET /api/portfolio/positions/:address - Get user positions with market data and PNL
+  app.get('/api/portfolio/positions/:address', async (req, res) => {
+    try {
+      const userAddress = req.params.address;
+      const positions = await storage.getUserPositions(userAddress);
+      
+      // Enrich positions with market data and calculate unrealized PNL
+      const enrichedPositions = await Promise.all(
+        positions
+          .filter(p => p.yesShares > 0 || p.noShares > 0) // Only positions with shares
+          .map(async (position) => {
+            const market = await storage.getMarket(position.marketId);
+            if (!market) return null;
+            
+            // Calculate current value and unrealized PNL
+            const yesValue = position.yesShares * market.yesPrice;
+            const noValue = position.noShares * market.noPrice;
+            const currentValue = yesValue + noValue;
+            const unrealizedPnl = currentValue - position.totalInvested;
+            const unrealizedPnlPercent = position.totalInvested > 0 
+              ? (unrealizedPnl / position.totalInvested) * 100 
+              : 0;
+            
+            return {
+              ...position,
+              market: {
+                id: market.id,
+                question: market.question,
+                category: market.category,
+                yesPrice: market.yesPrice,
+                noPrice: market.noPrice,
+                expiresAt: market.expiresAt,
+                resolved: market.resolved,
+                outcome: market.outcome,
+              },
+              currentValue,
+              unrealizedPnl,
+              unrealizedPnlPercent,
+            };
+          })
+      );
+      
+      res.json(enrichedPositions.filter(p => p !== null));
+    } catch (error: any) {
+      console.error('Error fetching portfolio positions:', error);
+      res.status(500).json({ error: 'Failed to fetch portfolio positions' });
+    }
+  });
+
+  // GET /api/portfolio/pnl/:address - Get comprehensive PNL summary
+  app.get('/api/portfolio/pnl/:address', async (req, res) => {
+    try {
+      const userAddress = req.params.address;
+      const positions = await storage.getUserPositions(userAddress);
+      const markets = await storage.getAllMarkets();
+      const marketMap = new Map(markets.map(m => [m.id, m]));
+      
+      // Calculate total portfolio value and unrealized PNL
+      let totalValue = 0;
+      let totalInvested = 0;
+      let totalRealizedPnl = 0;
+      let totalUnrealizedPnl = 0;
+      
+      positions.forEach(position => {
+        const market = marketMap.get(position.marketId);
+        if (!market) return;
+        
+        const yesValue = position.yesShares * market.yesPrice;
+        const noValue = position.noShares * market.noPrice;
+        const currentValue = yesValue + noValue;
+        
+        totalValue += currentValue;
+        totalInvested += position.totalInvested;
+        totalRealizedPnl += position.realizedPnl;
+        totalUnrealizedPnl += (currentValue - position.totalInvested);
+      });
+      
+      const totalPnl = totalRealizedPnl + totalUnrealizedPnl;
+      const totalPnlPercent = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
+      
+      // Calculate win rate from filled orders
+      const allOrders = await storage.getUserOrders(userAddress);
+      const filledOrders = allOrders.filter(o => o.status === 'filled');
+      const wins = filledOrders.filter(order => {
+        const market = marketMap.get(order.marketId);
+        if (!market || !market.resolved) return false;
+        // Win if bought YES and market resolved YES, or bought NO and market resolved NO
+        return (order.side === 'buy' && order.outcome === market.outcome);
+      }).length;
+      
+      const winRate = filledOrders.length > 0 ? (wins / filledOrders.length) * 100 : 0;
+      
+      // Calculate today's PNL (simplified - would need order fills with timestamps)
+      const todayPnl = 0; // TODO: Implement based on today's fills
+      
+      res.json({
+        totalValue,
+        totalInvested,
+        totalPnl,
+        totalPnlPercent,
+        totalRealizedPnl,
+        totalUnrealizedPnl,
+        winRate,
+        todayPnl,
+        totalTrades: filledOrders.length,
+        wins,
+        losses: filledOrders.length - wins,
+      });
+    } catch (error: any) {
+      console.error('Error calculating PNL:', error);
+      res.status(500).json({ error: 'Failed to calculate PNL' });
+    }
+  });
+
+  // GET /api/portfolio/history/:address - Get order history with fills
+  app.get('/api/portfolio/history/:address', async (req, res) => {
+    try {
+      const userAddress = req.params.address;
+      const orders = await storage.getUserOrders(userAddress);
+      const markets = await storage.getAllMarkets();
+      const marketMap = new Map(markets.map(m => [m.id, m]));
+      
+      // Enrich orders with market data and fill information
+      const enrichedOrders = orders.map(order => {
+        const market = marketMap.get(order.marketId);
+        return {
+          ...order,
+          market: market ? {
+            id: market.id,
+            question: market.question,
+            category: market.category,
+            yesPrice: market.yesPrice,
+            noPrice: market.noPrice,
+            resolved: market.resolved,
+            outcome: market.outcome,
+          } : null,
+          fillPercentage: order.size > 0 ? (order.filled / order.size) * 100 : 0,
+        };
+      });
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      console.error('Error fetching order history:', error);
+      res.status(500).json({ error: 'Failed to fetch order history' });
+    }
+  });
+
   return httpServer;
 }
