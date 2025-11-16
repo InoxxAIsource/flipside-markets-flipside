@@ -15,7 +15,7 @@ export interface ProxyWalletFactory$Type {
   readonly deployedLinkReferences: {};
   readonly immutableReferences: {};
   readonly inputSourceName: "project/contracts/ProxyWalletFactory.sol";
-  readonly buildInfoId: "solc-0_8_24-f84e26df71fdafd85480a41bf60dd39092d63360";
+  readonly buildInfoId: "solc-0_8_24-4b8256df37d0ae5987733eced395d5e58f39f0fe";
 };
 
 import "hardhat/types/artifacts";

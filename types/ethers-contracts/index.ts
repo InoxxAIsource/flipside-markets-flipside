@@ -4,11 +4,13 @@
 export type { CTFExchange } from './CTFExchange.js';
 export type { ConditionalTokens } from './ConditionalTokens.js';
 export type { MockUSDT } from './MockUSDT.js';
+export type { MockUSDTFaucet } from './MockUSDTFaucet.js';
 export type { ProxyWallet } from './ProxyWallet.js';
 export type { ProxyWalletFactory } from './ProxyWalletFactory.js';
 export * as factories from './factories/index.js';
 export { CTFExchange__factory } from './factories/CTFExchange__factory.js';
 export { ConditionalTokens__factory } from './factories/ConditionalTokens__factory.js';
 export { MockUSDT__factory } from './factories/MockUSDT__factory.js';
+export { MockUSDTFaucet__factory } from './factories/MockUSDTFaucet__factory.js';
 export { ProxyWallet__factory } from './factories/ProxyWallet__factory.js';
 export { ProxyWalletFactory__factory } from './factories/ProxyWalletFactory__factory.js';

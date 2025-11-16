@@ -13,24 +13,28 @@ declare module "@nomicfoundation/hardhat-ethers/types" {
   getContractFactory(name: 'CTFExchange', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.CTFExchange__factory>
 getContractFactory(name: 'ConditionalTokens', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ConditionalTokens__factory>
 getContractFactory(name: 'MockUSDT', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.MockUSDT__factory>
+getContractFactory(name: 'MockUSDTFaucet', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.MockUSDTFaucet__factory>
 getContractFactory(name: 'ProxyWallet', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ProxyWallet__factory>
 getContractFactory(name: 'ProxyWalletFactory', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ProxyWalletFactory__factory>
 
   getContractAt(name: 'CTFExchange', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.CTFExchange>
 getContractAt(name: 'ConditionalTokens', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ConditionalTokens>
 getContractAt(name: 'MockUSDT', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.MockUSDT>
+getContractAt(name: 'MockUSDTFaucet', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.MockUSDTFaucet>
 getContractAt(name: 'ProxyWallet', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ProxyWallet>
 getContractAt(name: 'ProxyWalletFactory', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ProxyWalletFactory>
 
   deployContract(name: 'CTFExchange', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.CTFExchange>
 deployContract(name: 'ConditionalTokens', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ConditionalTokens>
 deployContract(name: 'MockUSDT', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDT>
+deployContract(name: 'MockUSDTFaucet', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDTFaucet>
 deployContract(name: 'ProxyWallet', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ProxyWallet>
 deployContract(name: 'ProxyWalletFactory', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ProxyWalletFactory>
 
   deployContract(name: 'CTFExchange', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.CTFExchange>
 deployContract(name: 'ConditionalTokens', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ConditionalTokens>
 deployContract(name: 'MockUSDT', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDT>
+deployContract(name: 'MockUSDTFaucet', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDTFaucet>
 deployContract(name: 'ProxyWallet', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ProxyWallet>
 deployContract(name: 'ProxyWalletFactory', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ProxyWalletFactory>
 

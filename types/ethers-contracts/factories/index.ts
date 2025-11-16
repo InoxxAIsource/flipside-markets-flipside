@@ -4,5 +4,6 @@
 export { CTFExchange__factory } from './CTFExchange__factory.js';
 export { ConditionalTokens__factory } from './ConditionalTokens__factory.js';
 export { MockUSDT__factory } from './MockUSDT__factory.js';
+export { MockUSDTFaucet__factory } from './MockUSDTFaucet__factory.js';
 export { ProxyWallet__factory } from './ProxyWallet__factory.js';
 export { ProxyWalletFactory__factory } from './ProxyWalletFactory__factory.js';
