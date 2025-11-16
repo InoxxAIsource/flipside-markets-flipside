@@ -17,6 +17,7 @@ export const markets = pgTable("markets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   question: text("question").notNull(),
   description: text("description"),
+  imageUrl: text("image_url"), // Optional market image URL
   category: text("category").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   resolvedAt: timestamp("resolved_at"),

@@ -32,6 +32,7 @@ import type { TransactionStatus } from '@/pages/CreateMarket';
 const formSchema = z.object({
   question: z.string().min(10, 'Question must be at least 10 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
+  imageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   category: z.string().min(1, 'Please select a category'),
   expiresAt: z.date({ required_error: 'Please select an expiration date' }),
   pythPriceFeedId: z.string().optional(),
@@ -53,6 +54,7 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
     defaultValues: {
       question: '',
       description: '',
+      imageUrl: '',
       category: '',
     },
   });
@@ -173,6 +175,28 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
                 </FormControl>
                 <FormDescription>
                   Explain how the market will be resolved
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Market Image (Optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    data-testid="input-market-image"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Add an image URL to make your market more engaging. Leave blank for crypto markets to auto-detect logos.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
