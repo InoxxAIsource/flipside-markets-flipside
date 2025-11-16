@@ -1,4 +1,4 @@
-import { Search, User, PlusCircle, Wallet } from 'lucide-react';
+import { Search, User, PlusCircle, Wallet, Home } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -34,6 +34,11 @@ export function TopNav({ onSearch }: TopNavProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link href="/">
+            <Button variant="ghost" size="icon" data-testid="button-markets">
+              <Home className="h-5 w-5" />
+            </Button>
+          </Link>
           <Link href="/create">
             <Button variant="ghost" size="icon" data-testid="button-create-market">
               <PlusCircle className="h-5 w-5" />
