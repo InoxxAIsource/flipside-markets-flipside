@@ -51,6 +51,9 @@ export const markets = pgTable("markets", {
   // Social media integration
   tweetUrl: text("tweet_url"), // URL of auto-posted tweet on X (Twitter)
   
+  // AI analysis
+  aiAnalysis: text("ai_analysis"), // JSON string containing AI analysis results
+  
   // Status
   resolved: boolean("resolved").notNull().default(false),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
