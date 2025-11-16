@@ -13,7 +13,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: markets, isLoading } = useQuery<Market[]>({
-    queryKey: selectedCategory === 'all' ? ['/api/markets'] : ['/api/markets', { category: selectedCategory }],
+    queryKey: selectedCategory === 'all' ? ['/api/markets'] : [`/api/markets?category=${selectedCategory}`],
   });
 
   const filteredMarkets = useMemo(() => {
