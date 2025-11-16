@@ -48,6 +48,9 @@ export const markets = pgTable("markets", {
   pythPriceFeedId: text("pyth_price_feed_id"), // Pyth price feed identifier
   baselinePrice: real("baseline_price"), // Reference price for resolution
   
+  // Social media integration
+  tweetUrl: text("tweet_url"), // URL of auto-posted tweet on X (Twitter)
+  
   // Status
   resolved: boolean("resolved").notNull().default(false),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),

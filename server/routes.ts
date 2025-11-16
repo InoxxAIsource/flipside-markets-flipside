@@ -15,6 +15,7 @@ import sharp from "sharp";
 import path from "path";
 import fs from "fs/promises";
 import { randomBytes } from "crypto";
+import { postMarketToTwitter } from "./services/twitter";
 
 // Module-level variable for ProxyWalletService (set by server/index.ts)
 let proxyWalletServiceInstance: ProxyWalletService | null = null;
@@ -345,6 +346,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         console.log(`Market ${market.id} saved to database with conditionId: ${market.conditionId}`);
+        
+        // Post to Twitter asynchronously (don't block market creation)
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        postMarketToTwitter({
+          id: market.id,
+          question: market.question,
+          imageUrl: market.imageUrl,
+          yesPrice: market.yesPrice,
+          noPrice: market.noPrice,
+          category: market.category,
+        }, baseUrl).then(async (tweetUrl) => {
+          if (tweetUrl) {
+            // Update market with tweet URL
+            try {
+              await storage.updateMarket(market.id, { tweetUrl });
+              console.log(`✅ Updated market ${market.id} with tweet URL: ${tweetUrl}`);
+            } catch (err) {
+              console.error('Failed to update market with tweet URL:', err);
+            }
+          }
+        }).catch((err) => {
+          console.error('Failed to post market to Twitter:', err);
+        });
+        
         res.status(201).json(market);
       } catch (dbError: any) {
         console.error('Database save error:', dbError);
