@@ -10,6 +10,11 @@ import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { MarketDepthCalculator } from "./services/marketDepth";
 import type { ProxyWalletService } from "./services/proxyWalletService";
+import multer from "multer";
+import sharp from "sharp";
+import path from "path";
+import fs from "fs/promises";
+import { randomBytes } from "crypto";
 
 // Module-level variable for ProxyWalletService (set by server/index.ts)
 let proxyWalletServiceInstance: ProxyWalletService | null = null;
@@ -17,6 +22,22 @@ let proxyWalletServiceInstance: ProxyWalletService | null = null;
 export function setProxyWalletService(service: ProxyWalletService) {
   proxyWalletServiceInstance = service;
 }
+
+// Configure multer for image uploads (memory storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPG, PNG, and WebP are allowed.'));
+    }
+  },
+});
 
 // WebSocket client tracking
 const wsClients = new Map<string, Set<WebSocket>>();
@@ -341,6 +362,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error creating market:', error);
       res.status(500).json({ error: 'Failed to create market' });
+    }
+  });
+
+  // POST /api/markets/upload-image - Upload and resize market image
+  app.post('/api/markets/upload-image', upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No image file provided' });
+      }
+
+      // Create market_images directory if it doesn't exist
+      const uploadDir = path.join(process.cwd(), 'attached_assets', 'market_images');
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      // Generate unique filename
+      const uniqueSuffix = randomBytes(8).toString('hex');
+      const filename = `market_${Date.now()}_${uniqueSuffix}.webp`;
+      const filePath = path.join(uploadDir, filename);
+
+      // Resize image to 800x450px (16:9 aspect ratio) and convert to WebP
+      await sharp(req.file.buffer)
+        .resize(800, 450, {
+          fit: 'cover',
+          position: 'center',
+        })
+        .webp({ quality: 85 })
+        .toFile(filePath);
+
+      // Return public URL
+      const imageUrl = `/market_images/${filename}`;
+      res.json({ imageUrl });
+
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      res.status(500).json({ error: 'Failed to upload image' });
     }
   });
 

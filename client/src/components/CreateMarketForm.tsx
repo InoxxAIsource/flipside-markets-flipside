@@ -25,14 +25,23 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, CheckCircle2, Clock, Loader2, ExternalLink } from 'lucide-react';
+import { CalendarIcon, CheckCircle2, Clock, Loader2, ExternalLink, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import type { TransactionStatus } from '@/pages/CreateMarket';
 
 const formSchema = z.object({
   question: z.string().min(10, 'Question must be at least 10 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  imageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  imageUrl: z.string().refine(
+    (val) => {
+      if (!val || val === '') return true; // Optional field
+      // Accept both absolute URLs and relative paths
+      return val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/');
+    },
+    { message: 'Please enter a valid URL or path' }
+  ).optional().or(z.literal('')),
   category: z.string().min(1, 'Please select a category'),
   expiresAt: z.date({ required_error: 'Please select an expiration date' }),
   pythPriceFeedId: z.string().optional(),
@@ -49,6 +58,10 @@ interface CreateMarketFormProps {
 }
 
 export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'idle', txHash = null }: CreateMarketFormProps) {
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const { toast } = useToast();
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -58,6 +71,82 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
       category: '',
     },
   });
+
+  // Image upload mutation
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/markets/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload image');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data: { imageUrl: string }) => {
+      setUploadedImageUrl(data.imageUrl);
+      form.setValue('imageUrl', data.imageUrl);
+      toast({
+        title: 'Image uploaded',
+        description: 'Your image has been resized to 800x450px and uploaded successfully.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image smaller than 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select a JPG, PNG, or WebP image',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImagePreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload image
+    uploadImageMutation.mutate(file);
+  };
+
+  const clearImage = () => {
+    setUploadedImageUrl('');
+    setImagePreview('');
+    form.setValue('imageUrl', '');
+  };
 
   const handleSubmit = (data: FormData) => {
     onSubmit?.(data);
@@ -181,27 +270,70 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Market Image (Optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="url"
-                    placeholder="https://example.com/image.jpg"
-                    data-testid="input-market-image"
-                    {...field}
+          {/* Image Upload Section */}
+          <div className="space-y-3">
+            <Label>Market Image (Optional)</Label>
+            
+            {imagePreview ? (
+              <div className="relative">
+                <div className="relative w-full h-48 rounded-md overflow-hidden bg-muted">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
                   />
-                </FormControl>
-                <FormDescription>
-                  Add an image URL to make your market more engaging. Leave blank for crypto markets to auto-detect logos.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2"
+                  data-testid="button-clear-image"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('image-upload')?.click()}
+                  disabled={uploadImageMutation.isPending}
+                  data-testid="button-upload-image"
+                >
+                  {uploadImageMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Image
+                    </>
+                  )}
+                </Button>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  data-testid="input-image-file"
+                />
+                <span className="text-sm text-muted-foreground">
+                  Recommended: 800×450px (16:9), max 5MB
+                </span>
+              </div>
             )}
-          />
+            
+            <p className="text-sm text-muted-foreground">
+              Upload a custom image for your market. Images are automatically resized to 800×450px. Crypto markets auto-detect logos if no image is uploaded.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
