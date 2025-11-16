@@ -53,25 +53,27 @@ export function PriceDisplay({ marketId, targetPrice, className = '' }: PriceDis
 
   return (
     <div className={`flex items-center justify-between gap-8 ${className}`} data-testid="price-display">
-      {/* Target Price */}
-      <div>
-        <div className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-          Price to Beat
+      {/* Target Price - only show if we have one */}
+      {target && (
+        <div>
+          <div className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+            Price to Beat
+          </div>
+          <div className="text-2xl font-semibold text-muted-foreground" data-testid="text-target-price">
+            ${formatPrice(target)}
+          </div>
         </div>
-        <div className="text-2xl font-semibold text-muted-foreground" data-testid="text-target-price">
-          ${target ? formatPrice(target) : 'N/A'}
-        </div>
-      </div>
+      )}
 
       {/* Current Price */}
-      <div>
+      <div className={target ? '' : 'w-full'}>
         <div className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
           Current Price
         </div>
         <div className="flex items-center gap-2">
           <div 
             className={`text-2xl font-semibold ${
-              isPriceAboveTarget ? 'text-primary' : 'text-destructive'
+              target ? (isPriceAboveTarget ? 'text-primary' : 'text-destructive') : 'text-foreground'
             }`}
             data-testid="text-current-price"
           >

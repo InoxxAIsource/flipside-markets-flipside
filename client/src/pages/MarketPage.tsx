@@ -115,11 +115,11 @@ export default function MarketPage() {
               </div>
               
               {/* Show PriceDisplay for oracle markets */}
-              {isOracleMarket && targetPrice && (
+              {isOracleMarket && (
                 <div className="mb-6">
                   <PriceDisplay 
                     marketId={market.id} 
-                    targetPrice={targetPrice}
+                    targetPrice={targetPrice || null}
                   />
                 </div>
               )}
