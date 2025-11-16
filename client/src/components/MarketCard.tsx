@@ -54,11 +54,12 @@ export function MarketCard({ market }: MarketCardProps) {
   };
 
   return (
-    <Link href={`/market/${market.id}`}>
-      <Card 
-        className="overflow-hidden hover-elevate cursor-pointer transition-all h-full flex flex-col"
-        data-testid={`card-market-${market.id}`}
-      >
+    <>
+      <Link href={`/market/${market.id}`}>
+        <Card 
+          className="overflow-hidden hover-elevate cursor-pointer transition-all h-full flex flex-col"
+          data-testid={`card-market-${market.id}`}
+        >
         {/* Featured Image or Crypto Logo */}
         {hasCustomImage ? (
           <div className="relative w-full h-48 bg-muted">
@@ -163,6 +164,7 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
         </div>
       </Card>
+      </Link>
 
       {/* AI Analysis Dialog */}
       <AIAnalysisDialog
@@ -171,6 +173,6 @@ export function MarketCard({ market }: MarketCardProps) {
         marketId={market.id}
         marketQuestion={market.question}
       />
-    </Link>
+    </>
   );
 }

@@ -30,10 +30,9 @@ export function AIAnalysisDialog({
 
   const analysisMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest<AIAnalysisResult>(`/api/markets/${marketId}/ai-analysis`, {
-        method: 'POST',
-      });
-      return response;
+      const response = await apiRequest('POST', `/api/markets/${marketId}/ai-analysis`);
+      const data = await response.json();
+      return data as AIAnalysisResult;
     },
     onSuccess: (data) => {
       setAnalysis(data);
