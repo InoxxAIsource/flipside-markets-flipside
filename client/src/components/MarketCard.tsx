@@ -4,8 +4,9 @@ import { Link, useLocation } from 'wouter';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Brain } from 'lucide-react';
 import { CountdownTimer } from './CountdownTimer';
+import { AIAnalysisDialog } from './AIAnalysisDialog';
 import { detectCryptoFromQuestion } from '@/lib/cryptoLogos';
 import { SiBitcoin, SiEthereum, SiSolana, SiRipple, SiBinance, SiDogecoin, SiCardano, SiPolygon } from 'react-icons/si';
 import type { Market } from '@shared/schema';
@@ -28,6 +29,7 @@ const cryptoIcons: Record<string, ElementType> = {
 export function MarketCard({ market }: MarketCardProps) {
   const [, navigate] = useLocation();
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
+  const [showAIDialog, setShowAIDialog] = useState(false);
   const yesPercentage = Math.round(market.yesPrice * 100);
   const noPercentage = Math.round(market.noPrice * 100);
   
@@ -43,6 +45,12 @@ export function MarketCard({ market }: MarketCardProps) {
     e.preventDefault();
     e.stopPropagation();
     navigate(`/market/${market.id}?action=buy&outcome=${outcome}`);
+  };
+
+  const handleAIClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowAIDialog(true);
   };
 
   return (
@@ -133,6 +141,18 @@ export function MarketCard({ market }: MarketCardProps) {
             </Button>
           </div>
 
+          {/* AI Analysis Button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleAIClick}
+            data-testid={`button-ask-ai-${market.id}`}
+            className="w-full"
+          >
+            <Brain className="h-4 w-4 mr-2" />
+            Ask AI
+          </Button>
+
           {/* Footer - Volume & Countdown */}
           <div className="pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
@@ -143,6 +163,14 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
         </div>
       </Card>
+
+      {/* AI Analysis Dialog */}
+      <AIAnalysisDialog
+        open={showAIDialog}
+        onOpenChange={setShowAIDialog}
+        marketId={market.id}
+        marketQuestion={market.question}
+      />
     </Link>
   );
 }
