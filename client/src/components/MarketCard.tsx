@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import type { ElementType } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Brain } from 'lucide-react';
+import { TrendingUp, TrendingDown, Brain } from 'lucide-react';
 import { CountdownTimer } from './CountdownTimer';
 import { AIAnalysisDialog } from './AIAnalysisDialog';
 import { detectCryptoFromQuestion } from '@/lib/cryptoLogos';
+import { extractTargetPrice, formatPrice } from '@/lib/priceParser';
 import { SiBitcoin, SiEthereum, SiSolana, SiRipple, SiBinance, SiDogecoin, SiCardano, SiPolygon } from 'react-icons/si';
 import type { Market } from '@shared/schema';
 
@@ -40,6 +42,22 @@ export function MarketCard({ market }: MarketCardProps) {
   // Determine which image to show (fallback to crypto/default if custom image fails)
   const hasCustomImage = market.imageUrl && market.imageUrl.trim() !== '' && !imageLoadFailed;
   const hasCryptoLogo = !hasCustomImage && CryptoIcon;
+
+  // Oracle market detection and price fetching
+  const isOracleMarket = !!market.pythPriceFeedId;
+  const targetPrice = isOracleMarket ? (extractTargetPrice(market.question) || market.baselinePrice || null) : null;
+  
+  // Fetch current price for oracle markets
+  const { data: priceData } = useQuery<{
+    currentPrice: number;
+    targetPrice: number | null;
+    confidence: number;
+    publishTime: string;
+  }>({
+    queryKey: ['/api/markets', market.id, 'current-price'],
+    enabled: isOracleMarket,
+    refetchInterval: 30000, // Refresh every 30 seconds for cards (less aggressive than detail page)
+  });
   
   const handleBuyClick = (e: React.MouseEvent, outcome: 'yes' | 'no') => {
     e.preventDefault();
@@ -108,17 +126,68 @@ export function MarketCard({ market }: MarketCardProps) {
             {market.question}
           </h3>
 
-          {/* YES/NO Percentages - Big and Bold */}
-          <div className="flex items-center gap-3 text-center">
-            <div className="flex-1">
-              <div className="text-3xl font-bold text-primary">{yesPercentage}%</div>
-              <div className="text-xs text-muted-foreground uppercase font-medium mt-1">Yes</div>
+          {/* Oracle Markets: Show Current Price */}
+          {isOracleMarket && priceData ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">Current Price</div>
+                  <div 
+                    className={`text-2xl font-bold ${
+                      targetPrice 
+                        ? (priceData.currentPrice >= targetPrice ? 'text-primary' : 'text-destructive')
+                        : 'text-foreground'
+                    }`}
+                    data-testid={`text-current-price-${market.id}`}
+                  >
+                    ${formatPrice(priceData.currentPrice)}
+                  </div>
+                </div>
+                {targetPrice && (
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground uppercase font-medium">Target</div>
+                    <div className="text-lg font-semibold text-muted-foreground" data-testid={`text-target-price-${market.id}`}>
+                      ${formatPrice(targetPrice)}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {targetPrice && (
+                <div className="flex items-center justify-center gap-1">
+                  {priceData.currentPrice >= targetPrice ? (
+                    <TrendingUp className="h-4 w-4 text-primary" data-testid={`icon-trending-up-${market.id}`} />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-destructive" data-testid={`icon-trending-down-${market.id}`} />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    priceData.currentPrice >= targetPrice ? 'text-primary' : 'text-destructive'
+                  }`}>
+                    {priceData.currentPrice >= targetPrice ? '+' : ''}{formatPrice(priceData.currentPrice - targetPrice, 2)}
+                    <span className="text-muted-foreground ml-1">
+                      ({priceData.currentPrice >= targetPrice ? '+' : ''}{(((priceData.currentPrice - targetPrice) / targetPrice) * 100).toFixed(2)}%)
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="flex-1">
-              <div className="text-3xl font-bold text-muted-foreground">{noPercentage}%</div>
-              <div className="text-xs text-muted-foreground uppercase font-medium mt-1">No</div>
+          ) : !isOracleMarket ? (
+            /* Regular Markets: YES/NO Percentages - Big and Bold */
+            <div className="flex items-center gap-3 text-center">
+              <div className="flex-1">
+                <div className="text-3xl font-bold text-primary">{yesPercentage}%</div>
+                <div className="text-xs text-muted-foreground uppercase font-medium mt-1">Yes</div>
+              </div>
+              <div className="flex-1">
+                <div className="text-3xl font-bold text-muted-foreground">{noPercentage}%</div>
+                <div className="text-xs text-muted-foreground uppercase font-medium mt-1">No</div>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Oracle market loading state */
+            <div className="flex items-center justify-center py-4">
+              <div className="text-sm text-muted-foreground">Loading price...</div>
+            </div>
+          )}
 
           {/* Buy Buttons */}
           <div className="grid grid-cols-2 gap-2">
