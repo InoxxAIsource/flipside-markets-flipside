@@ -9,7 +9,7 @@ import { TrendingUp, TrendingDown, Brain } from 'lucide-react';
 import { CountdownTimer } from './CountdownTimer';
 import { AIAnalysisDialog } from './AIAnalysisDialog';
 import { detectCryptoFromQuestion } from '@/lib/cryptoLogos';
-import { extractTargetPrice, formatPrice } from '@/lib/priceParser';
+import { extractTargetPrice, formatPrice, formatSharePrice } from '@/lib/priceParser';
 import { SiBitcoin, SiEthereum, SiSolana, SiRipple, SiBinance, SiDogecoin, SiCardano, SiPolygon } from 'react-icons/si';
 import type { Market } from '@shared/schema';
 
@@ -198,7 +198,7 @@ export function MarketCard({ market }: MarketCardProps) {
               data-testid={`button-buy-yes-${market.id}`}
               className="font-semibold"
             >
-              Buy Yes {yesPercentage}%
+              Buy Yes {formatSharePrice(market.yesPrice)}
             </Button>
             <Button
               size="sm"
@@ -207,7 +207,7 @@ export function MarketCard({ market }: MarketCardProps) {
               data-testid={`button-buy-no-${market.id}`}
               className="font-semibold"
             >
-              Buy No {noPercentage}%
+              Buy No {formatSharePrice(market.noPrice)}
             </Button>
           </div>
 
