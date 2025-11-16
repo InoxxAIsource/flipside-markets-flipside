@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
 import { PriceChart } from '@/components/PriceChart';
+import { PriceDisplay } from '@/components/PriceDisplay';
 import { TradingPanel } from '@/components/TradingPanel';
 import { MarketStats } from '@/components/MarketStats';
 import { MarketDetails } from '@/components/MarketDetails';
@@ -13,6 +14,7 @@ import { DepositWithdrawPanel } from '@/components/DepositWithdrawPanel';
 import { OrderBook } from '@/components/OrderBook';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { OracleInfo } from '@/components/OracleInfo';
+import { extractTargetPrice } from '@/lib/priceParser';
 import type { Market } from '@shared/schema';
 
 export default function MarketPage() {
@@ -55,6 +57,10 @@ export default function MarketPage() {
 
   const yesPercentage = Math.round(market.yesPrice * 100);
   const noPercentage = Math.round(market.noPrice * 100);
+  
+  // Extract target price from question for oracle markets
+  const targetPrice = market.targetPrice || market.baselinePrice || extractTargetPrice(market.question);
+  const isOracleMarket = !!market.pythPriceFeedId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,7 +103,9 @@ export default function MarketPage() {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-card rounded-lg border p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Price Chart</h2>
+                <h2 className="text-lg font-semibold">
+                  {isOracleMarket ? 'Asset Price' : 'Price Chart'}
+                </h2>
                 <div className="flex gap-2 text-sm">
                   <Button variant="ghost" size="sm">1H</Button>
                   <Button variant="ghost" size="sm">1D</Button>
@@ -105,10 +113,23 @@ export default function MarketPage() {
                   <Button variant="ghost" size="sm">1M</Button>
                 </div>
               </div>
+              
+              {/* Show PriceDisplay for oracle markets */}
+              {isOracleMarket && targetPrice && (
+                <div className="mb-6">
+                  <PriceDisplay 
+                    marketId={market.id} 
+                    targetPrice={targetPrice}
+                  />
+                </div>
+              )}
+              
               <PriceChart 
                 height={400} 
-                showBaseline={!!market.baselinePrice}
+                mode={isOracleMarket ? 'asset-price' : 'probability'}
+                showBaseline={!isOracleMarket && !!market.baselinePrice}
                 baselinePrice={market.baselinePrice || undefined}
+                targetPrice={isOracleMarket ? targetPrice || undefined : undefined}
               />
             </div>
 
