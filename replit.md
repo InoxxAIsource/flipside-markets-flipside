@@ -8,7 +8,38 @@ This project is a full-stack prediction market platform on the Ethereum Sepolia 
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Updates (November 15, 2025)
+## Recent Updates
+
+### November 16, 2025
+
+#### ✅ CallMyBluff-Style Market Cards with Featured Images
+
+**New Features:**
+- **Featured Image Support**: Markets now support custom featured images via `imageUrl` field
+- **Crypto Logo Auto-Detection**: Automatically detects and displays crypto logos for markets mentioning BTC, ETH, SOL, XRP, BNB, DOGE, ADA, or MATIC
+- **Enhanced Card Design**: Redesigned market cards matching CallMyBluff.io's visual style with larger percentages and direct trading buttons
+
+**Database Changes:**
+- Added `image_url` column to markets table (optional text field)
+- Updated via `ALTER TABLE markets ADD COLUMN image_url TEXT`
+
+**UI Components:**
+- Created `cryptoLogos.ts` utility for automatic crypto token detection from market questions
+- Supports 8 major cryptocurrencies with react-icons/si logos
+- **MarketCard Redesign**:
+  - Large featured image area (h-48): Custom image → Crypto logo → Fallback gradient
+  - Bold, prominent YES/NO percentages (text-3xl font size)
+  - Direct "Buy Yes" and "Buy No" buttons on each card
+  - Smart fallback: If custom image fails to load, automatically shows crypto logo or default gradient
+  - Buy buttons navigate to market detail with pre-configured action and outcome
+
+**User Experience:**
+- Users can add custom images when creating markets
+- Crypto-related markets automatically get brand logos without manual configuration
+- One-click trading directly from market cards
+- Cleaner, more visual market browsing experience
+
+### November 15, 2025
 
 ### ✅ Sell Order EIP-712 Signature Bug Fixed
 
