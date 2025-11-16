@@ -41,6 +41,7 @@ export interface IStorage {
   getMarketsByCategory(category: string): Promise<Market[]>;
   createMarket(market: InsertMarket): Promise<Market>;
   updateMarket(id: string, updates: Partial<Market>): Promise<Market | undefined>;
+  updateMarketAIAnalysis(id: string, aiAnalysis: string): Promise<Market | undefined>;
   resolveMarket(id: string, outcome: boolean): Promise<Market | undefined>;
   
   // Order methods
@@ -142,6 +143,15 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .update(markets)
       .set(updates)
+      .where(eq(markets.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateMarketAIAnalysis(id: string, aiAnalysis: string): Promise<Market | undefined> {
+    const result = await db
+      .update(markets)
+      .set({ aiAnalysis })
       .where(eq(markets.id, id))
       .returning();
     return result[0];

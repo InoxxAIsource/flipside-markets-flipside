@@ -426,6 +426,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/markets/:id/ai-analysis - Generate AI analysis for a market
+  app.post('/api/markets/:id/ai-analysis', async (req, res) => {
+    try {
+      const { analyzeMarket } = await import('./services/aiAnalysis');
+      
+      const market = await storage.getMarket(req.params.id);
+      
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+
+      // Generate AI analysis
+      const analysis = await analyzeMarket({
+        question: market.question,
+        description: market.description || undefined,
+        category: market.category,
+        expiresAt: market.expiresAt,
+        currentYesPrice: market.yesPrice,
+        currentNoPrice: market.noPrice,
+        volume: market.volume,
+        pythPriceFeedId: market.pythPriceFeedId || undefined,
+        baselinePrice: market.baselinePrice || undefined,
+      });
+
+      // Store analysis in database
+      const updatedMarket = await storage.updateMarketAIAnalysis(req.params.id, JSON.stringify(analysis));
+
+      res.json(analysis);
+    } catch (error: any) {
+      console.error('Error generating AI analysis:', error);
+      res.status(500).json({ error: error.message || 'Failed to generate AI analysis' });
+    }
+  });
+
   // PUT /api/markets/:id/resolve - Resolve a market
   app.put('/api/markets/:id/resolve', async (req, res) => {
     try {
