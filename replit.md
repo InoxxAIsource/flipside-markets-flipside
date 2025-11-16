@@ -12,6 +12,57 @@ Preferred communication style: Simple, everyday language.
 
 ### November 16, 2025
 
+#### ✅ X (Twitter) Auto-Posting for New Markets
+
+**New Features:**
+- **Automatic Social Sharing**: Every new market is automatically posted to X (Twitter)
+- **Engaging Tweet Format**: Includes market question, YES/NO percentages, and direct link to trade
+- **Image Support**: Automatically uploads and attaches market images to tweets
+- **Smart Hashtags**: Category-based hashtag generation (#Crypto, #Sports, #Politics, etc.)
+- **Non-Blocking**: Market creation succeeds even if tweet posting fails
+
+**Technical Implementation:**
+- **Twitter Service** (`server/services/twitter.ts`):
+  - Twitter API v2 client using official twitter-api-v2 library
+  - Credential validation with graceful degradation when not configured
+  - Smart MIME type detection for WebP/PNG/JPEG images
+  - Fetches and uploads market images to Twitter
+  - Formats engaging tweets with emojis and structured data
+- **Database**:
+  - Added `tweet_url` column to markets table to store posted tweet URLs
+  - Updated via `ALTER TABLE markets ADD COLUMN tweet_url TEXT`
+- **Integration**:
+  - Asynchronous posting in POST /api/markets route
+  - Updates market with tweet URL after successful post
+  - Robust error handling - never blocks market creation
+
+**Tweet Format:**
+```
+🔮 New market on Flipside!
+
+[Market Question]
+
+Current odds:
+✅ YES [X]%
+❌ NO [X]%
+
+Trade now: [URL]
+
+#PredictionMarket [category hashtags]
+```
+
+**Environment Variables:**
+- `TWITTER_API_KEY`: X API key (Consumer Key)
+- `TWITTER_API_SECRET`: X API secret (Consumer Secret)
+- `TWITTER_ACCESS_TOKEN`: Access token for posting
+- `TWITTER_ACCESS_TOKEN_SECRET`: Access token secret
+
+**User Experience:**
+- Zero manual work - every market gets instant visibility on X
+- Professional-looking tweets with images
+- Direct traffic from social media to markets
+- Tweet URL stored with market for reference
+
 #### ✅ Image Upload Feature with Automatic Resizing
 
 **New Features:**
