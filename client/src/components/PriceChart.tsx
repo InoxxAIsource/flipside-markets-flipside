@@ -1,14 +1,25 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { formatPrice } from '@/lib/priceParser';
 
 interface PriceChartProps {
   data?: Array<{ time: string; price: number }>;
   height?: number;
   showBaseline?: boolean;
   baselinePrice?: number;
+  mode?: 'probability' | 'asset-price'; // New: determines chart type
+  targetPrice?: number; // New: for oracle markets
 }
 
-export function PriceChart({ data, height = 200, showBaseline = false, baselinePrice }: PriceChartProps) {
-  const mockData = data || [
+export function PriceChart({ 
+  data, 
+  height = 200, 
+  showBaseline = false, 
+  baselinePrice,
+  mode = 'probability',
+  targetPrice 
+}: PriceChartProps) {
+  // Default mock data for probability mode (YES/NO %)
+  const mockProbabilityData = [
     { time: '7:30', price: 0.45 },
     { time: '7:50', price: 0.48 },
     { time: '8:20', price: 0.52 },
@@ -18,10 +29,25 @@ export function PriceChart({ data, height = 200, showBaseline = false, baselineP
     { time: '12:45', price: 0.68 },
   ];
 
-  const displayData = mockData.map(d => ({
-    ...d,
-    displayPrice: d.price * 100
-  }));
+  // Mock data for asset price mode (e.g., BTC price)
+  const mockAssetPriceData = targetPrice ? [
+    { time: '7:30', price: targetPrice * 0.97 },
+    { time: '7:50', price: targetPrice * 0.98 },
+    { time: '8:20', price: targetPrice * 0.985 },
+    { time: '9:00', price: targetPrice * 0.99 },
+    { time: '10:15', price: targetPrice * 0.995 },
+    { time: '11:30', price: targetPrice * 1.00 },
+    { time: '12:45', price: targetPrice * 1.02 },
+  ] : [];
+
+  const defaultData = mode === 'asset-price' ? mockAssetPriceData : mockProbabilityData;
+  const mockData = data || defaultData;
+
+  // For probability mode, multiply by 100 to show percentages
+  // For asset-price mode, use raw prices
+  const displayData = mode === 'probability' 
+    ? mockData.map(d => ({ ...d, displayPrice: d.price * 100 }))
+    : mockData.map(d => ({ ...d, displayPrice: d.price }));
 
   return (
     <div className="w-full" style={{ height }} data-testid="price-chart">
@@ -46,10 +72,14 @@ export function PriceChart({ data, height = 200, showBaseline = false, baselineP
             fontSize={11}
             tickLine={false}
             axisLine={false}
-            domain={[0, 100]}
-            ticks={[0, 25, 50, 75, 100]}
+            domain={mode === 'probability' ? [0, 100] : ['auto', 'auto']}
+            ticks={mode === 'probability' ? [0, 25, 50, 75, 100] : undefined}
             tick={{ fill: 'hsl(var(--muted-foreground))' }}
-            tickFormatter={(value) => `$${(value / 100).toFixed(2)}`}
+            tickFormatter={(value) => 
+              mode === 'probability' 
+                ? `$${(value / 100).toFixed(2)}`
+                : `$${formatPrice(value)}`
+            }
           />
           <Tooltip 
             contentStyle={{
@@ -60,10 +90,16 @@ export function PriceChart({ data, height = 200, showBaseline = false, baselineP
               padding: '8px 12px',
             }}
             labelStyle={{ color: 'hsl(var(--foreground))' }}
-            formatter={(value: any) => [`$${(value / 100).toFixed(2)}`, 'Price']}
+            formatter={(value: any) => [
+              mode === 'probability' 
+                ? `$${(value / 100).toFixed(2)}` 
+                : `$${formatPrice(value)}`,
+              mode === 'probability' ? 'YES Price' : 'Asset Price'
+            ]}
             cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '3 3' }}
           />
-          {showBaseline && baselinePrice && (
+          {/* Show baseline reference for probability mode */}
+          {mode === 'probability' && showBaseline && baselinePrice && (
             <ReferenceLine 
               y={baselinePrice * 100} 
               stroke="hsl(var(--muted-foreground))" 
@@ -74,6 +110,22 @@ export function PriceChart({ data, height = 200, showBaseline = false, baselineP
                 position: 'right',
                 fill: 'hsl(var(--muted-foreground))',
                 fontSize: 11
+              }}
+            />
+          )}
+          {/* Show target price reference for asset-price mode */}
+          {mode === 'asset-price' && targetPrice && (
+            <ReferenceLine 
+              y={targetPrice} 
+              stroke="hsl(var(--primary))" 
+              strokeDasharray="5 5" 
+              strokeWidth={2}
+              label={{ 
+                value: `Target: $${formatPrice(targetPrice)}`, 
+                position: 'right',
+                fill: 'hsl(var(--primary))',
+                fontSize: 12,
+                fontWeight: 600,
               }}
             />
           )}
