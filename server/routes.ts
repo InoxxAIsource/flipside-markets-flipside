@@ -460,6 +460,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/markets/:id/current-price - Get current Pyth oracle price for a market
+  app.get('/api/markets/:id/current-price', async (req, res) => {
+    try {
+      const { fetchPythPrice } = await import('./services/pythPriceService');
+      
+      const market = await storage.getMarket(req.params.id);
+      
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+
+      if (!market.pythPriceFeedId) {
+        return res.status(400).json({ error: 'Market does not have a Pyth price feed configured' });
+      }
+
+      // Fetch current price from Pyth network
+      const priceData = await fetchPythPrice(market.pythPriceFeedId);
+      
+      if (!priceData) {
+        return res.status(503).json({ error: 'Failed to fetch price from Pyth network' });
+      }
+
+      res.json({
+        currentPrice: priceData.currentPrice,
+        targetPrice: market.targetPrice || market.baselinePrice || null,
+        confidence: priceData.confidence,
+        publishTime: priceData.publishTime,
+        priceFeedId: market.pythPriceFeedId,
+      });
+    } catch (error: any) {
+      console.error('Error fetching current price:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch current price' });
+    }
+  });
+
   // PUT /api/markets/:id/resolve - Resolve a market
   app.put('/api/markets/:id/resolve', async (req, res) => {
     try {
