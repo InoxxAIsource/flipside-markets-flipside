@@ -349,6 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Post to Twitter asynchronously (don't block market creation)
         const baseUrl = `${req.protocol}://${req.get('host')}`;
+        console.log('🐦 Attempting to post market to Twitter:', { marketId: market.id, baseUrl });
         postMarketToTwitter({
           id: market.id,
           question: market.question,

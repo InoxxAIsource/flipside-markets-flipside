@@ -31,6 +31,8 @@ interface MarketTweetData {
 }
 
 export async function postMarketToTwitter(market: MarketTweetData, baseUrl: string): Promise<string | null> {
+  console.log('🐦 postMarketToTwitter called:', { marketId: market.id, hasCredentials: hasTwitterCredentials });
+  
   // Skip if Twitter credentials not configured
   if (!hasTwitterCredentials || !rwClient) {
     console.log('📭 Skipping Twitter post - credentials not configured');
