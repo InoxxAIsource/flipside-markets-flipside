@@ -117,6 +117,7 @@ export default function Home() {
         <CategoryFilter 
           selected={selectedCategory}
           onSelect={setSelectedCategory}
+          markets={markets}
         />
 
         {isLoading ? (

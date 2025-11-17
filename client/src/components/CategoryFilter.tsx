@@ -1,24 +1,37 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useMemo } from 'react';
+import type { Market } from '@shared/schema';
 
-const categories = [
-  { id: 'all', label: 'All Markets', count: 48 },
-  { id: 'crypto', label: 'Crypto', count: 12 },
-  { id: 'sports', label: 'Sports', count: 8 },
-  { id: 'politics', label: 'Politics', count: 15 },
-  { id: 'finance', label: 'Finance', count: 7 },
-  { id: 'technology', label: 'Technology', count: 6 },
+const categoryDefinitions = [
+  { id: 'all', label: 'All Markets' },
+  { id: 'crypto', label: 'Crypto' },
+  { id: 'sports', label: 'Sports' },
+  { id: 'politics', label: 'Politics' },
+  { id: 'finance', label: 'Finance' },
+  { id: 'technology', label: 'Technology' },
 ];
 
 interface CategoryFilterProps {
   selected?: string;
   onSelect?: (category: string) => void;
+  markets?: Market[];
 }
 
-export function CategoryFilter({ selected = 'all', onSelect }: CategoryFilterProps) {
+export function CategoryFilter({ selected = 'all', onSelect, markets = [] }: CategoryFilterProps) {
+  const categoriesWithCounts = useMemo(() => {
+    return categoryDefinitions.map(category => {
+      const count = category.id === 'all' 
+        ? markets.length 
+        : markets.filter(m => m.category.toLowerCase() === category.id).length;
+      
+      return { ...category, count };
+    });
+  }, [markets]);
+
   return (
     <div className="flex flex-wrap gap-2">
-      {categories.map((category) => (
+      {categoriesWithCounts.map((category) => (
         <Button
           key={category.id}
           variant={selected === category.id ? 'default' : 'outline'}
