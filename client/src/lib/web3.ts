@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { createWalletConnectProvider, disconnectWalletConnect, getWalletConnectProvider } from './web3modal';
 
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const NETWORK_NAME = 'Sepolia';
@@ -14,11 +15,20 @@ export const CONTRACT_ADDRESSES = {
   ProxyWallet: '0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2', // Points to Factory
 };
 
+// Detect if user is on mobile
+function isMobile(): boolean {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 export async function connectWallet() {
-  if (!window.ethereum) {
-    throw new Error('MetaMask is not installed');
+  // On mobile browsers (not MetaMask in-app), prefer WalletConnect
+  const preferWalletConnect = isMobile() && !window.ethereum;
+
+  if (preferWalletConnect || !window.ethereum) {
+    return connectViaWalletConnect();
   }
 
+  // Try MetaMask first on desktop
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const accounts = await provider.send('eth_requestAccounts', []);
@@ -37,6 +47,36 @@ export async function connectWallet() {
   } catch (error: any) {
     throw new Error(`Failed to connect wallet: ${error.message}`);
   }
+}
+
+async function connectViaWalletConnect() {
+  try {
+    const wcProvider = await createWalletConnectProvider();
+    
+    // Enable session (shows QR modal)
+    const accounts = await wcProvider.enable();
+    
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts returned from WalletConnect');
+    }
+
+    // Create ethers provider
+    const provider = new ethers.BrowserProvider(wcProvider as any);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+
+    return {
+      address,
+      provider,
+      signer,
+    };
+  } catch (error: any) {
+    throw new Error(`Failed to connect via WalletConnect: ${error.message}`);
+  }
+}
+
+export async function disconnectWallet() {
+  await disconnectWalletConnect();
 }
 
 export async function switchToSepolia() {

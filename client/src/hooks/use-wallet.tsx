@@ -18,8 +18,8 @@ export function useWallet(): WalletState {
     const checkConnection = async () => {
       if (window.ethereum) {
         try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
+          if (accounts && accounts.length > 0) {
             setAccount(accounts[0]);
           }
         } catch (err) {
@@ -31,21 +31,25 @@ export function useWallet(): WalletState {
     checkConnection();
 
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts: string[]) => {
-        setAccount(accounts[0] || null);
-      });
+      const handleAccountsChanged = (accounts: unknown) => {
+        const accountArray = accounts as string[];
+        setAccount(accountArray[0] || null);
+      };
 
-      window.ethereum.on('chainChanged', () => {
+      const handleChainChanged = () => {
         window.location.reload();
-      });
-    }
+      };
 
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeAllListeners('accountsChanged');
-        window.ethereum.removeAllListeners('chainChanged');
-      }
-    };
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+
+      return () => {
+        if (window.ethereum) {
+          window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+          window.ethereum.removeListener('chainChanged', handleChainChanged);
+        }
+      };
+    }
   }, []);
 
   const connect = async (): Promise<string> => {
@@ -64,7 +68,13 @@ export function useWallet(): WalletState {
     }
   };
 
-  const disconnect = () => {
+  const disconnect = async () => {
+    try {
+      const { disconnectWallet } = await import('@/lib/web3');
+      await disconnectWallet();
+    } catch (err) {
+      console.error('Failed to disconnect wallet:', err);
+    }
     setAccount(null);
   };
 
