@@ -16,6 +16,16 @@ export function useWallet(): WalletState {
 
   useEffect(() => {
     const checkConnection = async () => {
+      // Check for existing WalletConnect session first
+      const { getWalletConnectProvider } = await import('@/lib/web3modal');
+      const wcProvider = getWalletConnectProvider();
+      
+      if (wcProvider && wcProvider.accounts && wcProvider.accounts.length > 0) {
+        setAccount(wcProvider.accounts[0]);
+        return;
+      }
+
+      // Fall back to checking MetaMask
       if (window.ethereum) {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
@@ -30,26 +40,53 @@ export function useWallet(): WalletState {
 
     checkConnection();
 
+    // MetaMask event handlers (defined once to ensure cleanup works)
+    const handleMetaMaskAccountsChanged = (accounts: unknown) => {
+      const accountArray = accounts as string[];
+      setAccount(accountArray[0] || null);
+    };
+
+    const handleMetaMaskChainChanged = () => {
+      window.location.reload();
+    };
+
+    // WalletConnect event handlers (via custom events)
+    const handleWalletAccountsChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<string[]>;
+      setAccount(customEvent.detail[0] || null);
+    };
+
+    const handleWalletChainChanged = () => {
+      window.location.reload();
+    };
+
+    const handleWalletDisconnected = () => {
+      setAccount(null);
+    };
+
+    // Listen for MetaMask events
     if (window.ethereum) {
-      const handleAccountsChanged = (accounts: unknown) => {
-        const accountArray = accounts as string[];
-        setAccount(accountArray[0] || null);
-      };
-
-      const handleChainChanged = () => {
-        window.location.reload();
-      };
-
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
-
-      return () => {
-        if (window.ethereum) {
-          window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-          window.ethereum.removeListener('chainChanged', handleChainChanged);
-        }
-      };
+      window.ethereum.on('accountsChanged', handleMetaMaskAccountsChanged);
+      window.ethereum.on('chainChanged', handleMetaMaskChainChanged);
     }
+
+    // Listen for WalletConnect events (via custom events)
+    window.addEventListener('walletAccountsChanged', handleWalletAccountsChanged);
+    window.addEventListener('walletChainChanged', handleWalletChainChanged);
+    window.addEventListener('walletDisconnected', handleWalletDisconnected);
+
+    return () => {
+      // Clean up MetaMask listeners
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', handleMetaMaskAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleMetaMaskChainChanged);
+      }
+
+      // Clean up WalletConnect listeners
+      window.removeEventListener('walletAccountsChanged', handleWalletAccountsChanged);
+      window.removeEventListener('walletChainChanged', handleWalletChainChanged);
+      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
+    };
   }, []);
 
   const connect = async (): Promise<string> => {

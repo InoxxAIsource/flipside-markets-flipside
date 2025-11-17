@@ -7,6 +7,13 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 17, 2025
+- **WalletConnect Integration**: Added mobile wallet support for trading on any browser
+  - **Hybrid Wallet System**: Auto-detects browser type and shows appropriate connection method
+  - **Mobile Support**: Users on mobile browsers (Chrome, Safari) can now connect via WalletConnect QR code scanning
+  - **Desktop Support**: Maintains MetaMask extension support, with WalletConnect as alternative option
+  - **Event Synchronization**: Properly handles account changes, chain switches, and disconnections from both MetaMask and WalletConnect
+  - **Implementation**: Uses `@walletconnect/ethereum-provider` with custom event bridge for unified state management
+  - **Project ID**: Configured via `VITE_WALLETCONNECT_PROJECT_ID` environment variable
 - **Liquidity Mining Rewards System**: Implemented comprehensive off-chain rewards program to incentivize trading and market creation
   - **Points System**: 1 point per $1 traded, 2x multiplier for market makers (limit orders), 10% bonus for market creators
   - **Leaderboard**: Public leaderboard showing top traders ranked by total points at `/leaderboard`
