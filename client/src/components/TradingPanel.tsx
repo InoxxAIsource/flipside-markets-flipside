@@ -578,13 +578,21 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
           </div>
 
           {limitTotal > 0 && (
-            <div className="p-3 bg-muted rounded-md">
+            <div className="p-3 bg-muted rounded-md space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total Cost</span>
+                <span className="text-muted-foreground">Total</span>
                 <span className="font-mono font-semibold" data-testid="text-limit-total">
-                  ${limitTotal.toFixed(2)} USDT
+                  ${limitTotal.toFixed(2)}
                 </span>
               </div>
+              {orderSide === 'buy' && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">To Win</span>
+                  <span className="font-mono font-semibold text-green-600 dark:text-green-500" data-testid="text-limit-to-win">
+                    ${parseFloat(limitSize || '0').toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -668,11 +676,17 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
           </div>
 
           {marketTotal > 0 && (
-            <div className="p-3 bg-muted rounded-md">
+            <div className="p-3 bg-muted rounded-md space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Estimated Total</span>
+                <span className="text-muted-foreground">Total</span>
                 <span className="font-mono font-semibold" data-testid="text-market-total">
-                  ${marketTotal.toFixed(2)} USDT
+                  ${marketTotal.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">To Win</span>
+                <span className="font-mono font-semibold text-green-600 dark:text-green-500" data-testid="text-market-to-win">
+                  ${parseFloat(marketSize || '0').toFixed(2)}
                 </span>
               </div>
             </div>
