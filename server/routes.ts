@@ -16,6 +16,7 @@ import path from "path";
 import fs from "fs/promises";
 import { randomBytes } from "crypto";
 import { postMarketToTwitter } from "./services/twitter";
+import { rewardsService } from "./services/rewardsService";
 
 // Module-level variable for ProxyWalletService (set by server/index.ts)
 let proxyWalletServiceInstance: ProxyWalletService | null = null;
@@ -1081,6 +1082,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching order history:', error);
       res.status(500).json({ error: 'Failed to fetch order history' });
+    }
+  });
+
+  // ============================================
+  // REWARDS & LIQUIDITY MINING ENDPOINTS
+  // ============================================
+
+  // GET /api/rewards/leaderboard - Get top traders by points
+  app.get('/api/rewards/leaderboard', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const leaderboard = await rewardsService.getLeaderboard(limit);
+      res.json(leaderboard);
+    } catch (error: any) {
+      console.error('Error fetching leaderboard:', error);
+      res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    }
+  });
+
+  // GET /api/rewards/user/:address - Get user's rewards data
+  app.get('/api/rewards/user/:address', async (req, res) => {
+    try {
+      const userAddress = req.params.address;
+      const rewards = await rewardsService.getUserRewards(userAddress);
+      
+      if (!rewards) {
+        return res.json({
+          userAddress,
+          totalPoints: 0,
+          weeklyPoints: 0,
+          rank: null,
+          totalVolume: 0,
+          tradesCount: 0,
+          marketsCreated: 0,
+        });
+      }
+      
+      res.json(rewards);
+    } catch (error: any) {
+      console.error('Error fetching user rewards:', error);
+      res.status(500).json({ error: 'Failed to fetch user rewards' });
+    }
+  });
+
+  // GET /api/rewards/history/:address - Get user's rewards history
+  app.get('/api/rewards/history/:address', async (req, res) => {
+    try {
+      const userAddress = req.params.address;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const history = await rewardsService.getUserRewardsHistory(userAddress, limit);
+      res.json(history);
+    } catch (error: any) {
+      console.error('Error fetching rewards history:', error);
+      res.status(500).json({ error: 'Failed to fetch rewards history' });
+    }
+  });
+
+  // POST /api/rewards/recalculate - Manually trigger points recalculation (admin only)
+  app.post('/api/rewards/recalculate', async (req, res) => {
+    try {
+      console.log('[API] Starting manual rewards recalculation...');
+      await rewardsService.recalculateAllPoints();
+      res.json({ success: true, message: 'Points recalculated successfully' });
+    } catch (error: any) {
+      console.error('Error recalculating points:', error);
+      res.status(500).json({ error: 'Failed to recalculate points' });
     }
   });
 

@@ -168,6 +168,48 @@ export const userNonces = pgTable("user_nonces", {
   userIdx: index("user_nonces_user_idx").on(table.userAddress),
 }));
 
+// Rewards points - tracks user rewards from liquidity mining
+export const rewardsPoints = pgTable("rewards_points", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAddress: text("user_address").notNull().unique(),
+  
+  // Points data
+  totalPoints: real("total_points").notNull().default(0),
+  weeklyPoints: real("weekly_points").notNull().default(0),
+  rank: integer("rank"),
+  
+  // Trading stats
+  totalVolume: real("total_volume").notNull().default(0),
+  tradesCount: integer("trades_count").notNull().default(0),
+  marketsCreated: integer("markets_created").notNull().default(0),
+  
+  // Metadata
+  lastTradeAt: timestamp("last_trade_at"),
+  weekStartsAt: timestamp("week_starts_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  userIdx: index("rewards_points_user_idx").on(table.userAddress),
+  rankIdx: index("rewards_points_rank_idx").on(table.rank),
+  totalPointsIdx: index("rewards_points_total_idx").on(table.totalPoints),
+}));
+
+// Rewards history - logs individual reward events
+export const rewardsHistory = pgTable("rewards_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAddress: text("user_address").notNull(),
+  
+  // Reward details
+  points: real("points").notNull(),
+  reason: text("reason").notNull(), // 'trade_volume', 'market_making', 'market_creation', 'streak_bonus'
+  metadata: text("metadata"), // JSON string with additional context
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => ({
+  userIdx: index("rewards_history_user_idx").on(table.userAddress),
+  createdAtIdx: index("rewards_history_created_at_idx").on(table.createdAt),
+  reasonIdx: index("rewards_history_reason_idx").on(table.reason),
+}));
+
 // Insert schemas with validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -223,6 +265,17 @@ export const insertUserNonceSchema = createInsertSchema(userNonces).omit({
   updatedAt: true,
 });
 
+export const insertRewardsPointsSchema = createInsertSchema(rewardsPoints).omit({
+  id: true,
+  updatedAt: true,
+  rank: true,
+});
+
+export const insertRewardsHistorySchema = createInsertSchema(rewardsHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -244,3 +297,9 @@ export type InsertPythPriceUpdate = z.infer<typeof insertPythPriceUpdateSchema>;
 
 export type UserNonce = typeof userNonces.$inferSelect;
 export type InsertUserNonce = z.infer<typeof insertUserNonceSchema>;
+
+export type RewardsPoints = typeof rewardsPoints.$inferSelect;
+export type InsertRewardsPoints = z.infer<typeof insertRewardsPointsSchema>;
+
+export type RewardsHistory = typeof rewardsHistory.$inferSelect;
+export type InsertRewardsHistory = z.infer<typeof insertRewardsHistorySchema>;

@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { formatSharePrice } from '@/lib/priceParser';
-import type { Order, Position, Market } from '@shared/schema';
+import { Trophy, TrendingUp, Award, Sparkles } from 'lucide-react';
+import type { Order, Position, Market, RewardsPoints, RewardsHistory } from '@shared/schema';
 
 export default function Profile() {
   const { account: address, connect } = useWallet();
@@ -39,6 +40,16 @@ export default function Profile() {
     enabled: isConnected,
   });
 
+  const { data: rewards, isLoading: rewardsLoading } = useQuery<RewardsPoints>({
+    queryKey: address ? ['/api/rewards/user', address] : ['disabled'],
+    enabled: !!address,
+  });
+
+  const { data: rewardsHistory, isLoading: rewardsHistoryLoading } = useQuery<RewardsHistory[]>({
+    queryKey: address ? ['/api/rewards/history', address] : ['disabled'],
+    enabled: !!address,
+  });
+
   if (!isConnected) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
@@ -66,8 +77,11 @@ export default function Profile() {
         </p>
       </div>
 
-      <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+      <Tabs defaultValue="rewards" className="w-full">
+        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsTrigger value="rewards" data-testid="tab-rewards">
+            Rewards
+          </TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders">
             Order History
           </TabsTrigger>
@@ -75,6 +89,157 @@ export default function Profile() {
             Positions
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="rewards" className="space-y-4">
+          {rewardsLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          ) : (
+            <>
+              {/* Rewards Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                    <p className="text-sm text-muted-foreground">Total Points</p>
+                  </div>
+                  <p className="text-3xl font-bold" data-testid="text-total-points">
+                    {rewards?.totalPoints.toLocaleString(undefined, { maximumFractionDigits: 0 }) || 0}
+                  </p>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Award className="h-5 w-5 text-primary" />
+                    <p className="text-sm text-muted-foreground">Global Rank</p>
+                  </div>
+                  <p className="text-3xl font-bold" data-testid="text-global-rank">
+                    #{rewards?.rank || '-'}
+                  </p>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <p className="text-sm text-muted-foreground">This Week</p>
+                  </div>
+                  <p className="text-3xl font-bold" data-testid="text-weekly-points">
+                    {rewards?.weeklyPoints.toLocaleString(undefined, { maximumFractionDigits: 0 }) || 0}
+                  </p>
+                </Card>
+              </div>
+
+              {/* Trading Stats */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Trading Activity
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Total Volume</p>
+                    <p className="text-xl font-bold" data-testid="text-trading-volume">
+                      ${rewards?.totalVolume.toLocaleString() || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Total Trades</p>
+                    <p className="text-xl font-bold" data-testid="text-trades-count">
+                      {rewards?.tradesCount || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Markets Created</p>
+                    <p className="text-xl font-bold" data-testid="text-markets-created">
+                      {rewards?.marketsCreated || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Last Trade</p>
+                    <p className="text-xl font-bold" data-testid="text-last-trade">
+                      {rewards?.lastTradeAt ? formatDistanceToNow(new Date(rewards.lastTradeAt), { addSuffix: true }) : 'Never'}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Rewards History */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Recent Rewards</h3>
+                
+                {rewardsHistoryLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : rewardsHistory && rewardsHistory.length > 0 ? (
+                  <div className="space-y-3">
+                    {rewardsHistory.slice(0, 10).map((reward, index) => (
+                      <div
+                        key={reward.id}
+                        className="flex items-center justify-between p-3 rounded-lg border hover-elevate"
+                        data-testid={`reward-${index}`}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="secondary" data-testid={`reward-reason-${index}`}>
+                              {reward.reason.replace(/_/g, ' ')}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground" data-testid={`reward-time-${index}`}>
+                              {formatDistanceToNow(new Date(reward.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                          {reward.metadata && (
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {(() => {
+                                try {
+                                  const meta = JSON.parse(reward.metadata);
+                                  return meta.volume ? `Volume: $${meta.volume.toFixed(2)}` : '';
+                                } catch {
+                                  return '';
+                                }
+                              })()}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-lg font-bold text-primary" data-testid={`reward-points-${index}`}>
+                          +{reward.points.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No rewards yet. Start trading to earn points!</p>
+                  </div>
+                )}
+              </Card>
+
+              {/* How to Earn More */}
+              <Card className="p-6 bg-primary/5">
+                <h3 className="text-lg font-semibold mb-3">How to Earn Points</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">•</span>
+                    <p><strong>Trade Volume:</strong> Earn 1 point per $1 traded</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">•</span>
+                    <p><strong>Market Making:</strong> 2x points for placing limit orders that get filled</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">•</span>
+                    <p><strong>Market Creation:</strong> 10% bonus on total market volume for creators</p>
+                  </div>
+                </div>
+              </Card>
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="orders" className="space-y-4">
           <Card className="p-6">

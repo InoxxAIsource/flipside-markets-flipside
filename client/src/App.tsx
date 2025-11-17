@@ -10,6 +10,7 @@ import MarketPage from "@/pages/MarketPage";
 import CreateMarket from "@/pages/CreateMarket";
 import Portfolio from "@/pages/Portfolio";
 import Profile from "@/pages/Profile";
+import Leaderboard from "@/pages/Leaderboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/create" component={CreateMarket} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/profile" component={Profile} />
+      <Route path="/leaderboard" component={Leaderboard} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -6,6 +6,16 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 
 ## Recent Changes
 
+### November 17, 2025
+- **Liquidity Mining Rewards System**: Implemented comprehensive off-chain rewards program to incentivize trading and market creation
+  - **Points System**: 1 point per $1 traded, 2x multiplier for market makers (limit orders), 10% bonus for market creators
+  - **Leaderboard**: Public leaderboard showing top traders ranked by total points at `/leaderboard`
+  - **Rewards Dashboard**: User profile now includes rewards tab showing total points, global rank, weekly points, and trading stats
+  - **Database Schema**: Added `rewardsPoints` and `rewardsHistory` tables tracking user rewards and point history
+  - **Automated Recalculation**: Hourly cron job recalculates all user points from order fills, weekly reset on Sundays
+  - **API Endpoints**: `/api/rewards/leaderboard`, `/api/rewards/user/:address`, `/api/rewards/history/:address`
+  - **Trophy Icon Navigation**: Added leaderboard link to top navigation bar
+
 ### November 16, 2025
 - **Polymarket-Style Share Price Formatting**: Updated all share price displays to use cents (50¢) instead of decimals ($0.50)
   - MarketCard buy buttons now show "Buy Yes 50¢" instead of "Buy Yes 50%"
@@ -45,8 +55,9 @@ The UI/UX is inspired by Polymarket and other trading platforms, utilizing shadc
 
 -   **Frontend:** Built with React 18, TypeScript, Vite, Wouter for routing, TanStack Query for server state management, and Ethers.js v6 for Web3 integration.
 -   **Backend:** Node.js with Express and TypeScript, utilizing Drizzle ORM for PostgreSQL interactions. Includes a WebSocket server for real-time updates.
--   **Blockchain Integration:** Operates on the Ethereum Sepolia testnet, using ConditionalTokens, MarketFactory, CTFExchange (order book DEX), PythPriceResolver, FeeDistributor, ProxyWallet (for gasless meta-transactions), and MockUSDT smart contracts. EIP-712 signed meta-transactions are used for gasless trading.
--   **Background Services:** Includes an `Event Indexer` for blockchain event syncing, a `Pyth Worker` for oracle updates and market resolution, and an `Order Matcher` for trade processing.
+-   **Blockchain Integration:** Operates on the Ethereum Sepolia testnet, using ConditionalTokens, MarketFactory, CTFExchange (order book DEX), PythPriceResolver, FeeDistributor (code exists but not deployed), ProxyWallet (for gasless meta-transactions), and MockUSDT smart contracts. EIP-712 signed meta-transactions are used for gasless trading. **Note**: Fee collection is calculated but not enforced on testnet; FeeDistributor contract deployment pending for mainnet.
+-   **Background Services:** Includes an `Event Indexer` for blockchain event syncing, a `Pyth Worker` for oracle updates and market resolution, an `Order Matcher` for trade processing, and a `Rewards Cron` for hourly points recalculation and weekly resets.
+-   **Liquidity Mining:** Off-chain rewards system tracking user points based on trading volume, market making activity, and market creation. Points stored in PostgreSQL and calculated hourly from historical order fills.
 -   **AI Integration:** Leverages Replit AI Integrations for OpenAI's GPT-4o-mini via a dedicated backend service (`server/services/aiAnalysis.ts`).
 -   **Social Media Integration:** Uses `twitter-api-v2` library for X (Twitter) auto-posting, including image uploads and smart hashtag generation.
 -   **Image Processing:** `Sharp` library is used on the backend for image resizing, format conversion (to WebP), and validation during uploads.
@@ -55,7 +66,7 @@ The UI/UX is inspired by Polymarket and other trading platforms, utilizing shadc
 
 -   **Data-first Hierarchy:** Prioritizes efficient data management and retrieval.
 -   **Mobile-first Responsiveness:** Ensures optimal viewing and interaction across various devices.
--   **PostgreSQL Database:** Managed via Drizzle ORM, storing core data for users, markets, orders, order fills, positions, and Pyth price updates, tracking both off-chain and on-chain states.
+-   **PostgreSQL Database:** Managed via Drizzle ORM, storing core data for users, markets, orders, order fills, positions, Pyth price updates, and rewards (points, history, rankings), tracking both off-chain and on-chain states.
 -   **Scalability:** Designed with distinct frontend and backend services for modularity and scalability.
 
 ## External Dependencies
