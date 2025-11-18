@@ -63,6 +63,7 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
 
   const [yesBalance, setYesBalance] = useState('0');
   const [noBalance, setNoBalance] = useState('0');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const { data: orders, isLoading: isLoadingOrders } = useQuery<Order[]>({
     queryKey: ['/api/markets', marketId, 'orders'],
@@ -91,38 +92,38 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
   const noTokenId = market?.noTokenId || '0';
 
   useEffect(() => {
-    const fetchYesBalance = async () => {
-      if (account && yesTokenId && yesTokenId !== '0' && yesTokenId !== 'undefined') {
+    const fetchBalances = async () => {
+      if (!account) {
+        setYesBalance('0');
+        setNoBalance('0');
+        return;
+      }
+
+      if (yesTokenId && yesTokenId !== '0' && yesTokenId !== 'undefined') {
         try {
           const balance = await getPositionBalance(yesTokenId);
           setYesBalance(ethers.formatUnits(balance, 6));
         } catch (error: any) {
-          console.error('Error fetching YES balance:', error);
           setYesBalance('0');
         }
       } else {
         setYesBalance('0');
       }
-    };
-    fetchYesBalance();
-  }, [account, yesTokenId, getPositionBalance]);
 
-  useEffect(() => {
-    const fetchNoBalance = async () => {
-      if (account && noTokenId && noTokenId !== '0' && noTokenId !== 'undefined') {
+      if (noTokenId && noTokenId !== '0' && noTokenId !== 'undefined') {
         try {
           const balance = await getPositionBalance(noTokenId);
           setNoBalance(ethers.formatUnits(balance, 6));
         } catch (error: any) {
-          console.error('Error fetching NO balance:', error);
           setNoBalance('0');
         }
       } else {
         setNoBalance('0');
       }
     };
-    fetchNoBalance();
-  }, [account, noTokenId, getPositionBalance]);
+
+    fetchBalances();
+  }, [account, yesTokenId, noTokenId, refreshTrigger]);
 
   const orderBook = useMemo(() => {
     if (!orders) return { yesBids: [], yesAsks: [], noBids: [], noAsks: [] };
@@ -267,6 +268,9 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
       await queryClient.invalidateQueries({ queryKey: ['/api/markets', marketId, 'orders'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'orders'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'positions'] });
+      
+      // Refresh position balances
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       console.error('Error placing limit order:', error);
       toast({
@@ -378,6 +382,9 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
       await queryClient.invalidateQueries({ queryKey: ['/api/markets', marketId, 'orders'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'orders'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/users', account, 'positions'] });
+      
+      // Refresh position balances
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       console.error('Error executing market order:', error);
       toast({
@@ -415,6 +422,8 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
     try {
       await split(conditionId, splitAmount);
       setSplitAmount('');
+      // Refresh position balances
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Split error:', error);
     }
@@ -444,6 +453,8 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
     try {
       await merge(conditionId, mergeAmount);
       setMergeAmount('');
+      // Refresh position balances
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Merge error:', error);
     }
