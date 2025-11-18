@@ -7,22 +7,24 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 18, 2025
-- **Comprehensive UI/UX Redesign**: Complete overhaul of the home page experience surpassing Polymarket's design quality
-  - **FilterSidebar Component**: Advanced filtering system with time-based filters (All, 24h, 7d, 30d) and dynamic category filters
-    - Real-time market counts for each filter option
-    - Categories dynamically generated from market data with normalization (trim, lowercase, 'other' fallback)
-    - Predefined categories: All Markets, Crypto, Sports, Politics, Entertainment, Science, Technology, Other
-    - Smooth scrolling with proper padding and spacing
-  - **SearchAndSort Component**: Powerful search and sorting controls in the header
-    - Live search filtering across market titles
-    - Sort options: Most Volume, Ending Soon (removed broken "newest" sort based on UUID)
-    - Combined search + sort for comprehensive market discovery
+- **Minimalist Home Page Redesign**: Streamlined full-height layout focused on market discovery
+  - **Full-Height FilterSidebar**: Clean left sidebar spanning entire viewport height
+    - Flipside branding header at top with logo and tagline
+    - Time-based filters (All, 24h, 7d, 30d) with real-time market counts
+    - Dynamic category filters generated from market data (Crypto, Sports, Politics, etc.)
+    - Smooth scrolling with optimized spacing
+  - **Simplified Main Content**: Removed hero section and stats for cleaner focus
+    - Removed Total Volume, Active Markets, and Traders statistics
+    - Removed Browse/Create Market hero buttons
+    - Clean "Markets" header with count display
+    - SearchAndSort component for live filtering and sorting
+    - Full-height responsive grid layout (flex h-screen)
   - **Enhanced MarketCard Design**: Polymarket-inspired cards with superior visual hierarchy
     - Better proportions, improved spacing, cleaner metadata layout
     - Smooth hover effects with scale animations and gradient overlays
     - Professional typography and visual polish throughout
-  - **Optimized Grid Layout**: Responsive 3-column grid with consistent spacing
-  - **Client-Side Filtering Strategy**: Single React Query fetch with all client-side filtering/sorting for consistency
+  - **Optimized Spacing**: Max-width centered layout (max-w-7xl) with professional padding
+  - **Client-Side Filtering Strategy**: Single React Query fetch with all client-side filtering/sorting
     - Prevents React Query cache mutation with spread operator before filtering
     - Accurate sidebar counts that stay synchronized across filter changes
     - Safe number handling with isFinite() checks for volume aggregation
