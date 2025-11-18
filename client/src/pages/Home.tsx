@@ -101,6 +101,7 @@ export default function Home() {
                       setSelectedTimeFilter(filter);
                       setMobileFiltersOpen(false);
                     }}
+                    isMobile={true}
                   />
                 </SheetContent>
               </Sheet>

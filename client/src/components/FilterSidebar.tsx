@@ -12,6 +12,7 @@ interface FilterSidebarProps {
   markets: Market[] | undefined;
   selectedTimeFilter: string;
   onTimeFilterChange: (filter: string) => void;
+  isMobile?: boolean;
 }
 
 const timeFilters = [
@@ -26,6 +27,7 @@ export function FilterSidebar({
   markets,
   selectedTimeFilter,
   onTimeFilterChange,
+  isMobile = false,
 }: FilterSidebarProps) {
   // Guard against undefined markets
   const safeMarkets = markets || [];
@@ -85,7 +87,7 @@ export function FilterSidebar({
                       isSelected ? 'bg-primary/10 text-primary hover:bg-primary/15' : ''
                     }`}
                     onClick={() => onTimeFilterChange(filter.id)}
-                    data-testid={`button-time-filter-${filter.id}`}
+                    data-testid={`button-time-filter-${filter.id}${isMobile ? '-mobile' : ''}`}
                   >
                     <Icon className="h-4 w-4" />
                     <span className="flex-1 text-left">{filter.label}</span>
