@@ -52,26 +52,6 @@ export function WalletButton() {
 
   const handleConnect = async () => {
     try {
-      // Check if MetaMask is available
-      if (typeof window.ethereum === 'undefined') {
-        // Likely in an iframe - suggest opening in new tab
-        toast({
-          title: 'MetaMask Not Detected',
-          description: 'Please open this app in a new tab to connect MetaMask',
-          variant: 'destructive',
-          action: (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => window.open(window.location.href, '_blank')}
-            >
-              Open in New Tab
-            </Button>
-          ),
-        });
-        return;
-      }
-
       const connectedAddress = await connect();
       toast({
         title: 'Wallet Connected',
