@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, Brain } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { TrendingUp, TrendingDown, Brain, Shield } from 'lucide-react';
 import { CountdownTimer } from './CountdownTimer';
 import { AIAnalysisDialog } from './AIAnalysisDialog';
 import { detectCryptoFromQuestion } from '@/lib/cryptoLogos';
@@ -114,10 +115,23 @@ export function MarketCard({ market }: MarketCardProps) {
               </Badge>
             )}
             {market.pythPriceFeedId && (
-              <Badge variant="outline" className="text-xs flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                Oracle
-              </Badge>
+              <>
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                  Oracle
+                </Badge>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs flex items-center gap-1 cursor-help">
+                      <Shield className="h-3 w-3" />
+                      Manual Resolution
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Resolved by admins using verified Pyth Network price data</p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
             )}
           </div>
           

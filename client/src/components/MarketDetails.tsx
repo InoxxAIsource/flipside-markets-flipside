@@ -1,7 +1,8 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, User, ExternalLink } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Calendar, User, ExternalLink, Shield } from 'lucide-react';
 import { formatAddress } from '@/lib/web3';
 import type { Market } from '@shared/schema';
 
@@ -53,7 +54,22 @@ export function MarketDetails({ market }: MarketDetailsProps) {
 
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Category</span>
-          <Badge variant="secondary">{market.category}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{market.category}</Badge>
+            {market.pythPriceFeedId && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-xs flex items-center gap-1 cursor-help">
+                    <Shield className="h-3 w-3" />
+                    Manual Resolution
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">Resolved by admins using verified Pyth Network price data</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
 
         {market.pythPriceFeed && (
