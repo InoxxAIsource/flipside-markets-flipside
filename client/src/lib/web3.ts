@@ -15,20 +15,20 @@ export const CONTRACT_ADDRESSES = {
   ProxyWallet: '0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2', // Points to Factory
 };
 
-// Detect if user is on mobile
-function isMobile(): boolean {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
 export async function connectWallet() {
-  // On mobile browsers (not MetaMask in-app), prefer WalletConnect
-  const preferWalletConnect = isMobile() && !window.ethereum;
-
-  if (preferWalletConnect || !window.ethereum) {
+  // Use MetaMask if available, otherwise fall back to WalletConnect
+  if (window.ethereum) {
+    return connectViaMetaMask();
+  } else {
     return connectViaWalletConnect();
   }
+}
 
-  // Try MetaMask first on desktop
+export async function connectViaMetaMask() {
+  if (!window.ethereum) {
+    throw new Error('MetaMask is not installed');
+  }
+
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const accounts = await provider.send('eth_requestAccounts', []);
@@ -45,11 +45,11 @@ export async function connectWallet() {
       signer,
     };
   } catch (error: any) {
-    throw new Error(`Failed to connect wallet: ${error.message}`);
+    throw new Error(`Failed to connect MetaMask: ${error.message}`);
   }
 }
 
-async function connectViaWalletConnect() {
+export async function connectViaWalletConnect() {
   try {
     const wcProvider = await createWalletConnectProvider();
     
