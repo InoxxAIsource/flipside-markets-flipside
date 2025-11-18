@@ -33,15 +33,6 @@ const timeFilters = [
   { id: '30d', label: '30 Days', icon: CalendarRange },
 ];
 
-const categories = [
-  { id: 'all', label: 'All Markets', icon: Globe },
-  { id: 'crypto', label: 'Crypto', icon: Bitcoin },
-  { id: 'sports', label: 'Sports', icon: Trophy },
-  { id: 'politics', label: 'Politics', icon: Vote },
-  { id: 'finance', label: 'Finance', icon: DollarSign },
-  { id: 'technology', label: 'Technology', icon: Zap },
-  { id: 'other', label: 'Other', icon: Sparkles },
-];
 
 export function FilterSidebar({
   markets,
