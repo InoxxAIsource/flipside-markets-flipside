@@ -12,23 +12,20 @@ export class PythWorker {
 
   /**
    * Start the Pyth price feed worker
-   * NOTE: Guarded no-op until PythPriceResolver contract is deployed
+   * NOTE: Disabled for testnet - oracle markets use manual resolution
+   * Markets are resolved by admins using verified Pyth Network price data
    */
   start() {
     if (this.isRunning) {
-      console.log('Pyth worker is already running');
       return;
     }
 
-    // Check if Pyth oracle functionality is available
-    // Exit early if PythPriceResolver not deployed
-    console.log('⚠️  Pyth worker: Oracle resolution disabled (PythPriceResolver not deployed)');
-    console.log('    Markets will require manual resolution until oracle is deployed');
-    
+    // Testnet uses manual resolution for oracle markets
+    // Auto-resolution via PythPriceResolver contract can be enabled for mainnet
     this.isRunning = false;
     return;
     
-    // TODO: Re-enable when PythPriceResolver is deployed on Sepolia
+    // TODO: Re-enable when PythPriceResolver is deployed for mainnet
     // this.isRunning = true;
     // console.log('Starting Pyth price feed worker...');
     // this.intervalId = setInterval(async () => {
