@@ -29,8 +29,10 @@ const CONTRACT_ADDRESSES = {
 
 const sections = [
   { id: 'overview', label: 'Project Overview', icon: Globe },
+  { id: 'uiux', label: 'UI/UX Features', icon: BookOpen },
   { id: 'contracts', label: 'Smart Contracts', icon: Code2 },
   { id: 'clob', label: 'CLOB System', icon: ArrowLeftRight },
+  { id: 'ai', label: 'AI Analysis', icon: Trophy },
   { id: 'decentralization', label: 'Decentralization', icon: Boxes },
   { id: 'benefits', label: 'Creator Benefits', icon: Trophy },
   { id: 'architecture', label: 'Architecture', icon: Code2 },
@@ -154,8 +156,8 @@ export default function Docs() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
+    <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="flex w-full max-w-full">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:block w-64 border-r bg-card/50 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="p-4">
@@ -186,8 +188,8 @@ export default function Docs() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 lg:mt-0 mt-[72px]">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+        <main className="flex-1 lg:mt-0 mt-[72px] min-w-0 w-full">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 sm:space-y-12 overflow-x-hidden">
             
             {/* Project Overview */}
             <section 
@@ -196,9 +198,9 @@ export default function Docs() {
               data-testid="section-overview"
               className="scroll-mt-20"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Globe className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold">Project Overview</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Project Overview</h1>
               </div>
               
               <div className="space-y-6 text-muted-foreground leading-relaxed">
@@ -251,6 +253,163 @@ export default function Docs() {
               </div>
             </section>
 
+            {/* UI/UX Features */}
+            <section 
+              ref={(el) => contentRefs.current['uiux'] = el}
+              id="uiux" 
+              data-testid="section-uiux"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">UI/UX Features</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Polymarket-inspired design with professional polish
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Market Cards</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Custom Images:</span> Upload custom market images with automatic WebP conversion and resizing
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Auto Crypto Logos:</span> Automatic detection and display of crypto logos (BTC, ETH, SOL, etc.) from market questions
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Oracle Price Display:</span> Real-time price vs. target comparison with trending indicators for oracle markets
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Direct Buy Buttons:</span> Quick "Buy Yes" and "Buy No" buttons on cards for instant trading
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Smooth Hover Effects:</span> Scale animations and gradient overlays for professional feel
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Market Detail Page</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Countdown Timer:</span> Real-time countdown to market expiration with dynamic updates
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Enhanced Price Chart:</span> Beautiful purple gradient chart showing historical market prices
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">TradingView Widget:</span> Embedded live charts for resolution sources (crypto prices, etc.)
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Oracle Info Display:</span> Shows Pyth Network feed details and confidence levels
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Buy/Sell Toggle:</span> Seamless switch between buying and selling positions
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Navigation & Filtering</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Horizontal Category Tabs:</span> Polymarket-style pill navigation with snap scrolling on mobile
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Time Range Filters:</span> Filter by 24h, 7d, 30d, or all markets
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Search & Sort:</span> Real-time search and sorting by volume, price, or expiry
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Responsive Grid:</span> 1-column (mobile) → 2-column (tablet) → 3-column (desktop) layout
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Mobile Optimization</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Touch Targets:</span> All buttons and interactive elements ≥44px for easy tapping
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Gradient Scroll Hints:</span> Edge fades indicate scrollable content
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Sheet Drawers:</span> Mobile-friendly slide-in menus for filters and navigation
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">WalletConnect Support:</span> Native mobile wallet integration for trading on-the-go
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             {/* Smart Contracts */}
             <section 
               ref={(el) => contentRefs.current['contracts'] = el}
@@ -258,9 +417,9 @@ export default function Docs() {
               data-testid="section-contracts"
               className="scroll-mt-20"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Code2 className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold">Smart Contract Addresses</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Code2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Smart Contract Addresses</h1>
               </div>
               
               <p className="text-muted-foreground mb-6">
@@ -309,9 +468,9 @@ export default function Docs() {
               data-testid="section-clob"
               className="scroll-mt-20"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <ArrowLeftRight className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold">Central Limit Order Book</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <ArrowLeftRight className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Central Limit Order Book</h1>
               </div>
               
               <p className="text-muted-foreground mb-6">
@@ -381,6 +540,129 @@ export default function Docs() {
               </div>
             </section>
 
+            {/* AI Analysis */}
+            <section 
+              ref={(el) => contentRefs.current['ai'] = el}
+              id="ai" 
+              data-testid="section-ai"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">AI-Powered Market Analysis</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Get instant insights powered by OpenAI GPT-4o-mini
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">Ask AI Button</h3>
+                  <p>
+                    Every market card and detail page features an "Ask AI" button that generates instant analysis 
+                    using OpenAI's GPT-4o-mini model. Simply click the button to receive comprehensive market insights.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">What AI Analyzes</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Market Question:</span> Interprets the prediction question and context
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Current Prices:</span> Analyzes YES/NO probabilities and market sentiment
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Trading Volume:</span> Considers market liquidity and trader engagement
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Expiry Date:</span> Factors in time remaining until resolution
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Oracle Data:</span> For oracle markets, analyzes real-time price feeds and targets
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">AI Analysis Output</h3>
+                  <div className="space-y-3">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Summary</div>
+                        <p className="text-sm">
+                          Clear explanation of what the market is predicting and key factors at play
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Probability Assessment</div>
+                        <p className="text-sm">
+                          AI's estimated likelihood of YES vs NO outcomes with reasoning
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Key Factors</div>
+                        <p className="text-sm">
+                          Important events, trends, or data points that could influence the outcome
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Risk Assessment</div>
+                        <p className="text-sm">
+                          Identified risks and uncertainties that traders should consider
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">Caching & Performance</h3>
+                  <p>
+                    AI analyses are cached in the database after first generation. This means instant loading 
+                    for previously analyzed markets while keeping OpenAI API costs low.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                  <h4 className="font-semibold mb-2 text-destructive">⚠️ Important Disclaimer</h4>
+                  <p className="text-sm text-muted-foreground">
+                    AI analysis is for informational purposes only and should NOT be considered financial advice. 
+                    The AI may make errors or miss important factors. Always do your own research before trading.
+                  </p>
+                </div>
+              </div>
+            </section>
+
             {/* Decentralization */}
             <section 
               ref={(el) => contentRefs.current['decentralization'] = el}
@@ -388,9 +670,9 @@ export default function Docs() {
               data-testid="section-decentralization"
               className="scroll-mt-20"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Boxes className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold">Decentralization Benefits</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Boxes className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Decentralization Benefits</h1>
               </div>
               
               <p className="text-muted-foreground mb-6">
@@ -466,9 +748,9 @@ export default function Docs() {
               data-testid="section-benefits"
               className="scroll-mt-20"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Trophy className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold">Creator & Trader Benefits</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Creator & Trader Benefits</h1>
               </div>
               
               <p className="text-muted-foreground mb-6">
@@ -556,9 +838,9 @@ export default function Docs() {
               data-testid="section-architecture"
               className="scroll-mt-20"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Code2 className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold">Technical Architecture</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Code2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Technical Architecture</h1>
               </div>
               
               <p className="text-muted-foreground mb-6">
@@ -636,9 +918,9 @@ export default function Docs() {
               data-testid="section-disclaimers"
               className="scroll-mt-20"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
-                <h1 className="text-3xl font-bold text-destructive">Important Disclaimers</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-destructive flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold text-destructive">Important Disclaimers</h1>
               </div>
               
               <p className="text-muted-foreground mb-6">

@@ -34,7 +34,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Web3Provider>
         <TooltipProvider>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background overflow-x-hidden">
             <TopNav />
             <Router />
           </div>
