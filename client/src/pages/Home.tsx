@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { MarketCard } from '@/components/MarketCard';
 import { FilterSidebar } from '@/components/FilterSidebar';
+import { CategoryTabs } from '@/components/CategoryTabs';
 import { SearchAndSort } from '@/components/SearchAndSort';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Market } from '@shared/schema';
@@ -69,9 +70,7 @@ export default function Home() {
         <FilterSidebar
           markets={markets}
           selectedTimeFilter={selectedTimeFilter}
-          selectedCategory={selectedCategory}
           onTimeFilterChange={setSelectedTimeFilter}
-          onCategoryChange={setSelectedCategory}
         />
 
         {/* Main Content */}
@@ -84,6 +83,13 @@ export default function Home() {
                 {filteredMarkets.length} market{filteredMarkets.length !== 1 ? 's' : ''} available
               </p>
             </div>
+
+            {/* Horizontal Category Tabs */}
+            <CategoryTabs
+              markets={markets}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+            />
 
             {/* Search and Sort */}
             <SearchAndSort
