@@ -92,6 +92,13 @@ export function FilterSidebar({
 
   return (
     <aside className="w-64 border-r bg-card/50 flex flex-col h-full">
+      {/* Sidebar Header */}
+      <div className="p-6 border-b">
+        <h1 className="text-2xl font-bold">Flipside</h1>
+        <p className="text-xs text-muted-foreground mt-1">Prediction Markets</p>
+      </div>
+
+      {/* Scrollable Filters */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-6">
           {/* Time Filters Section */}

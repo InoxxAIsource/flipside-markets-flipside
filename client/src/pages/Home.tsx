@@ -75,12 +75,12 @@ export default function Home() {
         />
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="px-8 py-6 space-y-6">
+        <div className="flex-1 overflow-auto bg-background">
+          <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
             {/* Header */}
             <div>
-              <h2 className="text-3xl font-bold">Markets</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-3xl font-bold tracking-tight">Markets</h2>
+              <p className="text-sm text-muted-foreground mt-1.5">
                 {filteredMarkets.length} market{filteredMarkets.length !== 1 ? 's' : ''} available
               </p>
             </div>
