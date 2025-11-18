@@ -7,6 +7,14 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 18, 2025
+- **Professional Gitbook-Style Documentation Page**: Complete technical documentation with interactive sidebar navigation
+  - **Sidebar Navigation**: Sticky sidebar with 7 sections (Overview, Contracts, CLOB, Decentralization, Benefits, Architecture, Disclaimers)
+  - **Scrollspy Effect**: Active section automatically highlights in sidebar based on scroll position
+  - **Smooth Scrolling**: Click sidebar items to smoothly scroll to any section
+  - **Mobile Responsive**: Collapsible sidebar in Sheet drawer with hamburger menu
+  - **Comprehensive Content**: Smart contract addresses with copy/Etherscan links, CLOB system details, decentralization benefits, liquidity mining rewards, technical architecture, and legal disclaimers
+  - **Professional Design**: Clean typography, proper spacing, card-based layouts, and visual hierarchy
+- **Disclaimer Banner Removed**: Removed home page disclaimer alert for cleaner user experience
 - **Mobile-First Responsive Design**: Complete mobile optimization with touch-friendly interface
   - **Responsive Breakpoints**: Mobile (0-639px), Tablet (640-1023px), Desktop (1024px+)
   - **Mobile Layout**: Hidden sidebar with hamburger menu that opens Sheet drawer
