@@ -3,12 +3,13 @@ import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MarketCard } from '@/components/MarketCard';
 import { FilterSidebar } from '@/components/FilterSidebar';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { SearchAndSort } from '@/components/SearchAndSort';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Menu } from 'lucide-react';
+import { Menu, AlertTriangle, X } from 'lucide-react';
 import type { Market } from '@shared/schema';
 
 export default function Home() {
@@ -17,6 +18,14 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('volume');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(() => {
+    return localStorage.getItem('flipside-disclaimer-dismissed') === 'true';
+  });
+
+  const handleDismissDisclaimer = () => {
+    setDisclaimerDismissed(true);
+    localStorage.setItem('flipside-disclaimer-dismissed', 'true');
+  };
 
   const { data: markets, isLoading } = useQuery<Market[]>({
     queryKey: ['/api/markets'],
@@ -120,6 +129,35 @@ export default function Home() {
                 {filteredMarkets.length} market{filteredMarkets.length !== 1 ? 's' : ''} available
               </p>
             </div>
+
+            {/* Disclaimer Banner */}
+            {!disclaimerDismissed && (
+              <Alert className="border-destructive/50 bg-destructive/5" data-testid="alert-disclaimer">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <span className="font-semibold text-destructive">Testnet Warning:</span>{' '}
+                    <span className="text-muted-foreground">
+                      Flipside operates on Ethereum Sepolia testnet. All tokens are for testing only and have no real value. 
+                      Trading involves risks. See{' '}
+                      <Link href="/docs" className="text-primary hover:underline">
+                        full disclaimers
+                      </Link>
+                      .
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 flex-shrink-0"
+                    onClick={handleDismissDisclaimer}
+                    data-testid="button-dismiss-disclaimer"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Horizontal Category Tabs */}
             <CategoryTabs
