@@ -76,37 +76,38 @@ export function MarketCard({ market }: MarketCardProps) {
     <>
       <Link href={`/market/${market.id}`}>
         <Card 
-          className="overflow-hidden hover-elevate cursor-pointer transition-all h-full flex flex-col"
+          className="group overflow-hidden hover-elevate cursor-pointer transition-all duration-300 h-full flex flex-col border-border/60"
           data-testid={`card-market-${market.id}`}
         >
         {/* Featured Image or Crypto Logo */}
         {hasCustomImage ? (
-          <div className="relative w-full h-48 bg-muted">
+          <div className="relative w-full h-40 bg-muted overflow-hidden">
             <img 
               src={market.imageUrl!} 
               alt={market.question}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               onError={() => {
                 // Fallback to crypto logo or default gradient if image fails
                 setImageLoadFailed(true);
               }}
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
         ) : hasCryptoLogo ? (
-          <div className="relative w-full h-48 bg-gradient-to-br from-primary/10 via-primary/5 to-background flex items-center justify-center">
-            <CryptoIcon className="w-24 h-24 text-primary opacity-80" />
+          <div className="relative w-full h-40 bg-gradient-to-br from-primary/10 via-primary/5 to-background flex items-center justify-center overflow-hidden">
+            <CryptoIcon className="w-20 h-20 text-primary opacity-70 transition-all duration-300 group-hover:scale-110 group-hover:opacity-90" />
           </div>
         ) : (
-          <div className="relative w-full h-48 bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center">
-            <span className="text-6xl opacity-20">?</span>
+          <div className="relative w-full h-40 bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center">
+            <span className="text-5xl opacity-20">?</span>
           </div>
         )}
         
         {/* Card Content */}
-        <div className="p-5 flex flex-col gap-4 flex-1">
+        <div className="p-4 flex flex-col gap-3 flex-1">
           {/* Badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="secondary" className="text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant="secondary" className="text-xs font-medium uppercase tracking-wide">
               {market.category}
             </Badge>
             {market.resolved && (
@@ -117,7 +118,7 @@ export function MarketCard({ market }: MarketCardProps) {
             {market.pythPriceFeedId && (
               <>
                 <Badge variant="outline" className="text-xs flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse"></span>
                   Oracle
                 </Badge>
                 <Tooltip>
@@ -136,18 +137,18 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
           
           {/* Question */}
-          <h3 className="font-semibold text-base leading-tight line-clamp-2 flex-1">
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 flex-1 min-h-[2.5rem]">
             {market.question}
           </h3>
 
           {/* Oracle Markets: Show Current Price */}
           {isOracleMarket && priceData ? (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 py-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase font-medium">Current Price</div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium tracking-wide">Current Price</div>
                   <div 
-                    className={`text-2xl font-bold ${
+                    className={`text-2xl font-bold transition-colors ${
                       targetPrice 
                         ? (priceData.currentPrice >= targetPrice ? 'text-primary' : 'text-destructive')
                         : 'text-foreground'
@@ -159,7 +160,7 @@ export function MarketCard({ market }: MarketCardProps) {
                 </div>
                 {targetPrice && (
                   <div className="text-right">
-                    <div className="text-xs text-muted-foreground uppercase font-medium">Target</div>
+                    <div className="text-xs text-muted-foreground uppercase font-medium tracking-wide">Target</div>
                     <div className="text-lg font-semibold text-muted-foreground" data-testid={`text-target-price-${market.id}`}>
                       ${formatPrice(targetPrice)}
                     </div>
@@ -167,7 +168,7 @@ export function MarketCard({ market }: MarketCardProps) {
                 )}
               </div>
               {targetPrice && (
-                <div className="flex items-center justify-center gap-1">
+                <div className="flex items-center justify-center gap-1 py-1">
                   {priceData.currentPrice >= targetPrice ? (
                     <TrendingUp className="h-4 w-4 text-primary" data-testid={`icon-trending-up-${market.id}`} />
                   ) : (
@@ -177,7 +178,7 @@ export function MarketCard({ market }: MarketCardProps) {
                     priceData.currentPrice >= targetPrice ? 'text-primary' : 'text-destructive'
                   }`}>
                     {priceData.currentPrice >= targetPrice ? '+' : ''}{formatPrice(priceData.currentPrice - targetPrice, 2)}
-                    <span className="text-muted-foreground ml-1">
+                    <span className="text-muted-foreground ml-1 text-xs">
                       ({priceData.currentPrice >= targetPrice ? '+' : ''}{(((priceData.currentPrice - targetPrice) / targetPrice) * 100).toFixed(2)}%)
                     </span>
                   </span>
@@ -185,15 +186,15 @@ export function MarketCard({ market }: MarketCardProps) {
               )}
             </div>
           ) : !isOracleMarket ? (
-            /* Regular Markets: YES/NO Percentages - Big and Bold */
-            <div className="flex items-center gap-3 text-center">
-              <div className="flex-1">
-                <div className="text-3xl font-bold text-primary">{yesPercentage}%</div>
-                <div className="text-xs text-muted-foreground uppercase font-medium mt-1">Yes</div>
+            /* Regular Markets: YES/NO Percentages - Clean and Bold */
+            <div className="flex items-stretch gap-2 py-2">
+              <div className="flex-1 text-center p-3 rounded-md bg-primary/5 border border-primary/20 hover-elevate transition-all">
+                <div className="text-2xl font-bold text-primary mb-0.5">{yesPercentage}%</div>
+                <div className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Yes</div>
               </div>
-              <div className="flex-1">
-                <div className="text-3xl font-bold text-muted-foreground">{noPercentage}%</div>
-                <div className="text-xs text-muted-foreground uppercase font-medium mt-1">No</div>
+              <div className="flex-1 text-center p-3 rounded-md bg-muted/30 border border-border/40 hover-elevate transition-all">
+                <div className="text-2xl font-bold text-foreground mb-0.5">{noPercentage}%</div>
+                <div className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">No</div>
               </div>
             </div>
           ) : (
@@ -210,7 +211,7 @@ export function MarketCard({ market }: MarketCardProps) {
               variant="default"
               onClick={(e) => handleBuyClick(e, 'yes')}
               data-testid={`button-buy-yes-${market.id}`}
-              className="font-semibold"
+              className="font-semibold h-9 text-xs"
             >
               Buy Yes {formatSharePrice(market.yesPrice)}
             </Button>
@@ -219,30 +220,28 @@ export function MarketCard({ market }: MarketCardProps) {
               variant="outline"
               onClick={(e) => handleBuyClick(e, 'no')}
               data-testid={`button-buy-no-${market.id}`}
-              className="font-semibold"
+              className="font-semibold h-9 text-xs"
             >
               Buy No {formatSharePrice(market.noPrice)}
             </Button>
           </div>
 
-          {/* AI Analysis Button */}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleAIClick}
-            data-testid={`button-ask-ai-${market.id}`}
-            className="w-full"
-          >
-            <Brain className="h-4 w-4 mr-2" />
-            Ask AI
-          </Button>
-
-          {/* Footer - Volume & Countdown */}
-          <div className="pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              <span className="font-mono">${market.volume.toLocaleString()} Vol</span>
+          {/* Footer - Volume, AI & Countdown */}
+          <div className="pt-2 mt-auto border-t flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span className="font-mono font-medium">${(market.volume / 1000).toFixed(1)}k</span>
             </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleAIClick}
+              data-testid={`button-ask-ai-${market.id}`}
+              className="h-7 px-2 text-xs gap-1"
+            >
+              <Brain className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">AI</span>
+            </Button>
             <CountdownTimer expiresAt={market.expiresAt} />
           </div>
         </div>
