@@ -6,6 +6,15 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 
 ## Recent Changes
 
+### November 18, 2025
+- **Trading Panel Position Balance Fix**: Fixed console errors and optimized position balance fetching in TradingPanel
+  - Eliminated "Error fetching YES balance" and "Error fetching NO balance" console spam
+  - Combined dual useEffect hooks into single efficient balance fetcher
+  - Added proper validation to skip fetching when tokenIds are invalid ('0' or 'undefined')
+  - Implemented automatic balance refresh after trades via refreshTrigger state
+  - Position balances now update immediately after: limit orders, market orders, split operations, and merge operations
+  - Removed unstable `getPositionBalance` function from useEffect dependencies to prevent infinite re-renders
+
 ### November 17, 2025
 - **WalletConnect Integration**: Added mobile wallet support for trading on any browser
   - **Hybrid Wallet System**: Auto-detects browser type and shows appropriate connection method
