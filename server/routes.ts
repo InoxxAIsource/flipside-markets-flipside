@@ -349,8 +349,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Market ${market.id} saved to database with conditionId: ${market.conditionId}`);
         
         // Post to Twitter asynchronously (don't block market creation)
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        console.log('🐦 Attempting to post market to Twitter:', { marketId: market.id, baseUrl });
+        // Use REPLIT_DOMAINS for production URL, fallback to request headers
+        const replitDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
+        const baseUrl = replitDomain 
+          ? `https://${replitDomain}` 
+          : `${req.protocol}://${req.get('host')}`;
+        console.log('🐦 Attempting to post market to Twitter:', { marketId: market.id, baseUrl, replitDomain });
         postMarketToTwitter({
           id: market.id,
           question: market.question,

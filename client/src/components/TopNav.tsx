@@ -1,9 +1,15 @@
-import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen } from 'lucide-react';
+import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen, Menu } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
 import { WalletButton } from './WalletButton';
 import { Link } from 'wouter';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface TopNavProps {
   onSearch?: (query: string) => void;
@@ -12,7 +18,7 @@ interface TopNavProps {
 export function TopNav({ onSearch }: TopNavProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center gap-4 px-4">
+      <div className="container flex h-16 items-center gap-2 sm:gap-4 px-4">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-lg">F</span>
@@ -33,7 +39,8 @@ export function TopNav({ onSearch }: TopNavProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Desktop Navigation - Hidden on small screens */}
+        <div className="hidden lg:flex items-center gap-2">
           <Link href="/">
             <Button variant="ghost" size="icon" data-testid="button-markets">
               <Home className="h-5 w-5" />
@@ -66,6 +73,69 @@ export function TopNav({ onSearch }: TopNavProps) {
           </Link>
           <ThemeToggle />
           <WalletButton />
+        </div>
+
+        {/* Mobile Navigation - Visible on small screens */}
+        <div className="flex lg:hidden items-center gap-2">
+          <ThemeToggle />
+          <WalletButton />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" data-testid="button-mobile-menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/">
+                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-markets">
+                    <Home className="h-4 w-4" />
+                    <span>Markets</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/create">
+                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-create">
+                    <PlusCircle className="h-4 w-4" />
+                    <span>Create Market</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/leaderboard">
+                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-leaderboard">
+                    <Trophy className="h-4 w-4" />
+                    <span>Leaderboard</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/docs">
+                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-docs">
+                    <BookOpen className="h-4 w-4" />
+                    <span>Documentation</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/portfolio">
+                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-portfolio">
+                    <Wallet className="h-4 w-4" />
+                    <span>Portfolio</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/profile">
+                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-profile">
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
