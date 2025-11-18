@@ -2,11 +2,13 @@ import { useState, useMemo } from 'react';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MarketCard } from '@/components/MarketCard';
 import { FilterSidebar } from '@/components/FilterSidebar';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { SearchAndSort } from '@/components/SearchAndSort';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Menu } from 'lucide-react';
 import type { Market } from '@shared/schema';
 
 export default function Home() {
@@ -14,6 +16,7 @@ export default function Home() {
   const [selectedTimeFilter, setSelectedTimeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('volume');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const { data: markets, isLoading } = useQuery<Market[]>({
     queryKey: ['/api/markets'],
@@ -66,20 +69,53 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-background">
-        {/* Filter Sidebar */}
-        <FilterSidebar
-          markets={markets}
-          selectedTimeFilter={selectedTimeFilter}
-          onTimeFilterChange={setSelectedTimeFilter}
-        />
+        {/* Desktop Filter Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <FilterSidebar
+            markets={markets}
+            selectedTimeFilter={selectedTimeFilter}
+            onTimeFilterChange={setSelectedTimeFilter}
+          />
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto bg-background">
-          <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-            {/* Header */}
-            <div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
+            {/* Mobile Header with Filter Button */}
+            <div className="lg:hidden flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold">Flipside</h1>
+                <p className="text-xs text-muted-foreground">Prediction Markets</p>
+              </div>
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" data-testid="button-mobile-filters">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-64 p-0">
+                  <FilterSidebar
+                    markets={markets}
+                    selectedTimeFilter={selectedTimeFilter}
+                    onTimeFilterChange={(filter) => {
+                      setSelectedTimeFilter(filter);
+                      setMobileFiltersOpen(false);
+                    }}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+            {/* Desktop Header - Hidden on mobile */}
+            <div className="hidden lg:block">
               <h2 className="text-3xl font-bold tracking-tight">Markets</h2>
               <p className="text-sm text-muted-foreground mt-1.5">
+                {filteredMarkets.length} market{filteredMarkets.length !== 1 ? 's' : ''} available
+              </p>
+            </div>
+            
+            {/* Mobile Markets Count */}
+            <div className="lg:hidden">
+              <p className="text-sm text-muted-foreground">
                 {filteredMarkets.length} market{filteredMarkets.length !== 1 ? 's' : ''} available
               </p>
             </div>
@@ -99,9 +135,9 @@ export default function Home() {
               onSortChange={setSortBy}
             />
 
-            {/* Markets Grid */}
+            {/* Markets Grid - Responsive columns */}
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="border rounded-lg overflow-hidden">
                     <Skeleton className="h-40 w-full" />
@@ -115,7 +151,7 @@ export default function Home() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                   {filteredMarkets.map((market) => (
                     <MarketCard key={market.id} market={market} />
                   ))}
