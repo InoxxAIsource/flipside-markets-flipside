@@ -7,6 +7,26 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 18, 2025
+- **Comprehensive UI/UX Redesign**: Complete overhaul of the home page experience surpassing Polymarket's design quality
+  - **FilterSidebar Component**: Advanced filtering system with time-based filters (All, 24h, 7d, 30d) and dynamic category filters
+    - Real-time market counts for each filter option
+    - Categories dynamically generated from market data with normalization (trim, lowercase, 'other' fallback)
+    - Predefined categories: All Markets, Crypto, Sports, Politics, Entertainment, Science, Technology, Other
+    - Smooth scrolling with proper padding and spacing
+  - **SearchAndSort Component**: Powerful search and sorting controls in the header
+    - Live search filtering across market titles
+    - Sort options: Most Volume, Ending Soon (removed broken "newest" sort based on UUID)
+    - Combined search + sort for comprehensive market discovery
+  - **Enhanced MarketCard Design**: Polymarket-inspired cards with superior visual hierarchy
+    - Better proportions, improved spacing, cleaner metadata layout
+    - Smooth hover effects with scale animations and gradient overlays
+    - Professional typography and visual polish throughout
+  - **Optimized Grid Layout**: Responsive 3-column grid with consistent spacing
+  - **Client-Side Filtering Strategy**: Single React Query fetch with all client-side filtering/sorting for consistency
+    - Prevents React Query cache mutation with spread operator before filtering
+    - Accurate sidebar counts that stay synchronized across filter changes
+    - Safe number handling with isFinite() checks for volume aggregation
+  - **Data Integrity**: All filtering and sorting operations work on immutable copies, preserving original query cache
 - **Manual Resolution Badge for Oracle Markets**: Added visual indicators to inform users about manual resolution process
   - "Manual Resolution" badge appears on all oracle market cards (markets with Pyth price feeds)
   - Shield icon with tooltip explaining: "Resolved by admins using verified Pyth Network price data"
@@ -65,7 +85,8 @@ Preferred communication style: Simple, everyday language.
 
 The UI/UX is inspired by Polymarket and other trading platforms, utilizing shadcn/ui (Radix UI) and Tailwind CSS for a modern, responsive design with dark/light theme support. Key features include:
 
--   **Market Cards:** Redesigned to be visually rich, featuring custom images, automatic crypto logo detection (BTC, ETH, SOL, XRP, BNB, DOGE, ADA, MATIC), prominent YES/NO percentages, and direct "Buy Yes/No" buttons.
+-   **Home Page Experience:** Redesigned with FilterSidebar for comprehensive filtering (time-based + categories), SearchAndSort component for search and sorting, optimized 3-column responsive grid layout, and enhanced visual polish throughout.
+-   **Market Cards:** Redesigned to be visually rich, featuring custom images, automatic crypto logo detection (BTC, ETH, SOL, XRP, BNB, DOGE, ADA, MATIC), prominent YES/NO percentages, direct "Buy Yes/No" buttons, and smooth hover effects with professional animations.
 -   **Market Detail Page:** Includes a real-time `CountdownTimer`, an enhanced `PriceChart` with a purple gradient and optional baseline reference for Pyth markets, `OracleInfo` display, and embedded `TradingView Widget` for live price charts of resolution sources.
 -   **Image Upload:** Users can upload custom images for markets, which are automatically resized (800x450px), converted to WebP, and previewed live.
 -   **AI-Powered Market Analysis:** An "Ask AI" button on market cards provides instant analysis including YES probability, confidence levels, and detailed reasoning, utilizing OpenAI's GPT-4o-mini.
