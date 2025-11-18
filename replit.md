@@ -7,6 +7,23 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 18, 2025
+- **Mobile-First Responsive Design**: Complete mobile optimization with touch-friendly interface
+  - **Responsive Breakpoints**: Mobile (0-639px), Tablet (640-1023px), Desktop (1024px+)
+  - **Mobile Layout**: Hidden sidebar with hamburger menu that opens Sheet drawer
+  - **Tablet Layout**: 2-column market grid, Sheet drawer for filters
+  - **Desktop Layout**: Full sidebar visible, 3-column market grid
+  - **Touch Targets**: All interactive elements ≥44px for mobile accessibility
+  - **CategoryTabs Mobile Enhancement**:
+    - Snap scrolling with smooth horizontal scroll behavior
+    - Gradient fade hints on edges to indicate scrollability
+    - Increased touch targets (min-h-[44px]) for better mobile UX
+    - Responsive text sizing and icon scaling
+  - **FilterSidebar Sheet Integration**:
+    - Mobile hamburger menu opens slide-in drawer from left
+    - Auto-closes after filter selection for seamless UX
+    - Same FilterSidebar component works in both desktop sidebar and mobile Sheet
+  - **Responsive Grid**: 1 column (mobile) → 2 columns (tablet sm:) → 3 columns (desktop lg:)
+  - **Adaptive Spacing**: Reduced padding on mobile (px-4 py-4) vs desktop (px-6 py-8)
 - **Horizontal Category Navigation (Polymarket Style)**: Redesigned category filtering to match Polymarket's modern UX
   - **CategoryTabs Component**: New horizontal pill-style navigation for categories
     - Pill buttons for: Crypto, Politics, Local, Sports, Technology, General, Other (plus "All")
