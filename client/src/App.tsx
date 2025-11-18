@@ -11,6 +11,7 @@ import CreateMarket from "@/pages/CreateMarket";
 import Portfolio from "@/pages/Portfolio";
 import Profile from "@/pages/Profile";
 import Leaderboard from "@/pages/Leaderboard";
+import Docs from "@/pages/Docs";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/profile" component={Profile} />
       <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/docs" component={Docs} />
       <Route component={NotFound} />
     </Switch>
   );

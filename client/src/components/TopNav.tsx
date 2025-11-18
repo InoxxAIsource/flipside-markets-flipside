@@ -1,4 +1,4 @@
-import { Search, User, PlusCircle, Wallet, Home, Trophy } from 'lucide-react';
+import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -47,6 +47,11 @@ export function TopNav({ onSearch }: TopNavProps) {
           <Link href="/leaderboard">
             <Button variant="ghost" size="icon" data-testid="button-leaderboard">
               <Trophy className="h-5 w-5" />
+            </Button>
+          </Link>
+          <Link href="/docs">
+            <Button variant="ghost" size="icon" data-testid="button-docs">
+              <BookOpen className="h-5 w-5" />
             </Button>
           </Link>
           <Link href="/portfolio">
