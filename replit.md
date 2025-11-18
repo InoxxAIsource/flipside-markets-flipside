@@ -7,11 +7,20 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 18, 2025
+- **Horizontal Category Navigation (Polymarket Style)**: Redesigned category filtering to match Polymarket's modern UX
+  - **CategoryTabs Component**: New horizontal pill-style navigation for categories
+    - Pill buttons for: Crypto, Politics, Local, Sports, Technology, General, Other (plus "All")
+    - Rounded-full styling with smooth hover effects and primary highlight when selected
+    - Smart visibility: only shows categories with markets (except "All")
+    - Smooth horizontal scrolling with hidden scrollbar for clean appearance
+  - **Simplified FilterSidebar**: Left sidebar now shows only time-based filters
+    - Removed all category filtering from sidebar (moved to horizontal tabs)
+    - Clean focus on Flipside branding and time range selection (All, 24h, 7d, 30d)
+  - **Layout Hierarchy**: Header → CategoryTabs → SearchAndSort → Market Grid
 - **Minimalist Home Page Redesign**: Streamlined full-height layout focused on market discovery
   - **Full-Height FilterSidebar**: Clean left sidebar spanning entire viewport height
     - Flipside branding header at top with logo and tagline
     - Time-based filters (All, 24h, 7d, 30d) with real-time market counts
-    - Dynamic category filters generated from market data (Crypto, Sports, Politics, etc.)
     - Smooth scrolling with optimized spacing
   - **Simplified Main Content**: Removed hero section and stats for cleaner focus
     - Removed Total Volume, Active Markets, and Traders statistics
