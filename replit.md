@@ -7,6 +7,12 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 ## Recent Changes
 
 ### November 18, 2025
+- **Manual Resolution Badge for Oracle Markets**: Added visual indicators to inform users about manual resolution process
+  - "Manual Resolution" badge appears on all oracle market cards (markets with Pyth price feeds)
+  - Shield icon with tooltip explaining: "Resolved by admins using verified Pyth Network price data"
+  - Badge appears on both market list cards and market detail pages
+  - Suppressed Pyth worker warning in server logs since manual resolution is the intended testnet approach
+  - PythPriceResolver contract deployment deferred to mainnet for automated oracle resolution
 - **Trading Panel Position Balance Fix**: Fixed console errors and optimized position balance fetching in TradingPanel
   - Eliminated "Error fetching YES balance" and "Error fetching NO balance" console spam
   - Combined dual useEffect hooks into single efficient balance fetcher
