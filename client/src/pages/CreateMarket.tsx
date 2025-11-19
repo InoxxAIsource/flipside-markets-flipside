@@ -57,7 +57,10 @@ export default function CreateMarket() {
         description: 'Market created on-chain. Saving to database...',
       });
 
-      const response = await apiRequest('POST', '/api/markets', {
+      // Choose endpoint based on market type
+      const endpoint = data.marketType === 'POOL' ? '/api/markets/pool' : '/api/markets';
+      
+      const requestBody = {
         ...data,
         creatorAddress: account,
         conditionId: result.conditionId,
@@ -65,7 +68,9 @@ export default function CreateMarket() {
         noTokenId: result.noTokenId,
         creationTxHash: result.txHash,
         questionTimestamp: result.questionTimestamp.toString(),
-      });
+      };
+
+      const response = await apiRequest('POST', endpoint, requestBody);
 
       return await response.json() as Market;
     },
