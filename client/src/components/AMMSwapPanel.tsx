@@ -75,32 +75,34 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       const provider = new ethers.BrowserProvider(window.ethereum as any);
       const conditionalTokensABI = [
         'function balanceOf(address account, uint256 id) view returns (uint256)',
+        'function getPositionId(address collateralToken, bytes32 collectionId) view returns (uint256)',
       ];
       const ct = new ethers.Contract(CONDITIONAL_TOKENS, conditionalTokensABI, provider);
 
-      // Calculate position IDs for YES (outcome 0) and NO (outcome 1)
-      const calculatePositionId = (conditionId: string, outcomeIndex: number): bigint => {
+      // Calculate position IDs for YES (outcome 0) and NO (outcome 1) using on-chain method
+      const getPositionId = async (conditionId: string, outcomeIndex: number): Promise<bigint> => {
+        // Collection ID formula: keccak256(conditionId, indexSet)
         const collectionId = ethers.keccak256(
           ethers.AbiCoder.defaultAbiCoder().encode(
             ['bytes32', 'uint256'],
             [conditionId, 1 << outcomeIndex]
           )
         );
-        // Simplified position ID calculation (full on-chain call would use getPositionId)
-        return BigInt(ethers.keccak256(
-          ethers.AbiCoder.defaultAbiCoder().encode(
-            ['address', 'bytes32'],
-            [USDT, collectionId]
-          )
-        ));
+        // Call on-chain getPositionId to get the exact token ID
+        return await ct.getPositionId(USDT, collectionId);
       };
 
-      const yesTokenId = calculatePositionId(market.conditionId, 0);
-      const noTokenId = calculatePositionId(market.conditionId, 1);
-
-      const [yesBalance, noBalance] = await Promise.all([
-        ct.balanceOf(account, yesTokenId),
-        ct.balanceOf(account, noTokenId),
+      const [yesTokenId, noTokenId, yesBalance, noBalance] = await Promise.all([
+        getPositionId(market.conditionId, 0),
+        getPositionId(market.conditionId, 1),
+        (async () => {
+          const yesId = await getPositionId(market.conditionId, 0);
+          return await ct.balanceOf(account, yesId);
+        })(),
+        (async () => {
+          const noId = await getPositionId(market.conditionId, 1);
+          return await ct.balanceOf(account, noId);
+        })(),
       ]);
 
       return {
