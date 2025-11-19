@@ -14,12 +14,16 @@ Preferred communication style: Simple, everyday language.
 
 The UI/UX is inspired by Polymarket, utilizing shadcn/ui (Radix UI) and Tailwind CSS for a modern, responsive design with dark/light theme support. Key elements include:
 -   **Home Page:** Features a FilterSidebar for filtering by time and categories, a SearchAndSort component, and an optimized 3-column responsive market grid.
--   **Market Cards:** Visually rich, with custom images, automatic crypto logo detection, prominent YES/NO percentages, direct "Buy Yes/No" buttons, and smooth hover effects. Oracle markets display current asset price vs. target price.
--   **Market Detail Page:** Includes a real-time `CountdownTimer`, an enhanced `PriceChart` with a purple gradient, `OracleInfo` display, and an embedded `TradingView Widget` for live resolution source charts.
+-   **Market Cards:** Visually rich, with custom images, automatic crypto logo detection, prominent YES/NO percentages, direct "Buy Yes/No" buttons, and smooth hover effects. Oracle markets display current asset price vs. target price. Each card displays a badge showing market type ([Order Book] or [LP Pool]).
+-   **Market Detail Page:** Includes a real-time `CountdownTimer`, an enhanced `PriceChart` with a purple gradient, `OracleInfo` display, and an embedded `TradingView Widget` for live resolution source charts. Conditionally renders either CLOB `OrderBook` interface or AMM `AMMSwapPanel` based on market type.
 -   **Image Upload:** Users can upload custom images which are automatically resized, converted to WebP, and previewed.
 -   **AI-Powered Analysis:** An "Ask AI" button provides instant market analysis using OpenAI's GPT-4o-mini.
 -   **X (Twitter) Auto-Posting:** New markets are automatically posted to X with engaging formats and details.
--   **Trading Interface:** Features a `Buy/Sell Toggle` and full Central Limit Order Book (CLOB) functionality.
+-   **Trading Interface:** 
+    -   **CLOB Markets:** Features a `Buy/Sell Toggle` and full Central Limit Order Book functionality
+    -   **AMM Pool Markets:** `AMMSwapPanel` with tabbed interface (Swap/Liquidity):
+        -   **Swap Tab:** Real-time quote calculations, slippage protection (0.1%-5% presets), price impact warnings (visual alerts at >5%), constant-sum pricing display (x + y = k), and fee breakdown (2% total: 1.5% LP + 0.5% protocol)
+        -   **Liquidity Tab:** Add/remove liquidity panels with percentage quick-select buttons (25%/50%/75%/100%), LP token balance display, pool share percentage, proportional token distribution preview, and informative tips about earning auto-compounded fees
 -   **Hybrid Gas Model:** User-pays-gas for deposits/withdrawals/splits/merges, while limit/market orders use gasless (relayer-subsidized) operations via ProxyWallet contracts.
 -   **Professional Gitbook-Style Documentation:** A comprehensive technical documentation page with interactive sidebar navigation, scrollspy effect, smooth scrolling, and mobile responsiveness.
 -   **Mobile-First Responsive Design:** Complete optimization for mobile (0-639px), tablet (640-1023px), and desktop (1024px+) with adaptive layouts, touch targets, and enhanced category navigation (snap scrolling with gradient hints).
