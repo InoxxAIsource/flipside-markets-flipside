@@ -53,7 +53,18 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
 
   // Fetch swap quote when amount changes
   const { data: quote, isLoading: quoteLoading } = useQuery<SwapQuote>({
-    queryKey: [`/api/pool/${poolAddress}/quote?buyYes=${buyYes}&amountIn=${amountIn}`],
+    queryKey: ['/api/pool', poolAddress, 'quote', { buyYes, amountIn }],
+    queryFn: async () => {
+      // Convert amountIn from human-readable to wei (6 decimals for USDT)
+      const amountInWei = Math.floor(parseFloat(amountIn) * 1e6).toString();
+      const params = new URLSearchParams({
+        buyYes: buyYes.toString(),
+        amountIn: amountInWei,
+      });
+      const response = await fetch(`/api/pool/${poolAddress}/quote?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch quote');
+      return response.json();
+    },
     enabled: !!amountIn && parseFloat(amountIn) > 0,
     refetchInterval: 5000,
   });

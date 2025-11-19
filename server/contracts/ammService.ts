@@ -234,38 +234,29 @@ export class AMMService {
     amountIn: string
   ): Promise<{
     amountOut: string;
-    lpFee: string;
-    protocolFee: string;
-    price: number; // Effective price after fees
+    effectivePrice: number;
+    priceImpact: number;
+    feeAmount: string;
   }> {
     const pool = this.getPoolContract(poolAddress);
     const [amountOut, totalFee] = await pool.getSwapOutput(buyYes, amountIn);
 
-    // Get fee rates to split total fee
-    const [lpFeeRate, protocolFeeRate] = await Promise.all([
-      pool.lpFeeRate(),
-      pool.protocolFeeRate()
-    ]);
-
-    const totalFeeRate = Number(lpFeeRate) + Number(protocolFeeRate);
-    const totalFeeBN = BigInt(totalFee);
-    
-    // Split fees proportionally
-    const lpFee = totalFeeRate > 0 
-      ? (totalFeeBN * BigInt(lpFeeRate)) / BigInt(totalFeeRate)
-      : BigInt(0);
-    const protocolFee = totalFeeBN - lpFee;
-
-    // Calculate effective price
+    // Calculate effective price (amountOut / amountIn) - this is the conversion rate
     const amountInBN = BigInt(amountIn);
     const amountOutBN = BigInt(amountOut);
-    const price = amountInBN > BigInt(0) ? Number(amountOutBN) / Number(amountInBN) : 0;
+    const effectivePrice = amountInBN > BigInt(0) ? Number(amountOutBN) / Number(amountInBN) : 0;
+
+    // For constant-sum AMM (x + y = k), price impact equals the fee rate
+    // Since swaps execute at marginal price = 1, only fees cause value loss
+    const priceImpact = amountInBN > BigInt(0) 
+      ? (Number(totalFee) / Number(amountInBN)) * 100 
+      : 0;
 
     return {
       amountOut: amountOut.toString(),
-      lpFee: lpFee.toString(),
-      protocolFee: protocolFee.toString(),
-      price,
+      effectivePrice,
+      priceImpact,
+      feeAmount: totalFee.toString(),
     };
   }
 
