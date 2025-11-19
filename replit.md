@@ -6,6 +6,36 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 
 ## Recent Updates
 
+### November 19, 2025 - AMM Swap Tracking System ✅
+
+**Feature Built:** Complete infrastructure to track, store, and display AMM swap transactions
+- **What Was Built:**
+  1. **Database:** `amm_swaps` table stores all swap details (user, pool, direction, amounts, fees, tx hash, block number)
+  2. **Event Indexer:** Real-time listeners capture Swap events from all 4 pool markets and save to database
+  3. **API Endpoints:** 
+     - GET `/api/amm/swaps` - all swaps system-wide
+     - GET `/api/amm/swaps/:userAddress` - user-specific swaps
+     - GET `/api/pool/:poolAddress/volume` - pool volume statistics (total & 24h)
+  4. **UI Integration:** Profile page History tab now displays AMM swaps alongside CLOB order history
+  5. **Atomic Volume Updates:** SQL-level increment prevents race conditions on concurrent swaps
+
+**Technical Details:**
+- Event indexer only captures **NEW** swaps going forward (doesn't backfill historical events)
+- All addresses normalized to lowercase for consistent querying
+- Amounts stored in normalized USDT format (already divided by 1e6)
+- Volume tracking uses atomic SQL: `volume = volume + amount` to prevent concurrent update conflicts
+
+**Known Limitations:**
+- New pool markets created after app startup won't be tracked until restart
+- Event indexer requires running backend service (doesn't work in static deployment)
+
+**Files Modified:**
+- `shared/schema.ts` - ammSwaps table definition
+- `server/storage.ts` - AMM swap CRUD + atomic incrementMarketVolume()
+- `server/services/eventIndexer.ts` - Pool event listeners with normalization
+- `server/routes.ts` - AMM API endpoints
+- `client/src/pages/Portfolio.tsx` - AMM swap UI display
+
 ### November 19, 2025 - AMM Swap 4-Step Flow Implementation ✅
 
 **Issue Fixed:** AMM swap transactions failing with "execution reverted" error
