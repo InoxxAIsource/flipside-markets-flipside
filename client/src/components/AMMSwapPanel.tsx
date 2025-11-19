@@ -60,6 +60,58 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
     refetchInterval: 10000, // Refresh every 10 seconds
   });
 
+  // Fetch user's YES/NO token balances
+  const { data: userBalances } = useQuery<{ yesBalance: string; noBalance: string }>({
+    queryKey: ['/api/user-balances', account, market?.conditionId],
+    queryFn: async () => {
+      if (!account || !market?.conditionId) {
+        return { yesBalance: '0', noBalance: '0' };
+      }
+
+      const { ethers } = await import('ethers');
+      const CONDITIONAL_TOKENS = '0xdC8CB01c328795C007879B2C030AbF1c1b580D84';
+      const USDT = '0xAf24D4DDbA993F6b11372528C678edb718a097Aa';
+      
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const conditionalTokensABI = [
+        'function balanceOf(address account, uint256 id) view returns (uint256)',
+      ];
+      const ct = new ethers.Contract(CONDITIONAL_TOKENS, conditionalTokensABI, provider);
+
+      // Calculate position IDs for YES (outcome 0) and NO (outcome 1)
+      const calculatePositionId = (conditionId: string, outcomeIndex: number): bigint => {
+        const collectionId = ethers.keccak256(
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['bytes32', 'uint256'],
+            [conditionId, 1 << outcomeIndex]
+          )
+        );
+        // Simplified position ID calculation (full on-chain call would use getPositionId)
+        return BigInt(ethers.keccak256(
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['address', 'bytes32'],
+            [USDT, collectionId]
+          )
+        ));
+      };
+
+      const yesTokenId = calculatePositionId(market.conditionId, 0);
+      const noTokenId = calculatePositionId(market.conditionId, 1);
+
+      const [yesBalance, noBalance] = await Promise.all([
+        ct.balanceOf(account, yesTokenId),
+        ct.balanceOf(account, noTokenId),
+      ]);
+
+      return {
+        yesBalance: yesBalance.toString(),
+        noBalance: noBalance.toString(),
+      };
+    },
+    enabled: !!account && !!market?.conditionId,
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+
   // Fetch swap quote when amount changes
   const { data: quote, isLoading: quoteLoading } = useQuery<SwapQuote>({
     queryKey: ['/api/pool', poolAddress, 'quote', { buyYes, amountIn }],
@@ -177,6 +229,8 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/pool', poolAddress] });
       queryClient.invalidateQueries({ queryKey: ['/api/markets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/amm/swaps'] });
     },
     onError: (error: any) => {
       toast({
@@ -238,6 +292,34 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
             Constant-Sum AMM
           </Badge>
         </div>
+
+        {/* User Balances (if wallet connected) */}
+        {account && userBalances && (
+          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Your Position
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono">
+                  YES:
+                </span>
+                <Badge variant="outline" className="font-mono bg-green-500/10 text-green-600 dark:text-green-400">
+                  {(parseFloat(userBalances.yesBalance) / 1e6).toFixed(4)}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono">
+                  NO:
+                </span>
+                <Badge variant="outline" className="font-mono bg-red-500/10 text-red-600 dark:text-red-400">
+                  {(parseFloat(userBalances.noBalance) / 1e6).toFixed(4)}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pool Stats */}
         <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border">
