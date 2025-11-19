@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, TrendingDown, TrendingUp, Info, AlertTriangle } from 'lucide-react';
+import { ArrowRight, TrendingDown, TrendingUp, Info, AlertTriangle, Plus, Minus, Droplet } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useWallet } from '@/hooks/use-wallet';
 
 interface AMMSwapPanelProps {
   poolAddress: string;
@@ -30,6 +31,13 @@ interface SwapQuote {
   priceImpact: number;
   effectivePrice: number;
   feeAmount: string;
+}
+
+interface UserPosition {
+  lpBalance: string;
+  yesTokens?: string;
+  noTokens?: string;
+  poolShare: number;
 }
 
 export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
@@ -304,13 +312,245 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
           </TabsContent>
 
           <TabsContent value="liquidity" className="space-y-4 mt-4">
-            <div className="text-center p-8 text-muted-foreground">
-              <p>Liquidity management coming soon</p>
-              <p className="text-xs mt-2">Add/remove liquidity and earn LP fees</p>
-            </div>
+            <LiquidityPanel poolAddress={poolAddress} poolInfo={poolInfo} />
           </TabsContent>
         </Tabs>
       </div>
     </Card>
+  );
+}
+
+// Liquidity Panel Component
+interface LiquidityPanelProps {
+  poolAddress: string;
+  poolInfo: PoolInfo | undefined;
+}
+
+function LiquidityPanel({ poolAddress, poolInfo }: LiquidityPanelProps) {
+  const [mode, setMode] = useState<'add' | 'remove'>('add');
+  const [yesAmount, setYesAmount] = useState('');
+  const [noAmount, setNoAmount] = useState('');
+  const [lpTokens, setLpTokens] = useState('');
+  const { account } = useWallet();
+
+  // Fetch user's pool position
+  const { data: userPosition, isLoading: positionLoading } = useQuery<UserPosition>({
+    queryKey: ['/api/pool', poolAddress, 'user', account],
+    enabled: !!account,
+    refetchInterval: 10000,
+  });
+
+  if (!poolInfo) {
+    return (
+      <div className="text-center p-8 text-muted-foreground">
+        <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+        <p>Unable to load pool information</p>
+      </div>
+    );
+  }
+
+  // Calculate pool share percentage
+  const poolShare = userPosition && poolInfo
+    ? (parseFloat(userPosition.lpBalance) / parseFloat(poolInfo.totalSupply)) * 100
+    : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* User Position Summary */}
+      {account && (
+        <div className="p-4 bg-muted/30 rounded-lg border">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Droplet className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-sm">Your Position</span>
+            </div>
+            {positionLoading && <Skeleton className="h-4 w-16" />}
+          </div>
+          
+          {userPosition ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">LP Tokens</div>
+                <div className="text-lg font-mono font-semibold">
+                  {(parseFloat(userPosition.lpBalance) / 1e18).toFixed(6)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Pool Share</div>
+                <div className="text-lg font-mono font-semibold text-primary">
+                  {poolShare.toFixed(4)}%
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">YES Tokens</div>
+                <div className="text-sm font-mono">
+                  {userPosition.yesTokens ? (parseFloat(userPosition.yesTokens) / 1e6).toFixed(4) : '0.00'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">NO Tokens</div>
+                <div className="text-sm font-mono">
+                  {userPosition.noTokens ? (parseFloat(userPosition.noTokens) / 1e6).toFixed(4) : '0.00'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-2">
+              No liquidity provided yet
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Add/Remove Toggle */}
+      <div className="flex gap-2">
+        <Button
+          variant={mode === 'add' ? 'default' : 'outline'}
+          onClick={() => setMode('add')}
+          className="flex-1"
+          data-testid="button-add-liquidity"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Liquidity
+        </Button>
+        <Button
+          variant={mode === 'remove' ? 'default' : 'outline'}
+          onClick={() => setMode('remove')}
+          className="flex-1"
+          data-testid="button-remove-liquidity"
+        >
+          <Minus className="h-4 w-4 mr-2" />
+          Remove Liquidity
+        </Button>
+      </div>
+
+      {mode === 'add' ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="yesAmount">YES Tokens (USDT value)</Label>
+            <Input
+              id="yesAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={yesAmount}
+              onChange={(e) => setYesAmount(e.target.value)}
+              className="font-mono"
+              data-testid="input-yes-amount"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="noAmount">NO Tokens (USDT value)</Label>
+            <Input
+              id="noAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={noAmount}
+              onChange={(e) => setNoAmount(e.target.value)}
+              className="font-mono"
+              data-testid="input-no-amount"
+            />
+          </div>
+
+          <div className="p-3 bg-muted/20 rounded-md border text-xs">
+            <div className="flex items-center gap-1 mb-2">
+              <Info className="h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Liquidity Tips</span>
+            </div>
+            <ul className="space-y-1 text-muted-foreground ml-4 list-disc">
+              <li>Add equal value of YES and NO for balanced liquidity</li>
+              <li>Earn 1.5% of all trading fees automatically compounded</li>
+              <li>Your LP tokens represent your share of the pool</li>
+            </ul>
+          </div>
+
+          <Button
+            size="lg"
+            className="w-full"
+            disabled={!yesAmount || !noAmount || parseFloat(yesAmount) <= 0 || parseFloat(noAmount) <= 0}
+            data-testid="button-submit-add-liquidity"
+          >
+            {!yesAmount || !noAmount || parseFloat(yesAmount) <= 0 || parseFloat(noAmount) <= 0
+              ? 'Enter Amounts'
+              : 'Add Liquidity'}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="lpTokens">LP Tokens to Remove</Label>
+            <Input
+              id="lpTokens"
+              type="number"
+              step="0.000001"
+              min="0"
+              placeholder="0.000000"
+              value={lpTokens}
+              onChange={(e) => setLpTokens(e.target.value)}
+              className="font-mono"
+              data-testid="input-lp-tokens"
+            />
+            {userPosition && (
+              <div className="flex gap-2 mt-2">
+                {['25', '50', '75', '100'].map((percentage) => (
+                  <Button
+                    key={percentage}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const amount = (parseFloat(userPosition.lpBalance) * parseFloat(percentage)) / 100 / 1e18;
+                      setLpTokens(amount.toFixed(6));
+                    }}
+                    className="flex-1 text-xs"
+                  >
+                    {percentage}%
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 bg-muted/20 rounded-md border">
+            <div className="text-xs text-muted-foreground mb-2">You will receive approximately:</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs text-muted-foreground">YES Tokens</div>
+                <div className="text-sm font-mono font-semibold">
+                  {lpTokens && poolInfo.totalSupply
+                    ? ((parseFloat(lpTokens) / (parseFloat(poolInfo.totalSupply) / 1e18)) *
+                        (parseFloat(poolInfo.yesReserve) / 1e6)).toFixed(6)
+                    : '0.00'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">NO Tokens</div>
+                <div className="text-sm font-mono font-semibold">
+                  {lpTokens && poolInfo.totalSupply
+                    ? ((parseFloat(lpTokens) / (parseFloat(poolInfo.totalSupply) / 1e18)) *
+                        (parseFloat(poolInfo.noReserve) / 1e6)).toFixed(6)
+                    : '0.00'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Button
+            size="lg"
+            variant="destructive"
+            className="w-full"
+            disabled={!lpTokens || parseFloat(lpTokens) <= 0}
+            data-testid="button-submit-remove-liquidity"
+          >
+            {!lpTokens || parseFloat(lpTokens) <= 0
+              ? 'Enter LP Token Amount'
+              : 'Remove Liquidity'}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
