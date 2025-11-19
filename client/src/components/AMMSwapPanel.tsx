@@ -89,7 +89,8 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       }
 
       const amountInWei = BigInt(Math.floor(parseFloat(amountIn) * 1e6));
-      const minAmountOutWei = BigInt(Math.floor(parseFloat(minAmountOut) * 1e6));
+      // minAmountOut is already in wei from quote.amountOut, so don't multiply by 1e6 again
+      const minAmountOutWei = BigInt(Math.floor(parseFloat(minAmountOut)));
 
       console.log('🔄 Swap Parameters:', {
         buyYes,
@@ -98,6 +99,7 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
         minAmountOut,
         minAmountOutWei: minAmountOutWei.toString(),
         slippage: `${slippage}%`,
+        note: 'minAmountOut already in wei - no conversion needed',
       });
 
       // Contract ABIs
