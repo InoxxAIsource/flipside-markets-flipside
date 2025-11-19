@@ -257,7 +257,7 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
     swapMutation.mutate();
   };
 
-  // Sell mutation to convert tokens back to USDT
+  // Sell mutation to convert specified side (YES or NO) to USDT
   const sellToUsdtMutation = useMutation({
     mutationFn: async (params: { sellYes: boolean }) => {
       if (!account || !userBalances || !market) {
@@ -267,8 +267,9 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       let yesBalance = parseFloat(userBalances.yesBalance) / 1e6;
       let noBalance = parseFloat(userBalances.noBalance) / 1e6;
       
-      if (yesBalance === 0 && noBalance === 0) {
-        throw new Error('No tokens to sell');
+      const targetBalance = params.sellYes ? yesBalance : noBalance;
+      if (targetBalance === 0) {
+        throw new Error(`No ${params.sellYes ? 'YES' : 'NO'} tokens to sell`);
       }
 
       const { ethers } = await import('ethers');
@@ -289,94 +290,20 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       const ct = new ethers.Contract(CONDITIONAL_TOKENS, conditionalTokensABI, signer);
       const pool = new ethers.Contract(poolAddress, poolABI, signer);
 
-      console.log('💰 Sell-to-USDT Flow (Initial):', {
+      console.log(`💰 Selling ${params.sellYes ? 'YES' : 'NO'} tokens to USDT:`, {
         yesBalance,
         noBalance,
-        sellYes: params.sellYes,
+        targetSide: params.sellYes ? 'YES' : 'NO',
+        targetAmount: targetBalance,
       });
 
       // Step 1: Approve tokens to pool (do this once upfront)
       const approveTx = await ct.setApprovalForAll(poolAddress, true);
       await approveTx.wait();
-      console.log('✅ Tokens approved to pool');
+      console.log('✅ Tokens approved');
 
-      // Step 2: If unbalanced, swap to create equal YES+NO amounts
-      if (yesBalance !== noBalance) {
-        console.log('🔄 Step 1: Swapping to balance position...');
-        
-        // Fetch pool reserves to calculate realistic expected output
-        if (!poolInfo) {
-          throw new Error('Pool info not available');
-        }
-        
-        const yesReserve = parseFloat(poolInfo.yesReserve) / 1e6;
-        const noReserve = parseFloat(poolInfo.noReserve) / 1e6;
-        const fee = 0.02; // 2% fee
-        
-        if (yesBalance > noBalance) {
-          // Swap half the excess YES for NO to create balance
-          const surplusYes = yesBalance - noBalance;
-          const swapAmount = surplusYes / 2; // Swap half to balance
-          
-          // Calculate expected output using constant-sum formula: x + y = k
-          // After fee: amountOut = (k - reserveOut - amountIn*(1-fee))
-          const amountInAfterFee = swapAmount * (1 - fee);
-          const k = yesReserve + noReserve;
-          const expectedOut = Math.max(0, k - yesReserve - swapAmount - noReserve);
-          const expectedOutWithBuffer = expectedOut * 0.8; // 20% slippage buffer
-          
-          const swapAmountWei = BigInt(Math.floor(swapAmount * 1e6));
-          const minOutWei = BigInt(Math.floor(expectedOutWithBuffer * 1e6));
-          
-          console.log('📊 Swap calculation:', {
-            swapAmount,
-            expectedOut,
-            minOut: expectedOutWithBuffer,
-            yesReserve,
-            noReserve,
-          });
-          
-          const swapTx = await pool.swap(false, swapAmountWei, minOutWei);
-          await swapTx.wait();
-          console.log(`✅ Swapped ${swapAmount.toFixed(4)} YES for ~${expectedOut.toFixed(4)} NO`);
-          
-          // Update balances after swap (approximate)
-          yesBalance -= swapAmount;
-          noBalance += expectedOut;
-        } else {
-          // Swap half the excess NO for YES to create balance
-          const surplusNo = noBalance - yesBalance;
-          const swapAmount = surplusNo / 2; // Swap half to balance
-          
-          // Calculate expected output using constant-sum formula
-          const amountInAfterFee = swapAmount * (1 - fee);
-          const k = yesReserve + noReserve;
-          const expectedOut = Math.max(0, k - noReserve - swapAmount - yesReserve);
-          const expectedOutWithBuffer = expectedOut * 0.8; // 20% slippage buffer
-          
-          const swapAmountWei = BigInt(Math.floor(swapAmount * 1e6));
-          const minOutWei = BigInt(Math.floor(expectedOutWithBuffer * 1e6));
-          
-          console.log('📊 Swap calculation:', {
-            swapAmount,
-            expectedOut,
-            minOut: expectedOutWithBuffer,
-            yesReserve,
-            noReserve,
-          });
-          
-          const swapTx = await pool.swap(true, swapAmountWei, minOutWei);
-          await swapTx.wait();
-          console.log(`✅ Swapped ${swapAmount.toFixed(4)} NO for ~${expectedOut.toFixed(4)} YES`);
-          
-          // Update balances after swap (approximate)
-          noBalance -= swapAmount;
-          yesBalance += expectedOut;
-        }
-      }
-
-      // Step 3: Fetch actual on-chain balances to get precise amounts for merge
-      console.log('🔍 Fetching updated on-chain balances...');
+      let totalMerged = 0;
+      const DUST_THRESHOLD = 0.001; // Minimum amount worth processing
       const getPositionId = async (conditionId: string, outcomeIndex: number): Promise<bigint> => {
         const collectionId = ethers.keccak256(
           ethers.AbiCoder.defaultAbiCoder().encode(
@@ -387,55 +314,111 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
         return await ct.getPositionId(USDT, collectionId);
       };
 
-      const yesTokenId = await getPositionId(market.conditionId, 0);
-      const noTokenId = await getPositionId(market.conditionId, 1);
+      // Step 2: Loop until the target side is fully sold
+      while (true) {
+        // Fetch current on-chain balances
+        const yesTokenId = await getPositionId(market.conditionId, 0);
+        const noTokenId = await getPositionId(market.conditionId, 1);
 
-      const [yesBalanceWei, noBalanceWei] = await Promise.all([
-        ct.balanceOf(account, yesTokenId),
-        ct.balanceOf(account, noTokenId),
-      ]);
+        const [yesBalanceWei, noBalanceWei] = await Promise.all([
+          ct.balanceOf(account, yesTokenId),
+          ct.balanceOf(account, noTokenId),
+        ]);
 
-      const actualYesBalance = Number(yesBalanceWei) / 1e6;
-      const actualNoBalance = Number(noBalanceWei) / 1e6;
-      const mergeableAmount = Math.min(actualYesBalance, actualNoBalance);
+        yesBalance = Number(yesBalanceWei) / 1e6;
+        noBalance = Number(noBalanceWei) / 1e6;
 
-      console.log('📊 Post-swap balances:', {
-        actualYesBalance,
-        actualNoBalance,
-        mergeableAmount,
-      });
-
-      // Step 4: Merge equal YES+NO tokens back to USDT
-      if (mergeableAmount > 0.01) { // Minimum 0.01 to avoid dust
-        console.log('🔀 Step 2: Merging YES+NO tokens back to USDT...');
+        const currentTargetBalance = params.sellYes ? yesBalance : noBalance;
         
-        const mergeAmountWei = BigInt(Math.floor(mergeableAmount * 1e6));
-        const parentCollectionId = '0x0000000000000000000000000000000000000000000000000000000000000000';
-        const partition = [1, 2]; // Binary outcome: [YES, NO]
+        console.log(`📊 Current balances: YES=${yesBalance.toFixed(4)}, NO=${noBalance.toFixed(4)}`);
 
-        const mergeTx = await ct.mergePositions(
-          USDT,
-          parentCollectionId,
-          market.conditionId,
-          partition,
-          mergeAmountWei
+        // Exit if target side is below dust threshold
+        if (currentTargetBalance < DUST_THRESHOLD) {
+          console.log(`✅ Target ${params.sellYes ? 'YES' : 'NO'} balance below dust threshold`);
+          break;
+        }
+
+        // Step 3: Merge any existing equal YES+NO pairs
+        const mergeableAmount = Math.min(yesBalance, noBalance);
+        if (mergeableAmount >= DUST_THRESHOLD) {
+          console.log(`🔀 Merging ${mergeableAmount.toFixed(4)} YES+NO → USDT...`);
+          
+          const mergeAmountWei = BigInt(Math.floor(mergeableAmount * 1e6));
+          const parentCollectionId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+          const partition = [1, 2];
+
+          const mergeTx = await ct.mergePositions(
+            USDT,
+            parentCollectionId,
+            market.conditionId,
+            partition,
+            mergeAmountWei
+          );
+          await mergeTx.wait();
+          totalMerged += mergeableAmount;
+          console.log(`✅ Merged ${mergeableAmount.toFixed(4)} USDT`);
+          
+          // Update balances after merge
+          yesBalance -= mergeableAmount;
+          noBalance -= mergeableAmount;
+        }
+
+        // Step 4: Check if target side still has surplus
+        const remainingTarget = params.sellYes ? yesBalance : noBalance;
+        const oppositeBalance = params.sellYes ? noBalance : yesBalance;
+
+        if (remainingTarget < DUST_THRESHOLD) {
+          console.log(`✅ Target side fully sold`);
+          break;
+        }
+
+        if (remainingTarget <= oppositeBalance) {
+          // Already balanced or opposite side has more - merge handled it
+          break;
+        }
+
+        // Step 5: Swap surplus of target side to create a pair for next merge iteration
+        const swapAmount = Math.min(remainingTarget - oppositeBalance, remainingTarget / 2);
+        
+        console.log(`🔄 Swapping ${swapAmount.toFixed(4)} ${params.sellYes ? 'YES' : 'NO'} to create pair...`);
+        
+        // Get quote from backend API
+        const swapAmountWei = Math.floor(swapAmount * 1e6);
+        const quoteParams = new URLSearchParams({
+          buyYes: params.sellYes ? 'false' : 'true', // Selling target side
+          amountIn: swapAmountWei.toString(),
+        });
+        const quoteResponse = await fetch(`/api/pool/${poolAddress}/quote?${quoteParams}`);
+        if (!quoteResponse.ok) throw new Error('Failed to get swap quote');
+        const quoteData = await quoteResponse.json();
+        
+        // Apply 5% slippage tolerance
+        const expectedOut = parseFloat(quoteData.amountOut) / 1e6;
+        const minOut = expectedOut * 0.95;
+        const minOutWei = BigInt(Math.floor(minOut * 1e6));
+        
+        console.log(`📊 Swap quote: ${swapAmount.toFixed(4)} → ~${expectedOut.toFixed(4)}, impact: ${quoteData.priceImpact.toFixed(2)}%`);
+        
+        const swapTx = await pool.swap(
+          params.sellYes ? false : true, // buyYes = opposite of selling side
+          BigInt(swapAmountWei),
+          minOutWei
         );
-        await mergeTx.wait();
-        console.log(`✅ Merged ${mergeableAmount.toFixed(4)} YES+NO tokens back to ${mergeableAmount.toFixed(2)} USDT`);
-      } else {
-        throw new Error('Insufficient balance to merge after swap');
+        await swapTx.wait();
+        console.log(`✅ Swap completed`);
+        
+        // Continue loop to merge the newly created pair
       }
 
       return {
-        mergedAmount: mergeableAmount,
-        actualYesBalance,
-        actualNoBalance,
+        mergedAmount: totalMerged,
+        side: params.sellYes ? 'YES' : 'NO',
       };
     },
     onSuccess: (data) => {
       toast({
-        title: 'Sell Successful!',
-        description: `Converted tokens to ${data.mergedAmount.toFixed(2)} USDT`,
+        title: `Sold ${data.side} Tokens!`,
+        description: `Converted to ${data.mergedAmount.toFixed(2)} USDT`,
       });
 
       // Invalidate queries to refresh balances
