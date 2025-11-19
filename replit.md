@@ -35,17 +35,17 @@ The UI/UX is inspired by Polymarket, utilizing shadcn/ui (Radix UI) and Tailwind
 -   **Blockchain Integration:** Ethereum Sepolia testnet, using ConditionalTokens, MarketFactory, CTFExchange (order book DEX), PythPriceResolver, ProxyWallet (for gasless meta-transactions), and MockUSDT contracts. EIP-712 signed meta-transactions enable gasless trading.
 -   **Dual Trading Systems (November 19, 2025):**
     -   **CLOB (Order Book):** Existing system with gasless limit/market orders via CTFExchange and ProxyWallet
-    -   **AMM Pool (NEW):** Constant-sum AMM (x + y = k) for automated market making:
-        -   Deployed factory: `AMMPoolFactorySimple` at 0x8a7FF8A21F0B775dB661986bD0299e06A76583Db
+    -   **AMM Pool (FIXED):** Constant-sum AMM (x + y = k) for automated market making:
+        -   Deployed factory: `AMMPoolFactorySimple` at **0xAe14f8BC192306A891b172A3bc0e91132a4417EF** ✅
         -   Individual AMMPool contracts with LP tokens (ERC20)
         -   Fee structure: 2.0% total (1.5% to LPs auto-compounding, 0.5% to protocol treasury)
         -   Constant-sum formula chosen for better price discovery in binary markets
-    -   **⚠️ CRITICAL BUG FIXED (November 19, 2025):**
+    -   **✅ CRITICAL BUG FIXED (November 19, 2025):**
         -   **ROOT CAUSE:** AMMPool contract was missing `IERC1155Receiver` interface implementation
         -   **SYMPTOM:** LP Pool creation failed at Step 4 (addLiquidity) with "execution reverted" error code `0x57f447ce`
         -   **FIX APPLIED:** Added `onERC1155Received()`, `onERC1155BatchReceived()`, and `supportsInterface()` to AMMPool.sol
-        -   **STATUS:** Contract fixed and compiled ✅ Factory redeployment required ⏳
-        -   **NEXT STEP:** Redeploy `AMMPoolFactorySimple` to use fixed AMMPool bytecode
+        -   **STATUS:** Contract fixed, compiled, and deployed ✅
+        -   **VERIFICATION:** Verified on Sourcify and Routescan
     -   **⚠️ KNOWN ISSUES (Lower priority):**
         -   **SECURITY:** API routes accept raw private keys - must migrate to ProxyWallet/relayer pattern
         -   BigInt precision loss when converting to Number for fee calculations
