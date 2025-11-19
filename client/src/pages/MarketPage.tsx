@@ -182,7 +182,9 @@ export default function MarketPage() {
 
           <div className="space-y-6">
             <DepositWithdrawPanel />
-            <TradingPanel marketId={market.id} />
+            {market.marketType !== 'POOL' && (
+              <TradingPanel marketId={market.id} />
+            )}
             <OracleInfo 
               pythPriceFeedId={market.pythPriceFeedId}
               baselinePrice={market.baselinePrice}
