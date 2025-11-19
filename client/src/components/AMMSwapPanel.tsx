@@ -46,6 +46,7 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
   const [buyYes, setBuyYes] = useState(true);
   const [amountIn, setAmountIn] = useState('');
   const [slippage, setSlippage] = useState('1.0');
+  const [sellMode, setSellMode] = useState(false); // Toggle between buy (USDT→tokens) and sell (tokens→opposite token)
   const { account } = useWallet();
   const { toast } = useToast();
 
@@ -256,6 +257,119 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
     swapMutation.mutate();
   };
 
+  // Sell mutation to convert tokens back to USDT
+  const sellToUsdtMutation = useMutation({
+    mutationFn: async (params: { sellYes: boolean }) => {
+      if (!account || !userBalances || !market) {
+        throw new Error('Missing required data');
+      }
+
+      const yesBalance = parseFloat(userBalances.yesBalance) / 1e6;
+      const noBalance = parseFloat(userBalances.noBalance) / 1e6;
+      
+      if (yesBalance === 0 && noBalance === 0) {
+        throw new Error('No tokens to sell');
+      }
+
+      const { ethers } = await import('ethers');
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+
+      const CONDITIONAL_TOKENS = '0xdC8CB01c328795C007879B2C030AbF1c1b580D84';
+      const USDT = '0xAf24D4DDbA993F6b11372528C678edb718a097Aa';
+
+      const conditionalTokensABI = [
+        'function setApprovalForAll(address operator, bool approved)',
+        'function mergePositions(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)',
+      ];
+      const poolABI = ['function swap(bool buyYes, uint256 amountIn, uint256 minAmountOut) returns (uint256)'];
+
+      const ct = new ethers.Contract(CONDITIONAL_TOKENS, conditionalTokensABI, signer);
+      const pool = new ethers.Contract(poolAddress, poolABI, signer);
+
+      // Step 1: Calculate mergeable amount and surplus
+      const mergeableAmount = Math.min(yesBalance, noBalance);
+      const surplusYes = yesBalance - mergeableAmount;
+      const surplusNo = noBalance - mergeableAmount;
+
+      console.log('💰 Sell-to-USDT Flow:', {
+        yesBalance,
+        noBalance,
+        mergeableAmount,
+        surplusYes,
+        surplusNo,
+        sellYes: params.sellYes,
+      });
+
+      // Step 2: If there's surplus, swap it to balance the position
+      if (surplusYes > 0 || surplusNo > 0) {
+        console.log('🔄 Step 1: Swapping surplus tokens to balance position...');
+        
+        // Approve tokens to pool
+        const approveTx = await ct.setApprovalForAll(poolAddress, true);
+        await approveTx.wait();
+
+        if (surplusYes > 0) {
+          // Swap surplus YES for NO
+          const surplusWei = BigInt(Math.floor(surplusYes * 1e6));
+          const minOut = (surplusWei * BigInt(9900)) / BigInt(10000); // 1% slippage
+          const swapTx = await pool.swap(false, surplusWei, minOut);
+          await swapTx.wait();
+          console.log(`✅ Swapped ${surplusYes.toFixed(4)} YES for NO`);
+        } else if (surplusNo > 0) {
+          // Swap surplus NO for YES
+          const surplusWei = BigInt(Math.floor(surplusNo * 1e6));
+          const minOut = (surplusWei * BigInt(9900)) / BigInt(10000); // 1% slippage
+          const swapTx = await pool.swap(true, surplusWei, minOut);
+          await swapTx.wait();
+          console.log(`✅ Swapped ${surplusNo.toFixed(4)} NO for YES`);
+        }
+      }
+
+      // Step 3: Merge equal YES+NO tokens back to USDT
+      if (mergeableAmount > 0) {
+        console.log('🔀 Step 2: Merging YES+NO tokens back to USDT...');
+        
+        const mergeAmountWei = BigInt(Math.floor(mergeableAmount * 1e6));
+        const parentCollectionId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+        const partition = [1, 2]; // Binary outcome: [YES, NO]
+
+        const mergeTx = await ct.mergePositions(
+          USDT,
+          parentCollectionId,
+          market.conditionId,
+          partition,
+          mergeAmountWei
+        );
+        await mergeTx.wait();
+        console.log(`✅ Merged ${mergeableAmount.toFixed(4)} YES+NO tokens back to USDT`);
+      }
+
+      return {
+        mergedAmount: mergeableAmount,
+        swappedAmount: surplusYes + surplusNo,
+      };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Sell Successful!',
+        description: `Converted tokens to ${data.mergedAmount.toFixed(2)} USDT`,
+      });
+
+      // Invalidate queries to refresh balances
+      queryClient.invalidateQueries({ queryKey: ['/api/user-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pool', poolAddress] });
+      queryClient.invalidateQueries({ queryKey: ['/api/markets'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Sell Failed',
+        description: error.message || 'Failed to sell tokens',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const priceImpactColor = (impact: number) => {
     if (impact < 1) return 'text-green-500';
     if (impact < 3) return 'text-yellow-500';
@@ -330,13 +444,11 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs"
-                    onClick={() => {
-                      setBuyYes(false);
-                      setAmountIn((parseFloat(userBalances.yesBalance) / 1e6).toFixed(4));
-                    }}
+                    onClick={() => sellToUsdtMutation.mutate({ sellYes: true })}
+                    disabled={sellToUsdtMutation.isPending}
                     data-testid="button-sell-yes"
                   >
-                    Sell All
+                    {sellToUsdtMutation.isPending ? 'Selling...' : 'Sell All'}
                   </Button>
                 )}
               </div>
@@ -355,13 +467,11 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs"
-                    onClick={() => {
-                      setBuyYes(true);
-                      setAmountIn((parseFloat(userBalances.noBalance) / 1e6).toFixed(4));
-                    }}
+                    onClick={() => sellToUsdtMutation.mutate({ sellYes: false })}
+                    disabled={sellToUsdtMutation.isPending}
                     data-testid="button-sell-no"
                   >
-                    Sell All
+                    {sellToUsdtMutation.isPending ? 'Selling...' : 'Sell All'}
                   </Button>
                 )}
               </div>
