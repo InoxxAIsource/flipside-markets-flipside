@@ -365,7 +365,8 @@ export default function Portfolio() {
                 {ammSwaps.map((swap: any) => (
                   <Card 
                     key={swap.id} 
-                    className="hover-elevate"
+                    className="hover-elevate cursor-pointer"
+                    onClick={() => navigate(`/market/${swap.marketId}`)}
                     data-testid={`card-amm-swap-${swap.id}`}
                   >
                     <CardContent className="py-4">
