@@ -15,8 +15,8 @@ export const CONTRACT_ADDRESSES = {
   // Order book exchange (CLOB)
   CTF_EXCHANGE: "0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3",
   
-  // AMM Pool Factory (for Pool-type markets)
-  AMM_POOL_FACTORY: "0x8a7FF8A21F0B775dB661986bD0299e06A76583Db",
+  // AMM Pool Factory (for Pool-type markets) - Deployed Nov 19, 2025 with ERC1155Receiver fix
+  AMM_POOL_FACTORY: "0xAe14f8BC192306A891b172A3bc0e91132a4417EF",
 } as const;
 
 export const NETWORK_CONFIG = {
