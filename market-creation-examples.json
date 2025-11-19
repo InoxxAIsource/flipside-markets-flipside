@@ -1,0 +1,138 @@
+{
+  "crypto_markets": [
+    {
+      "question": "Will Bitcoin reach $100,000 by December 31, 2025?",
+      "description": "This market resolves YES if Bitcoin (BTC/USD) reaches or exceeds $100,000 on any major exchange (Binance, Coinbase, Kraken) before December 31, 2025, 23:59:59 UTC. Price must be sustained for at least 1 minute on the exchange order book.",
+      "category": "Crypto",
+      "imageUrl": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+      "expiresAt": "2025-12-31",
+      "marketType": "CLOB"
+    },
+    {
+      "question": "Will Ethereum reach $5,000 before June 1, 2025?",
+      "description": "Resolves YES if ETH/USD hits $5,000 or higher on Coinbase, Binance, or Kraken before June 1, 2025, 00:00 UTC. The price must be recorded on the public order book for at least 60 consecutive seconds.",
+      "category": "Crypto",
+      "imageUrl": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+      "expiresAt": "2025-06-01",
+      "marketType": "POOL",
+      "initialYesLiquidity": "10",
+      "initialNoLiquidity": "10"
+    },
+    {
+      "question": "Will Solana outperform Ethereum in 2025?",
+      "description": "This market resolves YES if Solana's percentage price increase from January 1, 2025 (00:00 UTC) to December 31, 2025 (23:59 UTC) exceeds Ethereum's percentage increase over the same period. Prices will be measured using CoinGecko data.",
+      "category": "Crypto",
+      "imageUrl": "https://cryptologos.cc/logos/solana-sol-logo.png",
+      "expiresAt": "2025-12-31",
+      "marketType": "CLOB"
+    },
+    {
+      "question": "Will a Bitcoin ETF be approved in the US before 2026?",
+      "description": "Resolves YES if the SEC approves a spot Bitcoin ETF before January 1, 2026. Approval means the official announcement is published on the SEC website. Futures ETFs don't count - must be a spot ETF.",
+      "category": "Crypto",
+      "expiresAt": "2025-12-31",
+      "marketType": "POOL",
+      "initialYesLiquidity": "15",
+      "initialNoLiquidity": "15"
+    }
+  ],
+  "politics_markets": [
+    {
+      "question": "Will the US inflation rate drop below 2% in 2025?",
+      "description": "This market resolves YES if the US Consumer Price Index (CPI) year-over-year percentage change falls below 2.0% in any monthly report published in 2025. Data source: US Bureau of Labor Statistics official CPI releases.",
+      "category": "Politics",
+      "expiresAt": "2025-12-31",
+      "marketType": "CLOB"
+    },
+    {
+      "question": "Will there be a federal interest rate cut before July 2025?",
+      "description": "Resolves YES if the Federal Reserve announces a reduction in the federal funds rate target range before July 1, 2025, 00:00 UTC. The announcement must come from an official FOMC meeting statement.",
+      "category": "Politics",
+      "expiresAt": "2025-07-01",
+      "marketType": "POOL",
+      "initialYesLiquidity": "20",
+      "initialNoLiquidity": "10"
+    }
+  ],
+  "sports_markets": [
+    {
+      "question": "Will an NBA team win 70+ games in the 2024-25 season?",
+      "description": "This market resolves YES if any NBA team finishes the regular 2024-25 season with 70 or more wins. Only regular season games count - playoffs are excluded.",
+      "category": "Sports",
+      "expiresAt": "2025-04-15",
+      "marketType": "CLOB"
+    },
+    {
+      "question": "Will Lionel Messi score 20+ MLS goals in 2025?",
+      "description": "Resolves YES if Lionel Messi scores 20 or more goals in MLS regular season and playoff matches during the 2025 calendar year (Jan 1 - Dec 31). Own goals don't count.",
+      "category": "Sports",
+      "expiresAt": "2025-12-31",
+      "marketType": "POOL",
+      "initialYesLiquidity": "10",
+      "initialNoLiquidity": "10"
+    }
+  ],
+  "tech_markets": [
+    {
+      "question": "Will Apple release a foldable iPhone in 2025?",
+      "description": "This market resolves YES if Apple officially announces and makes available for purchase a foldable iPhone model before December 31, 2025, 23:59 UTC. The device must be actually released to consumers, not just announced or shown as a prototype.",
+      "category": "Tech",
+      "expiresAt": "2025-12-31",
+      "marketType": "POOL",
+      "initialYesLiquidity": "10",
+      "initialNoLiquidity": "15"
+    },
+    {
+      "question": "Will OpenAI release GPT-5 before September 2025?",
+      "description": "Resolves YES if OpenAI officially announces and releases GPT-5 (or equivalent next-generation model explicitly labeled as GPT-5) before September 1, 2025, 00:00 UTC. The model must be accessible to users, not just announced.",
+      "category": "Tech",
+      "expiresAt": "2025-09-01",
+      "marketType": "CLOB"
+    },
+    {
+      "question": "Will Tesla stock hit $300 before 2026?",
+      "description": "This market resolves YES if Tesla (TSLA) stock reaches or exceeds $300 per share on NASDAQ before January 1, 2026, 00:00 UTC. Price must be recorded during regular trading hours (not pre/post-market).",
+      "category": "Tech",
+      "expiresAt": "2025-12-31",
+      "marketType": "POOL",
+      "initialYesLiquidity": "20",
+      "initialNoLiquidity": "20"
+    }
+  ],
+  "science_markets": [
+    {
+      "question": "Will humans land on the Moon in 2025?",
+      "description": "Resolves YES if any human successfully lands on the lunar surface before December 31, 2025, 23:59 UTC. This includes government or private missions. Orbiting the moon without landing does not count.",
+      "category": "Science",
+      "expiresAt": "2025-12-31",
+      "marketType": "CLOB"
+    },
+    {
+      "question": "Will a major breakthrough in fusion energy be announced in 2025?",
+      "description": "This market resolves YES if a peer-reviewed study or credible research institution announces achieving net energy gain (Q > 1.5) from fusion before Dec 31, 2025. The announcement must be covered by at least 3 major science publications.",
+      "category": "Science",
+      "expiresAt": "2025-12-31",
+      "marketType": "POOL",
+      "initialYesLiquidity": "8",
+      "initialNoLiquidity": "12"
+    }
+  ],
+  "entertainment_markets": [
+    {
+      "question": "Will a movie gross over $2 billion worldwide in 2025?",
+      "description": "Resolves YES if any single movie released in 2025 achieves cumulative worldwide box office revenue of $2 billion or more by December 31, 2025. Data from Box Office Mojo or similar tracking services.",
+      "category": "Entertainment",
+      "expiresAt": "2025-12-31",
+      "marketType": "CLOB"
+    },
+    {
+      "question": "Will Beyoncé release a new album in 2025?",
+      "description": "This market resolves YES if Beyoncé releases a new studio album (excluding live albums, compilations, or re-releases) before December 31, 2025, 23:59 UTC. The album must be officially released on major streaming platforms.",
+      "category": "Entertainment",
+      "expiresAt": "2025-12-31",
+      "marketType": "POOL",
+      "initialYesLiquidity": "10",
+      "initialNoLiquidity": "10"
+    }
+  ]
+}
