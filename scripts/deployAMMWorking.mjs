@@ -1,12 +1,10 @@
-import { ethers } from "hardhat";
-
-async function main() {
+import("hardhat").then(async ({ ethers }) => {
   const [deployer] = await ethers.getSigners();
   
   console.log("Deploying AMM contracts with account:", deployer.address);
-  console.log("Account balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)));
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log("Account balance:", ethers.formatEther(balance));
 
-  // Get existing contract addresses from env
   const mockUSDT = process.env.MOCK_USDT_ADDRESS || "0xAf24D4DDbA993F6b11372528C678edb718a097Aa";
   const conditionalTokens = process.env.CTF_ADDRESS || "0xdC8CB01c328795C007879B2C030AbF1c1b580D84";
   const treasury = deployer.address;
@@ -51,11 +49,9 @@ async function main() {
   console.log(`   npx hardhat verify --network sepolia ${ammPoolFactoryAddress}`);
   console.log(`2. Update CONTRACT_ADDRESSES in server/config/contracts.ts:`);
   console.log(`   AMM_POOL_FACTORY: "${ammPoolFactoryAddress}"`);
-}
-
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+  
+  process.exit(0);
+}).catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

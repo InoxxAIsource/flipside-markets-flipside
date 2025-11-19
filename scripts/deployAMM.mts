@@ -1,10 +1,9 @@
-import { ethers } from "hardhat";
-
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const hre = await import("hardhat");
+  const [deployer] = await hre.ethers.getSigners();
   
   console.log("Deploying AMM contracts with account:", deployer.address);
-  console.log("Account balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)));
+  console.log("Account balance:", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)));
 
   // Get existing contract addresses from env
   const mockUSDT = process.env.MOCK_USDT_ADDRESS || "0xAf24D4DDbA993F6b11372528C678edb718a097Aa";
@@ -18,7 +17,7 @@ async function main() {
 
   // 1. Deploy AMMPoolFactory
   console.log("\n1. Deploying AMMPoolFactory...");
-  const AMMPoolFactory = await ethers.getContractFactory("AMMPoolFactory");
+  const AMMPoolFactory = await hre.ethers.getContractFactory("AMMPoolFactory");
   const ammPoolFactory = await AMMPoolFactory.deploy();
   await ammPoolFactory.waitForDeployment();
   const ammPoolFactoryAddress = await ammPoolFactory.getAddress();
@@ -57,5 +56,4 @@ main()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);
-    process.exit(1);
-  });
+    process.exit(1));
