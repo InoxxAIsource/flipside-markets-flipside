@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { ArrowRight, TrendingDown, TrendingUp, Info, AlertTriangle, Plus, Minus, Droplet } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWallet } from '@/hooks/use-wallet';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 
 interface AMMSwapPanelProps {
   poolAddress: string;
@@ -44,6 +46,8 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
   const [buyYes, setBuyYes] = useState(true);
   const [amountIn, setAmountIn] = useState('');
   const [slippage, setSlippage] = useState('1.0');
+  const { account } = useWallet();
+  const { toast } = useToast();
 
   // Fetch pool info
   const { data: poolInfo, isLoading: poolLoading } = useQuery<PoolInfo>({
@@ -73,6 +77,79 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
   const minAmountOut = quote
     ? (parseFloat(quote.amountOut) * (1 - parseFloat(slippage) / 100)).toFixed(6)
     : '0';
+
+  // Swap mutation (user-pays-gas like deposits/withdrawals)
+  const swapMutation = useMutation({
+    mutationFn: async () => {
+      if (!account) {
+        throw new Error('Please connect your wallet');
+      }
+      if (!quote) {
+        throw new Error('No quote available');
+      }
+
+      const amountInWei = BigInt(Math.floor(parseFloat(amountIn) * 1e6));
+      const minAmountOutWei = BigInt(Math.floor(parseFloat(minAmountOut)));
+
+      // Contract ABIs
+      const usdtABI = ['function approve(address spender, uint256 amount) returns (bool)'];
+      const poolABI = ['function swap(bool buyYes, uint256 amountIn, uint256 minAmountOut) returns (uint256)'];
+
+      // Create contract instances
+      const { ethers } = await import('ethers');
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const userSigner = await provider.getSigner();
+      
+      const usdt = new ethers.Contract('0xAf24D4DDbA993F6b11372528C678edb718a097Aa', usdtABI, userSigner);
+      const pool = new ethers.Contract(poolAddress, poolABI, userSigner);
+
+      // Step 1: Approve USDT to pool
+      const approveTx = await usdt.approve(poolAddress, amountInWei);
+      await approveTx.wait();
+
+      // Step 2: Execute swap
+      const swapTx = await pool.swap(buyYes, amountInWei, minAmountOutWei);
+      const receipt = await swapTx.wait();
+
+      return {
+        amountOut: quote.amountOut,
+        txHash: receipt.hash,
+      };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Swap Successful!',
+        description: `Received ${(parseFloat(data.amountOut) / 1e6).toFixed(4)} ${buyYes ? 'YES' : 'NO'} tokens`,
+      });
+      
+      // Reset form
+      setAmountIn('');
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/pool', poolAddress] });
+      queryClient.invalidateQueries({ queryKey: ['/api/markets'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Swap Failed',
+        description: error.message || 'Failed to execute swap',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSwap = () => {
+    if (!account) {
+      toast({
+        title: 'Wallet Not Connected',
+        description: 'Please connect your wallet to swap',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    swapMutation.mutate();
+  };
 
   const priceImpactColor = (impact: number) => {
     if (impact < 1) return 'text-green-500';
@@ -299,13 +376,18 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
             <Button
               size="lg"
               className="w-full"
-              disabled={!amountIn || parseFloat(amountIn) <= 0 || !quote}
+              disabled={!amountIn || parseFloat(amountIn) <= 0 || !quote || swapMutation.isPending || !account}
+              onClick={handleSwap}
               data-testid="button-execute-swap"
             >
-              {!amountIn || parseFloat(amountIn) <= 0
+              {!account
+                ? 'Connect Wallet'
+                : !amountIn || parseFloat(amountIn) <= 0
                 ? 'Enter Amount'
                 : quoteLoading
                 ? 'Calculating...'
+                : swapMutation.isPending
+                ? 'Swapping...'
                 : `Swap for ${buyYes ? 'YES' : 'NO'}`}
             </Button>
 
