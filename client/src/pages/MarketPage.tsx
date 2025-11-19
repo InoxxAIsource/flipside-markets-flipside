@@ -141,37 +141,40 @@ export default function MarketPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-card rounded-lg border p-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">YES Probability</span>
-                    <Badge variant="outline">Long</Badge>
+            {/* Only show CLOB probability cards for order book markets */}
+            {market.marketType !== 'POOL' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-card rounded-lg border p-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">YES Probability</span>
+                      <Badge variant="outline">Long</Badge>
+                    </div>
+                    <div className="text-3xl font-mono font-bold text-primary">
+                      {yesPercentage}%
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {yesPercentage}¢ per share
+                    </p>
                   </div>
-                  <div className="text-3xl font-mono font-bold text-primary">
-                    {yesPercentage}%
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {yesPercentage}¢ per share
-                  </p>
                 </div>
-              </div>
 
-              <div className="bg-card rounded-lg border p-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">NO Probability</span>
-                    <Badge variant="outline">Short</Badge>
+                <div className="bg-card rounded-lg border p-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">NO Probability</span>
+                      <Badge variant="outline">Short</Badge>
+                    </div>
+                    <div className="text-3xl font-mono font-bold text-destructive">
+                      {noPercentage}%
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {noPercentage}¢ per share
+                    </p>
                   </div>
-                  <div className="text-3xl font-mono font-bold text-destructive">
-                    {noPercentage}%
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {noPercentage}¢ per share
-                  </p>
                 </div>
               </div>
-            </div>
+            )}
 
             {market.marketType === 'POOL' && market.poolAddress ? (
               <AMMSwapPanel poolAddress={market.poolAddress} marketId={market.id} />
