@@ -40,9 +40,14 @@ The UI/UX is inspired by Polymarket, utilizing shadcn/ui (Radix UI) and Tailwind
         -   Individual AMMPool contracts with LP tokens (ERC20)
         -   Fee structure: 2.0% total (1.5% to LPs auto-compounding, 0.5% to protocol treasury)
         -   Constant-sum formula chosen for better price discovery in binary markets
-    -   **⚠️ KNOWN ISSUES (Requires immediate fixes):**
-        -   **CRITICAL SECURITY FLAW:** API routes accept raw private keys in request body - must migrate to ProxyWallet/relayer pattern
-        -   Missing ERC20/ERC1155 approval handling - swaps/liquidity operations will fail
+    -   **⚠️ CRITICAL BUG FIXED (November 19, 2025):**
+        -   **ROOT CAUSE:** AMMPool contract was missing `IERC1155Receiver` interface implementation
+        -   **SYMPTOM:** LP Pool creation failed at Step 4 (addLiquidity) with "execution reverted" error code `0x57f447ce`
+        -   **FIX APPLIED:** Added `onERC1155Received()`, `onERC1155BatchReceived()`, and `supportsInterface()` to AMMPool.sol
+        -   **STATUS:** Contract fixed and compiled ✅ Factory redeployment required ⏳
+        -   **NEXT STEP:** Redeploy `AMMPoolFactorySimple` to use fixed AMMPool bytecode
+    -   **⚠️ KNOWN ISSUES (Lower priority):**
+        -   **SECURITY:** API routes accept raw private keys - must migrate to ProxyWallet/relayer pattern
         -   BigInt precision loss when converting to Number for fee calculations
         -   Missing numeric validation/conversion in API routes
         -   Need to integrate with existing ProxyWallet gasless transaction system

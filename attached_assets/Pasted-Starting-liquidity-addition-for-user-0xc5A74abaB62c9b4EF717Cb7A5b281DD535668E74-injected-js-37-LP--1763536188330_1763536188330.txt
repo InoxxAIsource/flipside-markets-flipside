@@ -1,0 +1,33 @@
+Starting liquidity addition for user 0xc5A74abaB62c9b4EF717Cb7A5b281DD535668E74
+injected.js:37 [LP] Pool: 0x835fF1b5b7f4aC91712BC7e77019048Afb7C81C1, YES: 25, NO: 25
+injected.js:37 [LP] Total amount to split: 50.0 USDT
+injected.js:37 [LP] Step 1: Checking USDT allowance...
+injected.js:37 [LP] Current allowance: 115792089237316195423570985008687907853269984665640564039457584007913129.639935 USDT
+injected.js:37 [LP] Sufficient allowance already exists
+injected.js:37 [LP] Step 2: Splitting position...
+injected.js:37 [LP] Split tx submitted: 0x716a9448e196efd6246fa277ea6f8bf45c95343f99189cd4c059d79c7ccf47f8
+injected.js:37 [LP] Split confirmed in block 9660368
+injected.js:37 [LP] YES balance: 50.0
+injected.js:37 [LP] NO balance: 50.0
+injected.js:37 [LP] Step 3: Checking pool approval...
+injected.js:37 [LP] Pool approved: false
+injected.js:37 [LP] Requesting pool approval...
+injected.js:37 [LP] Pool approval tx submitted: 0x0cac1c3d557232a85ad0a6e940411d8ec921709303ec87fb9b63adcdd68c51bf
+injected.js:37 [LP] Pool approval confirmed in block 9660370
+injected.js:37 [LP] Step 4: Adding liquidity to pool...
+injected.js:37 [LP] Adding YES: 25.0, NO: 25.0
+inpage.js:1 MetaMask - RPC Error: execution reverted Object
+(anonymous) @ inpage.js:1Understand this warning
+injected.js:37 [LP] Step 4 failed: Error: execution reverted (unknown custom error) (action="estimateGas", data="0x57f447ce000000000000000000000000835ff1b5b7f4ac91712bc7e77019048afb7c81c1", reason=null, transaction={ "data": "0x9cd441da00000000000000000000000000000000000000000000000000000000017d784000000000000000000000000000000000000000000000000000000000017d7840", "from": "0xc5A74abaB62c9b4EF717Cb7A5b281DD535668E74", "to": "0x835fF1b5b7f4aC91712BC7e77019048Afb7C81C1" }, invocation=null, revert=null, code=CALL_EXCEPTION, version=6.15.0)
+    at makeError (ethers.js?v=70c5977c:337:15)
+    at getBuiltinCallException (ethers.js?v=70c5977c:12020:10)
+    at _AbiCoder.getBuiltinCallException (ethers.js?v=70c5977c:12091:12)
+    at _BrowserProvider.getRpcError (ethers.js?v=70c5977c:19294:26)
+    at _BrowserProvider.getRpcError (ethers.js?v=70c5977c:21728:18)
+    at ethers.js?v=70c5977c:19482:27
+(anonymous) @ injected.js:37Understand this error
+injected.js:37 [CreateMarket] Step 4/4: Adding liquidity failed: execution reverted (unknown custom error) (action="estimateGas", data="0x57f447ce000000000000000000000000835ff1b5b7f4ac91712bc7e77019048afb7c81c1", reason=null, transaction={ "data": "0x9cd441da00000000000000000000000000000000000000000000000000000000017d784000000000000000000000000000000000000000000000000000000000017d7840", "from": "0xc5A74abaB62c9b4EF717Cb7A5b281DD535668E74", "to": "0x835fF1b5b7f4aC91712BC7e77019048Afb7C81C1" }, invocation=null, revert=null, code=CALL_EXCEPTION, version=6.15.0)
+(anonymous) @ injected.js:37Understand this error
+injected.js:37 [LP] Overall process failed: Error: Add liquidity failed: execution reverted (unknown custom error) (action="estimateGas", data="0x57f447ce000000000000000000000000835ff1b5b7f4ac91712bc7e77019048afb7c81c1", reason=null, transaction={ "data": "0x9cd441da00000000000000000000000000000000000000000000000000000000017d784000000000000000000000000000000000000000000000000000000000017d7840", "from": "0xc5A74abaB62c9b4EF717Cb7A5b281DD535668E74", "to": "0x835fF1b5b7f4aC91712BC7e77019048Afb7C81C1" }, invocation=null, revert=null, code=CALL_EXCEPTION, version=6.15.0)
+    at addInitialLiquidity (ammPool.ts:214:13)
+    at async Object.mutationFn (CreateMarket.tsx:90:33)

@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 interface IConditionalTokens {
@@ -20,7 +21,7 @@ interface IConditionalTokens {
  * Uses x + y = k formula for YES/NO token pricing
  * Supports liquidity provision with LP tokens
  */
-contract AMMPool is ERC20, ReentrancyGuard {
+contract AMMPool is ERC20, ReentrancyGuard, IERC1155Receiver {
     // Contracts
     IERC20 public immutable collateralToken;
     IConditionalTokens public immutable conditionalTokens;
@@ -315,5 +316,36 @@ contract AMMPool is ERC20, ReentrancyGuard {
         } else {
             require(amountOut <= yesReserve, "Insufficient reserves");
         }
+    }
+    
+    /**
+     * ERC1155 Receiver implementation
+     * Required to receive ERC1155 tokens (YES/NO tokens)
+     */
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+    
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+    
+    /**
+     * ERC165 support
+     */
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+        return interfaceId == type(IERC1155Receiver).interfaceId;
     }
 }
