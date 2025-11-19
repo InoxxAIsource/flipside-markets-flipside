@@ -4,6 +4,27 @@
 
 Flipside is a full-stack prediction market platform on the Ethereum Sepolia testnet, inspired by Polymarket. It enables users to create, trade, and resolve prediction markets on crypto and real-world events. The platform combines trustless blockchain operations with a modern web interface (React, Express, PostgreSQL) to provide a robust and intuitive decentralized prediction market experience.
 
+## Recent Updates
+
+### November 19, 2025 - LP Pool Bug Fix & Deployment ✅
+
+**Critical Bug Fixed:** AMMPool ERC1155Receiver Implementation
+- **Issue:** LP Pool market creation failed at Step 4 (addLiquidity) with error code `0x57f447ce` ("execution reverted")
+- **Root Cause:** AMMPool.sol missing `IERC1155Receiver` interface required to receive YES/NO tokens (ERC1155)
+- **Solution:** Added complete ERC1155Receiver implementation with `onERC1155Received()`, `onERC1155BatchReceived()`, and `supportsInterface()` methods
+- **Deployment:** New AMMPoolFactorySimple deployed to **0xAe14f8BC192306A891b172A3bc0e91132a4417EF**
+- **Verification:**
+  - Sourcify: [View Contract](https://repo.sourcify.dev/contracts/full_match/11155111/0xAe14f8BC192306A891b172A3bc0e91132a4417EF/)
+  - Routescan: [Sepolia Explorer](https://sepolia.etherscan.io/address/0xAe14f8BC192306A891b172A3bc0e91132a4417EF)
+- **Status:** Ready for testing - LP Pool markets can now be created successfully
+
+**How to Test:**
+1. Navigate to `/create` page
+2. Select "LP Pool (AMM)" as market type
+3. Fill in market details and initial liquidity (e.g., 10 USDT each for YES/NO)
+4. Submit and watch console logs for 4-step liquidity process
+5. Expected result: "✅ Liquidity addition completed successfully!" with no errors
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -33,24 +54,14 @@ The UI/UX is inspired by Polymarket, utilizing shadcn/ui (Radix UI) and Tailwind
 -   **Frontend:** React 18, TypeScript, Vite, Wouter for routing, TanStack Query for server state, Ethers.js v6 for Web3.
 -   **Backend:** Node.js with Express and TypeScript, Drizzle ORM for PostgreSQL. Includes a WebSocket server for real-time updates.
 -   **Blockchain Integration:** Ethereum Sepolia testnet, using ConditionalTokens, MarketFactory, CTFExchange (order book DEX), PythPriceResolver, ProxyWallet (for gasless meta-transactions), and MockUSDT contracts. EIP-712 signed meta-transactions enable gasless trading.
--   **Dual Trading Systems (November 19, 2025):**
-    -   **CLOB (Order Book):** Existing system with gasless limit/market orders via CTFExchange and ProxyWallet
-    -   **AMM Pool (FIXED):** Constant-sum AMM (x + y = k) for automated market making:
-        -   Deployed factory: `AMMPoolFactorySimple` at **0xAe14f8BC192306A891b172A3bc0e91132a4417EF** ✅
+-   **Dual Trading Systems:**
+    -   **CLOB (Order Book):** Traditional order book with gasless limit/market orders via CTFExchange and ProxyWallet meta-transactions
+    -   **AMM Pool:** Constant-sum AMM (x + y = k) for automated market making
+        -   Factory: `AMMPoolFactorySimple` at `0xAe14f8BC192306A891b172A3bc0e91132a4417EF` (Sepolia)
         -   Individual AMMPool contracts with LP tokens (ERC20)
         -   Fee structure: 2.0% total (1.5% to LPs auto-compounding, 0.5% to protocol treasury)
-        -   Constant-sum formula chosen for better price discovery in binary markets
-    -   **✅ CRITICAL BUG FIXED (November 19, 2025):**
-        -   **ROOT CAUSE:** AMMPool contract was missing `IERC1155Receiver` interface implementation
-        -   **SYMPTOM:** LP Pool creation failed at Step 4 (addLiquidity) with "execution reverted" error code `0x57f447ce`
-        -   **FIX APPLIED:** Added `onERC1155Received()`, `onERC1155BatchReceived()`, and `supportsInterface()` to AMMPool.sol
-        -   **STATUS:** Contract fixed, compiled, and deployed ✅
-        -   **VERIFICATION:** Verified on Sourcify and Routescan
-    -   **⚠️ KNOWN ISSUES (Lower priority):**
-        -   **SECURITY:** API routes accept raw private keys - must migrate to ProxyWallet/relayer pattern
-        -   BigInt precision loss when converting to Number for fee calculations
-        -   Missing numeric validation/conversion in API routes
-        -   Need to integrate with existing ProxyWallet gasless transaction system
+        -   Constant-sum formula (x + y = k) chosen for better price discovery in binary markets
+        -   ERC1155Receiver interface implemented for token handling
 -   **Background Services:** Includes an `Event Indexer` for blockchain sync, a `Pyth Worker` for oracle updates, an `Order Matcher` for trade processing, and a `Rewards Cron` for hourly points recalculation and weekly resets.
 -   **Liquidity Mining:** Off-chain rewards system tracks user points for trading volume, market making, and market creation, stored in PostgreSQL and calculated hourly.
 -   **AI Integration:** Leverages Replit AI Integrations for OpenAI's GPT-4o-mini via a dedicated backend service.
@@ -91,3 +102,40 @@ The UI/UX is inspired by Polymarket, utilizing shadcn/ui (Radix UI) and Tailwind
 -   `ALCHEMY_API_KEY`
 -   `TWITTER_API_KEY`, `TWITTER_API_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`
 -   `VITE_WALLETCONNECT_PROJECT_ID`
+
+## Smart Contract Deployments (Sepolia Testnet)
+
+### Core Infrastructure
+- **ConditionalTokens:** `0xdC8CB01c328795C007879B2C030AbF1c1b580D84`
+- **MockUSDT:** `0xAf24D4DDbA993F6b11372528C678edb718a097Aa`
+- **MarketFactory:** (CLOB markets)
+- **CTFExchange:** (Order book DEX)
+- **ProxyWallet Factory:** `0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2`
+- **ProxyWallet Implementation:** `0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7`
+
+### AMM Pool System
+- **AMMPoolFactorySimple:** `0xAe14f8BC192306A891b172A3bc0e91132a4417EF`
+  - [View on Sourcify](https://repo.sourcify.dev/contracts/full_match/11155111/0xAe14f8BC192306A891b172A3bc0e91132a4417EF/)
+  - [View on Routescan](https://sepolia.etherscan.io/address/0xAe14f8BC192306A891b172A3bc0e91132a4417EF)
+  - Deployed: November 19, 2025
+  - Status: Active ✅
+
+### Oracle & Resolution
+- **PythPriceResolver:** (Oracle-based market resolution)
+- **Pyth Network:** Real-time price feeds on Sepolia
+
+## Known Issues & Future Enhancements
+
+### Security Improvements (High Priority)
+- **AMM API Security:** Current AMM API routes accept raw private keys - must migrate to ProxyWallet/relayer pattern for gasless transactions (similar to CLOB markets)
+
+### Technical Debt (Medium Priority)
+- BigInt precision loss when converting to Number for fee calculations in AMM contracts
+- Missing numeric validation/conversion in API routes
+- Need to fully integrate AMM system with existing ProxyWallet gasless transaction infrastructure
+
+### Future Enhancements (Low Priority)
+- Enhanced slippage protection mechanisms for AMM swaps
+- Advanced LP rewards tracking and analytics
+- Multi-collateral support (currently USDT-only)
+- Cross-chain deployment capabilities
