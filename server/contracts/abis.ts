@@ -195,6 +195,7 @@ export const AMMPoolABI = [
   
   // Views
   "function getSwapQuote(bool buyYes, uint256 amountIn) view returns (uint256 amountOut, uint256 lpFee, uint256 protocolFee)",
+  "function getYesPrice() view returns (uint256)",
   "function yesReserve() view returns (uint256)",
   "function noReserve() view returns (uint256)",
   "function resolved() view returns (bool)",
