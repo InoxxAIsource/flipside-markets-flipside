@@ -239,7 +239,22 @@ export class AMMService {
     price: number; // Effective price after fees
   }> {
     const pool = this.getPoolContract(poolAddress);
-    const [amountOut, lpFee, protocolFee] = await pool.getSwapQuote(buyYes, amountIn);
+    const [amountOut, totalFee] = await pool.getSwapOutput(buyYes, amountIn);
+
+    // Get fee rates to split total fee
+    const [lpFeeRate, protocolFeeRate] = await Promise.all([
+      pool.lpFeeRate(),
+      pool.protocolFeeRate()
+    ]);
+
+    const totalFeeRate = Number(lpFeeRate) + Number(protocolFeeRate);
+    const totalFeeBN = BigInt(totalFee);
+    
+    // Split fees proportionally
+    const lpFee = totalFeeRate > 0 
+      ? (totalFeeBN * BigInt(lpFeeRate)) / BigInt(totalFeeRate)
+      : BigInt(0);
+    const protocolFee = totalFeeBN - lpFee;
 
     // Calculate effective price
     const amountInBN = BigInt(amountIn);

@@ -202,11 +202,11 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
                 {quoteLoading ? (
                   <Skeleton className="h-8 w-24" />
                 ) : quote ? (
-                  <div className="text-2xl font-mono font-bold">
+                  <div className="text-2xl font-mono font-bold" data-testid="text-swap-quote">
                     {(parseFloat(quote.amountOut) / 1e6).toFixed(6)}
                   </div>
                 ) : (
-                  <div className="text-2xl font-mono text-muted-foreground">0.00</div>
+                  <div className="text-2xl font-mono text-muted-foreground" data-testid="text-swap-quote">0.00</div>
                 )}
               </div>
             </div>

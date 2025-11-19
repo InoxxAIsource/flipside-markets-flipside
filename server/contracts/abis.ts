@@ -194,7 +194,7 @@ export const AMMPoolABI = [
   "function removeLiquidity(uint256 lpTokens, uint256 minYesAmount, uint256 minNoAmount) returns (uint256 yesAmount, uint256 noAmount)",
   
   // Views
-  "function getSwapQuote(bool buyYes, uint256 amountIn) view returns (uint256 amountOut, uint256 lpFee, uint256 protocolFee)",
+  "function getSwapOutput(bool buyYes, uint256 amountIn) view returns (uint256 amountOut, uint256 totalFee)",
   "function getYesPrice() view returns (uint256)",
   "function yesReserve() view returns (uint256)",
   "function noReserve() view returns (uint256)",
