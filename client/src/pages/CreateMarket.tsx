@@ -9,10 +9,11 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useWallet } from '@/hooks/use-wallet';
 import { ethers } from 'ethers';
 import { prepareMarketCondition } from '@/lib/contracts/conditionalTokens';
+import { addInitialLiquidity } from '@/lib/contracts/ammPool';
 import { CONTRACT_ADDRESSES } from '@/lib/web3';
 import type { Market } from '@shared/schema';
 
-export type TransactionStatus = 'idle' | 'walletPrompt' | 'pending' | 'confirmed' | 'failed';
+export type TransactionStatus = 'idle' | 'walletPrompt' | 'pending' | 'confirmed' | 'addingLiquidity' | 'failed';
 
 export default function CreateMarket() {
   const { toast } = useToast();
@@ -71,8 +72,38 @@ export default function CreateMarket() {
       };
 
       const response = await apiRequest('POST', endpoint, requestBody);
+      const market = await response.json() as Market;
 
-      return await response.json() as Market;
+      // If it's a pool market, add initial liquidity
+      if (data.marketType === 'POOL' && data.initialYesLiquidity && data.initialNoLiquidity) {
+        if (!market.poolAddress) {
+          throw new Error('Pool address not returned from server');
+        }
+
+        setTxStatus('addingLiquidity');
+        
+        toast({
+          title: 'Adding Initial Liquidity',
+          description: 'Please confirm the transactions to add liquidity to your pool...',
+        });
+
+        const liquidityResult = await addInitialLiquidity(
+          market.poolAddress,
+          result.conditionId,
+          result.yesTokenId,
+          result.noTokenId,
+          data.initialYesLiquidity,
+          data.initialNoLiquidity,
+          signer
+        );
+
+        toast({
+          title: 'Liquidity Added',
+          description: `Successfully added ${data.initialYesLiquidity} YES + ${data.initialNoLiquidity} NO liquidity`,
+        });
+      }
+
+      return market;
     },
     onSuccess: (market) => {
       queryClient.invalidateQueries({ queryKey: ['/api/markets'] });

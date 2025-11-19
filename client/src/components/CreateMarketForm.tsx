@@ -215,6 +215,22 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
       );
     }
 
+    if (txStatus === 'addingLiquidity') {
+      return (
+        <div className="bg-purple-500/10 border border-purple-500/20 rounded-md p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 text-purple-500 animate-spin" />
+            <div>
+              <p className="font-medium text-purple-500">Adding Initial Liquidity</p>
+              <p className="text-sm text-muted-foreground">
+                Splitting USDT into tokens and adding to pool...
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return null;
   };
 
