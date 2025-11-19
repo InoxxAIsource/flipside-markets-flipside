@@ -23,7 +23,10 @@ export const markets = pgTable("markets", {
   resolvedAt: timestamp("resolved_at"),
   outcome: boolean("outcome"), // true = YES, false = NO, null = unresolved
   
-  // Current market prices (derived from order book)
+  // Market type - CLOB or AMM Pool
+  marketType: text("market_type").notNull().default('CLOB'), // 'CLOB' or 'POOL'
+  
+  // Current market prices (derived from order book or AMM pool)
   yesPrice: real("yes_price").notNull().default(0.5),
   noPrice: real("no_price").notNull().default(0.5),
   
@@ -37,6 +40,9 @@ export const markets = pgTable("markets", {
   yesTokenId: text("yes_token_id"), // Token ID for YES outcome
   noTokenId: text("no_token_id"), // Token ID for NO outcome
   creationTxHash: text("creation_tx_hash"), // Transaction hash of market creation
+  
+  // AMM Pool specific fields
+  poolAddress: text("pool_address"), // AMM Pool contract address (only for POOL markets)
   
   // On-chain metadata (from ConditionPreparation event)
   questionId: text("question_id"), // Keccak256 hash of question + timestamp
@@ -62,6 +68,7 @@ export const markets = pgTable("markets", {
   categoryIdx: index("markets_category_idx").on(table.category),
   expiresAtIdx: index("markets_expires_at_idx").on(table.expiresAt),
   resolvedIdx: index("markets_resolved_idx").on(table.resolved),
+  marketTypeIdx: index("markets_market_type_idx").on(table.marketType),
 }));
 
 // Orders table - limit orders for trading
@@ -119,6 +126,28 @@ export const orderFills = pgTable("order_fills", {
   marketIdx: index("fills_market_idx").on(table.marketId),
   makerIdx: index("fills_maker_idx").on(table.makerAddress),
   takerIdx: index("fills_taker_idx").on(table.takerAddress),
+}));
+
+// LP Positions - tracks liquidity provider holdings in AMM pools
+export const lpPositions = pgTable("lp_positions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketId: varchar("market_id").notNull().references(() => markets.id, { onDelete: 'cascade' }),
+  userAddress: text("user_address").notNull(),
+  
+  // LP token holdings
+  lpTokenBalance: real("lp_token_balance").notNull().default(0), // Amount of LP tokens owned
+  
+  // Position statistics
+  sharePercent: real("share_percent").notNull().default(0), // Percentage of total pool
+  yesReserveShare: real("yes_reserve_share").notNull().default(0), // User's share of YES reserves
+  noReserveShare: real("no_reserve_share").notNull().default(0), // User's share of NO reserves
+  
+  // Tracking
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  marketIdx: index("lp_positions_market_idx").on(table.marketId),
+  userIdx: index("lp_positions_user_idx").on(table.userAddress),
 }));
 
 // User positions - tracks user's holdings in each market
@@ -276,6 +305,12 @@ export const insertRewardsHistorySchema = createInsertSchema(rewardsHistory).omi
   createdAt: true,
 });
 
+export const insertLPPositionSchema = createInsertSchema(lpPositions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -291,6 +326,9 @@ export type InsertOrderFill = z.infer<typeof insertOrderFillSchema>;
 
 export type Position = typeof positions.$inferSelect;
 export type InsertPosition = z.infer<typeof insertPositionSchema>;
+
+export type LPPosition = typeof lpPositions.$inferSelect;
+export type InsertLPPosition = z.infer<typeof insertLPPositionSchema>;
 
 export type PythPriceUpdate = typeof pythPriceUpdates.$inferSelect;
 export type InsertPythPriceUpdate = z.infer<typeof insertPythPriceUpdateSchema>;
