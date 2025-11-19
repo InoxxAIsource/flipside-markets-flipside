@@ -144,8 +144,8 @@ export const ammSwaps = pgTable("amm_swaps", {
   lpFee: real("lp_fee").notNull(), // Fee paid to LPs
   protocolFee: real("protocol_fee").notNull(), // Fee paid to protocol
   
-  // Blockchain transaction
-  txHash: text("tx_hash").notNull(),
+  // Blockchain transaction (optional - not all events include these)
+  txHash: text("tx_hash"),
   blockNumber: integer("block_number"),
   
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
