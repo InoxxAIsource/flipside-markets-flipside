@@ -1,11 +1,14 @@
 import { web3Service } from "../contracts/web3Service";
 import { storage } from "../storage";
+import { ethers } from "ethers";
+import { AMMPoolABI } from "../contracts/abis";
 
 /**
  * Event indexer service to listen to blockchain events and update the database
  */
 export class EventIndexer {
   private isRunning = false;
+  private poolListeners: Map<string, ethers.Contract> = new Map();
 
   /**
    * Start listening to blockchain events
@@ -72,7 +75,90 @@ export class EventIndexer {
       }
     });
 
+    // Set up AMM pool swap event listeners
+    this.setupAMMPoolListeners().catch(error => {
+      console.error('Error setting up AMM pool listeners:', error);
+    });
+
     console.log('Event indexer started successfully');
+  }
+
+  /**
+   * Set up event listeners for all AMM pools
+   */
+  private async setupAMMPoolListeners() {
+    try {
+      // Get all POOL markets
+      const markets = await storage.getAllMarkets();
+      const poolMarkets = markets.filter(m => m.marketType === 'POOL' && m.poolAddress);
+
+      console.log(`Setting up AMM swap listeners for ${poolMarkets.length} pools...`);
+
+      for (const market of poolMarkets) {
+        const poolAddress = market.poolAddress!;
+        
+        // Skip if already listening
+        if (this.poolListeners.has(poolAddress)) {
+          continue;
+        }
+
+        // Create contract instance
+        const provider = web3Service.getProvider();
+        const pool = new ethers.Contract(poolAddress, AMMPoolABI, provider);
+        this.poolListeners.set(poolAddress, pool);
+
+        // Listen for Swap events
+        pool.on('Swap', async (user: string, buyYes: boolean, amountIn: bigint, amountOut: bigint, lpFee: bigint, protocolFee: bigint, event: ethers.Log) => {
+          console.log('AMM Swap event:', {
+            pool: poolAddress,
+            user,
+            buyYes,
+            amountIn: amountIn.toString(),
+            amountOut: amountOut.toString(),
+            lpFee: lpFee.toString(),
+            protocolFee: protocolFee.toString(),
+            txHash: event.transactionHash,
+          });
+
+          try {
+            // Get transaction details for block number
+            const tx = await event.getTransaction();
+            const blockNumber = event.blockNumber;
+
+            // Convert amounts from wei (6 decimals for USDT)
+            const amountInUSDT = Number(amountIn) / 1e6;
+            const amountOutUSDT = Number(amountOut) / 1e6;
+            const lpFeeUSDT = Number(lpFee) / 1e6;
+            const protocolFeeUSDT = Number(protocolFee) / 1e6;
+
+            // Store swap in database (normalize addresses to lowercase)
+            await storage.createAmmSwap({
+              marketId: market.id,
+              poolAddress: poolAddress.toLowerCase(),
+              userAddress: user.toLowerCase(),
+              buyYes,
+              amountIn: amountInUSDT,
+              amountOut: amountOutUSDT,
+              lpFee: lpFeeUSDT,
+              protocolFee: protocolFeeUSDT,
+              txHash: event.transactionHash!,
+              blockNumber,
+            });
+
+            // Update market volume atomically (prevents race conditions)
+            await storage.incrementMarketVolume(market.id, amountInUSDT);
+
+            console.log(`✅ AMM swap indexed: ${amountInUSDT} USDT → ${amountOutUSDT} tokens (${buyYes ? 'YES' : 'NO'})`);
+          } catch (error) {
+            console.error('Error processing AMM swap event:', error);
+          }
+        });
+
+        console.log(`✅ Listening to swaps on pool ${poolAddress}`);
+      }
+    } catch (error) {
+      console.error('Error in setupAMMPoolListeners:', error);
+    }
   }
 
   /**
@@ -86,6 +172,14 @@ export class EventIndexer {
 
     console.log('Stopping event indexer...');
     web3Service.removeAllListeners();
+    
+    // Remove all AMM pool listeners
+    for (const [poolAddress, pool] of this.poolListeners) {
+      pool.removeAllListeners();
+      console.log(`Stopped listening to pool ${poolAddress}`);
+    }
+    this.poolListeners.clear();
+    
     this.isRunning = false;
     console.log('Event indexer stopped');
   }

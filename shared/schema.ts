@@ -128,6 +128,34 @@ export const orderFills = pgTable("order_fills", {
   takerIdx: index("fills_taker_idx").on(table.takerAddress),
 }));
 
+// AMM Swaps - tracks all swap transactions in AMM pools
+export const ammSwaps = pgTable("amm_swaps", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketId: varchar("market_id").notNull().references(() => markets.id, { onDelete: 'cascade' }),
+  poolAddress: text("pool_address").notNull(), // AMM pool contract address
+  
+  // Swap participant
+  userAddress: text("user_address").notNull(),
+  
+  // Swap details
+  buyYes: boolean("buy_yes").notNull(), // true = buying YES, false = buying NO
+  amountIn: real("amount_in").notNull(), // Amount of tokens sent
+  amountOut: real("amount_out").notNull(), // Amount of tokens received
+  lpFee: real("lp_fee").notNull(), // Fee paid to LPs
+  protocolFee: real("protocol_fee").notNull(), // Fee paid to protocol
+  
+  // Blockchain transaction
+  txHash: text("tx_hash").notNull(),
+  blockNumber: integer("block_number"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => ({
+  marketIdx: index("amm_swaps_market_idx").on(table.marketId),
+  poolIdx: index("amm_swaps_pool_idx").on(table.poolAddress),
+  userIdx: index("amm_swaps_user_idx").on(table.userAddress),
+  txHashIdx: index("amm_swaps_tx_hash_idx").on(table.txHash),
+}));
+
 // LP Positions - tracks liquidity provider holdings in AMM pools
 export const lpPositions = pgTable("lp_positions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -191,7 +219,7 @@ export const pythPriceUpdates = pgTable("pyth_price_updates", {
 export const userNonces = pgTable("user_nonces", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userAddress: text("user_address").notNull().unique(),
-  highestNonce: bigint("highest_nonce", { mode: 'bigint' }).notNull().default(BigInt(0)),
+  highestNonce: bigint("highest_nonce", { mode: 'bigint' }).notNull().default(sql`'0'::bigint`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 }, (table) => ({
   userIdx: index("user_nonces_user_idx").on(table.userAddress),
@@ -279,6 +307,11 @@ export const insertOrderFillSchema = createInsertSchema(orderFills).omit({
   createdAt: true,
 });
 
+export const insertAmmSwapSchema = createInsertSchema(ammSwaps).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertPositionSchema = createInsertSchema(positions).omit({
   id: true,
   updatedAt: true,
@@ -323,6 +356,9 @@ export type InsertOrder = z.infer<typeof insertOrderSchema>;
 
 export type OrderFill = typeof orderFills.$inferSelect;
 export type InsertOrderFill = z.infer<typeof insertOrderFillSchema>;
+
+export type AmmSwap = typeof ammSwaps.$inferSelect;
+export type InsertAmmSwap = z.infer<typeof insertAmmSwapSchema>;
 
 export type Position = typeof positions.$inferSelect;
 export type InsertPosition = z.infer<typeof insertPositionSchema>;

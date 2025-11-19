@@ -42,6 +42,12 @@ export default function Portfolio() {
     enabled: isConnected && !!account,
   });
 
+  // Fetch AMM swap history
+  const { data: ammSwaps = [], isLoading: ammSwapsLoading } = useQuery<any[]>({
+    queryKey: [`/api/amm/swaps/${account}`],
+    enabled: isConnected && !!account,
+  });
+
   // Get open orders (filter from history)
   const openOrders = history.filter((order: any) => order.status === 'open');
 
@@ -341,22 +347,81 @@ export default function Portfolio() {
 
         {/* History Tab */}
         <TabsContent value="history" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Order History</h2>
-            {history.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={exportHistoryCSV}
-                data-testid="button-export-csv"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
+          {/* AMM Swaps Section */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4">AMM Swaps</h2>
+            {ammSwapsLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}
+              </div>
+            ) : ammSwaps.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground text-sm">No AMM swaps yet</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2 mb-6">
+                {ammSwaps.map((swap: any) => (
+                  <Card 
+                    key={swap.id} 
+                    className="hover-elevate"
+                    data-testid={`card-amm-swap-${swap.id}`}
+                  >
+                    <CardContent className="py-4">
+                      <div className="flex justify-between items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex gap-2 items-center flex-wrap">
+                            <Badge variant="default" className="text-xs">
+                              AMM SWAP
+                            </Badge>
+                            <Badge variant={swap.buyYes ? 'default' : 'secondary'} className="text-xs">
+                              {swap.buyYes ? 'BUY YES' : 'BUY NO'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              ${swap.amountIn?.toFixed(2)} → {swap.amountOut?.toFixed(2)} tokens
+                            </span>
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            {formatDistanceToNow(new Date(swap.createdAt), { addSuffix: true })}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="default" className="text-xs">
+                            COMPLETED
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(swap.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </div>
 
-          {historyLoading ? (
+          {/* CLOB Order History Section */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">Order Book History</h2>
+              {history.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={exportHistoryCSV}
+                  data-testid="button-export-csv"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              )}
+            </div>
+
+            {historyLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 w-full" />)}
             </div>
@@ -415,6 +480,7 @@ export default function Portfolio() {
               ))}
             </div>
           )}
+          </div>
         </TabsContent>
 
         {/* Wallet Tab */}

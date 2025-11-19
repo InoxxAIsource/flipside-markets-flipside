@@ -797,6 +797,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/amm/swaps - Get all AMM swaps
+  app.get('/api/amm/swaps', async (req, res) => {
+    try {
+      const swaps = await storage.getAllAmmSwaps();
+      res.json(swaps);
+    } catch (error: any) {
+      console.error('Error fetching AMM swaps:', error);
+      res.status(500).json({ error: 'Failed to fetch AMM swaps' });
+    }
+  });
+
+  // GET /api/amm/swaps/:userAddress - Get user's AMM swap history
+  app.get('/api/amm/swaps/:userAddress', async (req, res) => {
+    try {
+      const swaps = await storage.getUserAmmSwaps(req.params.userAddress.toLowerCase());
+      res.json(swaps);
+    } catch (error: any) {
+      console.error('Error fetching user AMM swaps:', error);
+      res.status(500).json({ error: 'Failed to fetch user AMM swaps' });
+    }
+  });
+
+  // GET /api/pool/:poolAddress/volume - Get pool trading volume
+  app.get('/api/pool/:poolAddress/volume', async (req, res) => {
+    try {
+      const swaps = await storage.getPoolAmmSwaps(req.params.poolAddress.toLowerCase());
+      
+      // Calculate total volume and 24h volume
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      
+      const totalVolume = swaps.reduce((sum, swap) => sum + (swap.amountIn || 0), 0);
+      const volume24h = swaps
+        .filter(swap => new Date(swap.createdAt) >= oneDayAgo)
+        .reduce((sum, swap) => sum + (swap.amountIn || 0), 0);
+      
+      const swapCount = swaps.length;
+      const swapCount24h = swaps.filter(swap => new Date(swap.createdAt) >= oneDayAgo).length;
+
+      res.json({
+        poolAddress: req.params.poolAddress,
+        totalVolume,
+        volume24h,
+        swapCount,
+        swapCount24h,
+      });
+    } catch (error: any) {
+      console.error('Error fetching pool volume:', error);
+      res.status(500).json({ error: 'Failed to fetch pool volume' });
+    }
+  });
+
   // ========== Order Routes ==========
 
   // GET /api/markets/:marketId/orders - Get orders for a market

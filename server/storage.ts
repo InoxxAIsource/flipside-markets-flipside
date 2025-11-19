@@ -7,6 +7,7 @@ import {
   markets,
   orders,
   orderFills,
+  ammSwaps,
   positions,
   pythPriceUpdates,
   userNonces,
@@ -18,6 +19,8 @@ import {
   type InsertOrder,
   type OrderFill,
   type InsertOrderFill,
+  type AmmSwap,
+  type InsertAmmSwap,
   type Position,
   type InsertPosition,
   type PythPriceUpdate,
@@ -42,6 +45,7 @@ export interface IStorage {
   createMarket(market: InsertMarket): Promise<Market>;
   updateMarket(id: string, updates: Partial<Market>): Promise<Market | undefined>;
   updateMarketAIAnalysis(id: string, aiAnalysis: string): Promise<Market | undefined>;
+  incrementMarketVolume(id: string, amount: number): Promise<Market | undefined>;
   resolveMarket(id: string, outcome: boolean): Promise<Market | undefined>;
   
   // Order methods
@@ -56,6 +60,13 @@ export interface IStorage {
   createOrderFill(fill: InsertOrderFill): Promise<OrderFill>;
   getOrderFills(orderId: string): Promise<OrderFill[]>;
   getMarketFills(marketId: string): Promise<OrderFill[]>;
+  
+  // AMM swap methods
+  createAmmSwap(swap: InsertAmmSwap): Promise<AmmSwap>;
+  getUserAmmSwaps(userAddress: string): Promise<AmmSwap[]>;
+  getMarketAmmSwaps(marketId: string): Promise<AmmSwap[]>;
+  getPoolAmmSwaps(poolAddress: string): Promise<AmmSwap[]>;
+  getAllAmmSwaps(): Promise<AmmSwap[]>;
   
   // Position methods
   getUserPosition(userAddress: string, marketId: string): Promise<Position | undefined>;
@@ -157,6 +168,15 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async incrementMarketVolume(id: string, amount: number): Promise<Market | undefined> {
+    const result = await db
+      .update(markets)
+      .set({ volume: sqlOperator`${markets.volume} + ${amount}` })
+      .where(eq(markets.id, id))
+      .returning();
+    return result[0];
+  }
+
   async resolveMarket(id: string, outcome: boolean): Promise<Market | undefined> {
     const result = await db
       .update(markets)
@@ -251,6 +271,46 @@ export class DatabaseStorage implements IStorage {
       .from(orderFills)
       .where(eq(orderFills.marketId, marketId))
       .orderBy(desc(orderFills.createdAt));
+  }
+
+  // AMM swap methods
+  async createAmmSwap(swap: InsertAmmSwap): Promise<AmmSwap> {
+    const result = await db
+      .insert(ammSwaps)
+      .values(swap)
+      .returning();
+    return result[0];
+  }
+
+  async getUserAmmSwaps(userAddress: string): Promise<AmmSwap[]> {
+    return await db
+      .select()
+      .from(ammSwaps)
+      .where(eq(ammSwaps.userAddress, userAddress))
+      .orderBy(desc(ammSwaps.createdAt));
+  }
+
+  async getMarketAmmSwaps(marketId: string): Promise<AmmSwap[]> {
+    return await db
+      .select()
+      .from(ammSwaps)
+      .where(eq(ammSwaps.marketId, marketId))
+      .orderBy(desc(ammSwaps.createdAt));
+  }
+
+  async getPoolAmmSwaps(poolAddress: string): Promise<AmmSwap[]> {
+    return await db
+      .select()
+      .from(ammSwaps)
+      .where(eq(ammSwaps.poolAddress, poolAddress))
+      .orderBy(desc(ammSwaps.createdAt));
+  }
+
+  async getAllAmmSwaps(): Promise<AmmSwap[]> {
+    return await db
+      .select()
+      .from(ammSwaps)
+      .orderBy(desc(ammSwaps.createdAt));
   }
 
   // Position methods
