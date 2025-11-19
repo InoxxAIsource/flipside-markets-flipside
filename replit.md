@@ -6,6 +6,26 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 
 ## Recent Updates
 
+### November 19, 2025 - AMM Swap 4-Step Flow Implementation ✅
+
+**Issue Fixed:** AMM swap transactions failing with "execution reverted" error
+- **Problem:** Pool.swap() expects YES/NO outcome tokens as input, but users only have USDT
+- **Root Cause:** Direct USDT-to-swap approach incompatible with ConditionalTokens architecture
+- **Solution:** Implemented 4-step swap workflow:
+  1. Approve USDT to ConditionalTokens contract
+  2. Call `splitPosition()` to convert USDT into complete set (equal YES + NO tokens)
+  3. Approve outcome tokens to the pool
+  4. Call `pool.swap()` to trade unwanted tokens for wanted tokens
+- **Additional Fixes:**
+  - Fixed slippage calculation using BigInt math (`(amountOut * (10000 - slippage*100)) / 10000`) to prevent truncation on small trades
+  - Removed double multiplication of amounts (was multiplying by 1e6 twice)
+  - Updated UI to display proper minimum received amounts
+- **Validation:** ✅ Successfully tested on Sepolia testnet
+  - Transaction: `0x03bb4d13d4bfdabe233775a53c85fdf2a37425840fc77cc8314ea4ff4fa6e9f5`
+  - All 4 steps completed without errors
+  - Slippage protection working correctly
+- **Status:** AMM swaps fully functional on mainnet
+
 ### November 19, 2025 - AMM Trading Interface Fix ✅
 
 **Issue Fixed:** Pool markets incorrectly displayed both AMM swap panel AND order book interface
