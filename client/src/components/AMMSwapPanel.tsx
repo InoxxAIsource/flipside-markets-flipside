@@ -296,28 +296,74 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
         </div>
 
         {/* User Balances (if wallet connected) */}
-        {account && userBalances && (
+        {account && userBalances && poolInfo && (
           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              Your Position
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono">
-                  YES:
-                </span>
-                <Badge variant="outline" className="font-mono bg-green-500/10 text-green-600 dark:text-green-400">
-                  {(parseFloat(userBalances.yesBalance) / 1e6).toFixed(4)}
-                </Badge>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                Your Position
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono">
-                  NO:
-                </span>
-                <Badge variant="outline" className="font-mono bg-red-500/10 text-red-600 dark:text-red-400">
-                  {(parseFloat(userBalances.noBalance) / 1e6).toFixed(4)}
-                </Badge>
+              {(() => {
+                const yesValue = (parseFloat(userBalances.yesBalance) / 1e6) * poolInfo.yesPrice;
+                const noValue = (parseFloat(userBalances.noBalance) / 1e6) * poolInfo.noPrice;
+                const totalValue = yesValue + noValue;
+                return totalValue > 0 ? (
+                  <div className="text-sm font-semibold">
+                    Total: <span className="font-mono text-primary">${totalValue.toFixed(2)}</span>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono">YES:</span>
+                  <Badge variant="outline" className="font-mono bg-green-500/10 text-green-600 dark:text-green-400">
+                    {(parseFloat(userBalances.yesBalance) / 1e6).toFixed(4)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    (${((parseFloat(userBalances.yesBalance) / 1e6) * poolInfo.yesPrice).toFixed(2)})
+                  </span>
+                </div>
+                {parseFloat(userBalances.yesBalance) > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setBuyYes(false);
+                      setAmountIn((parseFloat(userBalances.yesBalance) / 1e6).toFixed(4));
+                    }}
+                    data-testid="button-sell-yes"
+                  >
+                    Sell All
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono">NO:</span>
+                  <Badge variant="outline" className="font-mono bg-red-500/10 text-red-600 dark:text-red-400">
+                    {(parseFloat(userBalances.noBalance) / 1e6).toFixed(4)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    (${((parseFloat(userBalances.noBalance) / 1e6) * poolInfo.noPrice).toFixed(2)})
+                  </span>
+                </div>
+                {parseFloat(userBalances.noBalance) > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setBuyYes(true);
+                      setAmountIn((parseFloat(userBalances.noBalance) / 1e6).toFixed(4));
+                    }}
+                    data-testid="button-sell-no"
+                  >
+                    Sell All
+                  </Button>
+                )}
               </div>
             </div>
           </div>
