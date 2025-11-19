@@ -15,6 +15,19 @@ export const CONTRACT_ADDRESSES = {
   ProxyWallet: '0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2', // Points to Factory
 };
 
+/**
+ * Get a reliable Alchemy provider for Sepolia
+ * This is used as a fallback for read operations when MetaMask RPC is unreliable
+ */
+export function getAlchemyProvider(): ethers.AlchemyProvider | null {
+  const apiKey = import.meta.env.VITE_ALCHEMY_API_KEY;
+  if (!apiKey) {
+    console.warn('VITE_ALCHEMY_API_KEY not configured - using default RPC');
+    return null;
+  }
+  return new ethers.AlchemyProvider('sepolia', apiKey);
+}
+
 export async function connectWallet() {
   // Use MetaMask if available, otherwise fall back to WalletConnect
   if (window.ethereum) {

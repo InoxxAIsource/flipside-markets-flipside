@@ -84,7 +84,7 @@ export default function CreateMarket() {
         
         toast({
           title: 'Adding Initial Liquidity',
-          description: 'Please confirm the transactions to add liquidity to your pool...',
+          description: 'Step 1/4: Approving USDT...',
         });
 
         const liquidityResult = await addInitialLiquidity(
@@ -94,7 +94,31 @@ export default function CreateMarket() {
           result.noTokenId,
           data.initialYesLiquidity,
           data.initialNoLiquidity,
-          signer
+          signer,
+          (progress) => {
+            // Update toast with current step
+            const stepNames = {
+              approve_usdt: 'Step 1/4: Approving USDT',
+              split: 'Step 2/4: Splitting into YES/NO tokens',
+              approve_pool: 'Step 3/4: Approving pool',
+              add_liquidity: 'Step 4/4: Adding liquidity',
+            };
+            
+            const statusMsg = progress.status === 'pending' 
+              ? 'Waiting for wallet confirmation...'
+              : progress.status === 'waiting'
+              ? `Transaction submitted: ${progress.txHash?.slice(0, 10)}...`
+              : 'Confirmed!';
+            
+            if (progress.error) {
+              console.error(`[CreateMarket] ${stepNames[progress.step]} failed:`, progress.error);
+            } else {
+              toast({
+                title: stepNames[progress.step],
+                description: statusMsg,
+              });
+            }
+          }
         );
 
         toast({
