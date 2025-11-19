@@ -110,6 +110,15 @@ export function MarketCard({ market }: MarketCardProps) {
             <Badge variant="secondary" className="text-xs font-medium uppercase tracking-wide">
               {market.category}
             </Badge>
+            {market.marketType === 'POOL' ? (
+              <Badge variant="default" className="text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
+                LP Pool
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs font-semibold">
+                Order Book
+              </Badge>
+            )}
             {market.resolved && (
               <Badge variant="outline" className="text-xs">
                 Resolved
