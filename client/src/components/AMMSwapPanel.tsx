@@ -89,7 +89,16 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       }
 
       const amountInWei = BigInt(Math.floor(parseFloat(amountIn) * 1e6));
-      const minAmountOutWei = BigInt(Math.floor(parseFloat(minAmountOut)));
+      const minAmountOutWei = BigInt(Math.floor(parseFloat(minAmountOut) * 1e6));
+
+      console.log('🔄 Swap Parameters:', {
+        buyYes,
+        amountIn,
+        amountInWei: amountInWei.toString(),
+        minAmountOut,
+        minAmountOutWei: minAmountOutWei.toString(),
+        slippage: `${slippage}%`,
+      });
 
       // Contract ABIs
       const usdtABI = ['function approve(address spender, uint256 amount) returns (bool)'];
@@ -103,13 +112,17 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       const usdt = new ethers.Contract('0xAf24D4DDbA993F6b11372528C678edb718a097Aa', usdtABI, userSigner);
       const pool = new ethers.Contract(poolAddress, poolABI, userSigner);
 
+      console.log('✅ Step 1: Approving USDT to pool...');
       // Step 1: Approve USDT to pool
       const approveTx = await usdt.approve(poolAddress, amountInWei);
       await approveTx.wait();
+      console.log('✅ USDT approved');
 
+      console.log('✅ Step 2: Executing swap...');
       // Step 2: Execute swap
       const swapTx = await pool.swap(buyYes, amountInWei, minAmountOutWei);
       const receipt = await swapTx.wait();
+      console.log('✅ Swap completed:', receipt.hash);
 
       return {
         amountOut: quote.amountOut,
