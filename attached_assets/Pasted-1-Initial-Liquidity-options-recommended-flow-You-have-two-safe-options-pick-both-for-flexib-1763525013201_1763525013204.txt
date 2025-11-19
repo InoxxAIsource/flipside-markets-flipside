@@ -1,0 +1,115 @@
+1) Initial Liquidity — options & recommended flow
+
+You have two safe options; pick both for flexibility:
+
+Options
+
+Market creator funds initial liquidity: creator must deposit minInitialLiquidity (e.g., $100) when creating the pool.
+
+Admin bootstrap: admin seeds new markets (helps early UX) and sets bootstrapAllowed = true so creators can skip initial deposit. Admin can later withdraw or keep as incentive.
+
+Recommended defaults (production-friendly)
+
+minInitialLiquidity = $100 (configurable per market)
+
+Allow both flows. Track initialProvider and bootstrapProvider in DB.
+
+Enforce split deposit: deposit must mint complete sets (YES + NO) so the pool starts neutral (no directional exposure for LP).
+
+Behavior
+
+After creation, anyone (creator, admin, token holders) can add liquidity by supplying complete sets and receiving LP tokens.
+
+If admin bootstraps, mark bootstrap_provider and optionally allocate a vesting or penalty to prevent instant withdraw (e.g., 7-day lock).
+
+2) LP Token Mechanics
+
+Use standard ERC-20 LP tokens (Uniswap-V2 style) with these rules:
+
+Design
+
+LPToken is ERC-20 per pool, minted on addLiquidity, burned on removeLiquidity.
+
+LP total supply represents total shares. User share = userLP / totalLP.
+
+Fees are credited into the pool reserves (fees increase YES/NO reserves). This effectively reinvests fees for LPs automatically — LP share is static but underlying reserves grow.
+
+Functions
+
+mintLP(address to, uint256 amount)
+
+burnLP(address from, uint256 amount)
+
+getShare(address user) -> (YES_amount, NO_amount)
+
+Edge cases
+
+Prevent tiny dust LP issuance; enforce minLPAdd to avoid state bloat.
+
+If you later implement a reward program, you can mint a protocol token to LP holders off-chain based on bookkeeping.
+
+3) Fee Structure — recommendation
+
+Fees are a product decision — here’s a balanced, proven model:
+
+Recommended default
+
+Total swap fee = 2.0%
+
+1.5% → LPs (added to pool reserves)
+
+0.5% → Protocol treasury (split to admin/creator as per market settings)
+
+Why 2%?
+
+Prediction markets typically need higher fees than spot AMMs because ticket sizes and frequency are lower; Polymarket/Limitless style markets use ~2%. Gives platform revenue while still attractive for LPs.
+
+Alternate conservative option
+
+Total swap fee = 0.5% (0.3% LP, 0.2% protocol) — better for high-volume markets but lower revenue.
+
+Configurable per market
+
+Allow market creator/admin to set feeTotal and feeSplit at creation (subject to platform max/min limits).
+
+4) Price Discovery — initial state & formula
+
+Start at neutral 50/50 by design.
+
+Implementation
+
+On market creation, pool is seeded with YES_reserve = NO_reserve = initial_liquidity/2.
+
+Use constant-sum pricing for binaries: priceYES = YES / (YES + NO).
+
+How prices shift
+
+When trader buys YES with USD (or stablecoin), they add value to YES reserve and remove USD (minted into YES tokens?), resulting in priceYES increasing.
+
+The pool must route swaps between stable (USDT/USDC) and conditional tokens or operate purely between YES and NO tokens with complete-set doorway. Pick an architecture:
+
+
+Recommendation: use YES/NO-only AMM plus a mint/burn gateway for stablecoin <-> complete sets. Keeps AMM logic simple.
+
+5) Oracle Resolution & Settlement
+
+Use the same oracle system for both CLOB and POOL markets for consistency.
+
+Resolution flow (POOL)
+
+Oracle publishes resolution (YES or NO) and resolutionTime.
+
+ConditionalTokens contract marks outcome = 1 or 0.
+
+LPs call withdrawLiquidity() (burn LP tokens) OR call redeem() to claim underlying collateral. Because you used complete sets, winners can be redeemed to collateral.
+
+Protocol fees (accumulated treasury) are withdrawable by admin according to governance/vesting rules.
+
+CLOB settlement
+
+CLOB uses the same oracle feed. Off-chain matching engine settles user ledger, and final settlement can be an on-chain claim or on-chain payout depending on your design.
+
+LP withdrawal after resolution
+
+LPs burn LP tokens -> receive proportional share of final collateral (winners + remaining tokens) + accrued fees. Since one outcome becomes worthless, the redeemed value corresponds to the winning side.
+
