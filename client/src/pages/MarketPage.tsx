@@ -12,6 +12,7 @@ import { MarketStats } from '@/components/MarketStats';
 import { MarketDetails } from '@/components/MarketDetails';
 import { DepositWithdrawPanel } from '@/components/DepositWithdrawPanel';
 import { OrderBook } from '@/components/OrderBook';
+import { AMMSwapPanel } from '@/components/AMMSwapPanel';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { OracleInfo } from '@/components/OracleInfo';
 import { extractTargetPrice } from '@/lib/priceParser';
@@ -72,6 +73,13 @@ export default function MarketPage() {
             </Button>
           </Link>
           <Badge variant="secondary">{market.category}</Badge>
+          {market.marketType === 'POOL' ? (
+            <Badge variant="default" className="bg-primary/20 text-primary border border-primary/30">
+              LP Pool (AMM)
+            </Badge>
+          ) : (
+            <Badge variant="outline">Order Book (CLOB)</Badge>
+          )}
           {market.resolved && (
             <Badge variant={market.outcome ? 'default' : 'destructive'}>
               Resolved: {market.outcome ? 'YES' : 'NO'}
@@ -165,7 +173,11 @@ export default function MarketPage() {
               </div>
             </div>
 
-            <OrderBook marketId={market.id} />
+            {market.marketType === 'POOL' && market.poolAddress ? (
+              <AMMSwapPanel poolAddress={market.poolAddress} marketId={market.id} />
+            ) : (
+              <OrderBook marketId={market.id} />
+            )}
           </div>
 
           <div className="space-y-6">
