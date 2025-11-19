@@ -600,6 +600,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/pool/sync-liquidity - Sync all pool market liquidity values from on-chain
+  app.post('/api/pool/sync-liquidity', async (req, res) => {
+    try {
+      const markets = await storage.getAllMarkets();
+      const poolMarkets = markets.filter(m => m.marketType === 'POOL' && m.poolAddress);
+      
+      const results = [];
+      for (const market of poolMarkets) {
+        try {
+          const poolInfo = await ammService.getPoolInfo(market.poolAddress!);
+          const totalLiquidity = parseFloat(poolInfo.totalLiquidity);
+          
+          await storage.updateMarket(market.id, { liquidity: totalLiquidity });
+          
+          results.push({
+            marketId: market.id,
+            question: market.question,
+            poolAddress: market.poolAddress,
+            liquidity: totalLiquidity,
+            status: 'updated'
+          });
+        } catch (error: any) {
+          results.push({
+            marketId: market.id,
+            error: error.message,
+            status: 'failed'
+          });
+        }
+      }
+      
+      res.json({ 
+        message: `Updated ${results.filter(r => r.status === 'updated').length} pool markets`,
+        results 
+      });
+    } catch (error: any) {
+      console.error('Error syncing pool liquidity:', error);
+      res.status(500).json({ error: error.message || 'Failed to sync pool liquidity' });
+    }
+  });
+
   // GET /api/pool/:poolAddress/info - Get AMM pool information
   app.get('/api/pool/:poolAddress/info', async (req, res) => {
     try {
