@@ -167,6 +167,10 @@ export class AMMService {
     protocolFeeRate: number;
     resolved: boolean;
     winningOutcome?: number;
+    yesPrice: number;
+    noPrice: number;
+    totalLiquidity: string;
+    lpTokenAddress: string;
   }> {
     const pool = this.getPoolContract(poolAddress);
 
@@ -181,6 +185,7 @@ export class AMMService {
       protocolFeeRate,
       resolved,
       winningOutcome,
+      yesPriceBP,
     ] = await Promise.all([
       pool.conditionId(),
       pool.yesPositionId(),
@@ -192,7 +197,15 @@ export class AMMService {
       pool.protocolFeeRate(),
       pool.resolved(),
       pool.winningOutcome().catch(() => 0),
+      pool.getYesPrice(),
     ]);
+
+    // Convert basis points to decimal (5000 BP = 0.5 = 50%)
+    const yesPrice = Number(yesPriceBP) / 10000;
+    const noPrice = 1 - yesPrice;
+
+    // Calculate total liquidity in USDT
+    const totalLiquidityBN = BigInt(yesReserve) + BigInt(noReserve);
 
     return {
       conditionId,
@@ -205,6 +218,10 @@ export class AMMService {
       protocolFeeRate: Number(protocolFeeRate),
       resolved,
       winningOutcome: resolved ? Number(winningOutcome) : undefined,
+      yesPrice,
+      noPrice,
+      totalLiquidity: totalLiquidityBN.toString(),
+      lpTokenAddress: poolAddress, // Pool contract is also the LP token
     };
   }
 
