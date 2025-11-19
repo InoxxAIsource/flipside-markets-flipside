@@ -6,6 +6,24 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 
 ## Recent Updates
 
+### November 19, 2025 - AMM Trading Interface Fix ✅
+
+**Issue Fixed:** Pool markets incorrectly displayed both AMM swap panel AND order book interface
+- **Problem:** Pool market pages showed "$10" prices and "no shares available" errors from the order book UI
+- **Root Cause:** MarketPage component rendered both TradingPanel (CLOB) and AMMSwapPanel for pool markets
+- **Solution:** Added conditional rendering to hide TradingPanel for POOL markets, enhanced pool info API
+- **Changes Made:**
+  1. MarketPage.tsx - Gate TradingPanel to only render for CLOB markets
+  2. ammService.ts - Enhanced getPoolInfo() to fetch on-chain prices via getYesPrice() and calculate totalLiquidity
+  3. abis.ts - Added missing getYesPrice() function to AMMPool ABI
+- **Status:** ✅ Verified via E2E test - pool markets now show only AMM interface with correct pricing
+
+**Testing Results:**
+- Pool reserves display correctly ($20.00 YES, $20.00 NO for 50/50 pool)
+- Prices show as percentages (50¢ each = 50%)
+- No order book elements visible on pool markets
+- API returns proper data: yesPrice, noPrice, totalLiquidity, lpTokenAddress
+
 ### November 19, 2025 - LP Pool Bug Fix & Deployment ✅
 
 **Critical Bug Fixed:** AMMPool ERC1155Receiver Implementation
