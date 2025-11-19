@@ -49,6 +49,11 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
   const { account } = useWallet();
   const { toast } = useToast();
 
+  // Fetch market data to get conditionId and positionIds
+  const { data: market } = useQuery<any>({
+    queryKey: ['/api/markets', marketId],
+  });
+
   // Fetch pool info
   const { data: poolInfo, isLoading: poolLoading } = useQuery<PoolInfo>({
     queryKey: ['/api/pool', poolAddress, 'info'],
@@ -73,10 +78,10 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
     refetchInterval: 5000,
   });
 
-  // Calculate minimum amount out based on slippage
-  const minAmountOut = quote
-    ? (parseFloat(quote.amountOut) * (1 - parseFloat(slippage) / 100)).toFixed(6)
-    : '0';
+  // Calculate minimum amount out based on slippage (using BigInt to avoid truncation)
+  const minAmountOutWei = quote
+    ? (BigInt(quote.amountOut) * BigInt(10000 - Math.floor(parseFloat(slippage) * 100))) / BigInt(10000)
+    : BigInt(0);
 
   // Swap mutation (user-pays-gas like deposits/withdrawals)
   const swapMutation = useMutation({
@@ -87,23 +92,31 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       if (!quote) {
         throw new Error('No quote available');
       }
+      if (!market) {
+        throw new Error('Market data not loaded');
+      }
 
       const amountInWei = BigInt(Math.floor(parseFloat(amountIn) * 1e6));
-      // minAmountOut is already in wei from quote.amountOut, so don't multiply by 1e6 again
-      const minAmountOutWei = BigInt(Math.floor(parseFloat(minAmountOut)));
 
-      console.log('🔄 Swap Parameters:', {
+      console.log('🔄 AMM Swap Flow (4 Steps):', {
         buyYes,
         amountIn,
         amountInWei: amountInWei.toString(),
-        minAmountOut,
         minAmountOutWei: minAmountOutWei.toString(),
         slippage: `${slippage}%`,
-        note: 'minAmountOut already in wei - no conversion needed',
+        note: 'After split, we have equal YES+NO. We swap unwanted for more wanted.',
       });
+
+      // Contract addresses
+      const CONDITIONAL_TOKENS = '0xdC8CB01c328795C007879B2C030AbF1c1b580D84';
+      const USDT = '0xAf24D4DDbA993F6b11372528C678edb718a097Aa';
 
       // Contract ABIs
       const usdtABI = ['function approve(address spender, uint256 amount) returns (bool)'];
+      const conditionalTokensABI = [
+        'function splitPosition(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)',
+        'function setApprovalForAll(address operator, bool approved)',
+      ];
       const poolABI = ['function swap(bool buyYes, uint256 amountIn, uint256 minAmountOut) returns (uint256)'];
 
       // Create contract instances
@@ -111,17 +124,38 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
       const provider = new ethers.BrowserProvider(window.ethereum as any);
       const userSigner = await provider.getSigner();
       
-      const usdt = new ethers.Contract('0xAf24D4DDbA993F6b11372528C678edb718a097Aa', usdtABI, userSigner);
+      const usdt = new ethers.Contract(USDT, usdtABI, userSigner);
+      const ct = new ethers.Contract(CONDITIONAL_TOKENS, conditionalTokensABI, userSigner);
       const pool = new ethers.Contract(poolAddress, poolABI, userSigner);
 
-      console.log('✅ Step 1: Approving USDT to pool...');
-      // Step 1: Approve USDT to pool
-      const approveTx = await usdt.approve(poolAddress, amountInWei);
+      console.log('✅ Step 1: Approving USDT to ConditionalTokens...');
+      // Step 1: Approve USDT to ConditionalTokens contract
+      const approveTx = await usdt.approve(CONDITIONAL_TOKENS, amountInWei);
       await approveTx.wait();
       console.log('✅ USDT approved');
 
-      console.log('✅ Step 2: Executing swap...');
-      // Step 2: Execute swap
+      console.log('✅ Step 2: Splitting USDT into YES + NO tokens...');
+      // Step 2: Split USDT into complete set (YES + NO tokens)
+      const parentCollectionId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const partition = [1, 2]; // Binary outcome: [YES, NO]
+      const splitTx = await ct.splitPosition(
+        USDT,
+        parentCollectionId,
+        market.conditionId,
+        partition,
+        amountInWei
+      );
+      await splitTx.wait();
+      console.log('✅ Split completed - received YES + NO tokens');
+
+      console.log('✅ Step 3: Approving outcome tokens to pool and swapping...');
+      // Step 3: Approve outcome tokens to pool
+      const approveTokensTx = await ct.setApprovalForAll(poolAddress, true);
+      await approveTokensTx.wait();
+      console.log('✅ Tokens approved to pool');
+
+      console.log('✅ Step 4: Executing swap...');
+      // Step 4: Swap unwanted tokens for wanted tokens
       const swapTx = await pool.swap(buyYes, amountInWei, minAmountOutWei);
       const receipt = await swapTx.wait();
       console.log('✅ Swap completed:', receipt.hash);
@@ -350,7 +384,7 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
                 <div className="flex items-center justify-between text-sm pt-2 border-t">
                   <span className="text-muted-foreground">Minimum Received</span>
                   <span className="font-mono font-medium">
-                    {(parseFloat(minAmountOut) / 1e6).toFixed(6)}
+                    {(Number(minAmountOutWei) / 1e6).toFixed(6)}
                   </span>
                 </div>
               </div>
