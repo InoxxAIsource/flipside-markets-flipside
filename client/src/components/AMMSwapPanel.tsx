@@ -53,7 +53,7 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
 
   // Fetch swap quote when amount changes
   const { data: quote, isLoading: quoteLoading } = useQuery<SwapQuote>({
-    queryKey: ['/api/pool', poolAddress, 'quote', { buyYes, amountIn }],
+    queryKey: [`/api/pool/${poolAddress}/quote?buyYes=${buyYes}&amountIn=${amountIn}`],
     enabled: !!amountIn && parseFloat(amountIn) > 0,
     refetchInterval: 5000,
   });

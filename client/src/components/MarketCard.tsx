@@ -235,11 +235,15 @@ export function MarketCard({ market }: MarketCardProps) {
             </Button>
           </div>
 
-          {/* Footer - Volume, AI & Countdown */}
+          {/* Footer - Volume/Liquidity, AI & Countdown */}
           <div className="pt-2 mt-auto border-t flex items-center justify-between text-xs">
             <div className="flex items-center gap-1 text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5" />
-              <span className="font-mono font-medium">${(market.volume / 1000).toFixed(1)}k</span>
+              <span className="font-mono font-medium">
+                {market.marketType === 'POOL' 
+                  ? `$${(market.liquidity / 1000).toFixed(1)}k` 
+                  : `$${(market.volume / 1000).toFixed(1)}k`}
+              </span>
             </div>
             <Button
               size="sm"
