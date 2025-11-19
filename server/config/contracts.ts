@@ -14,6 +14,9 @@ export const CONTRACT_ADDRESSES = {
   
   // Order book exchange (CLOB)
   CTF_EXCHANGE: "0x3Bca0E519CC8Ec4c07b04d14E057AE50A9554bA3",
+  
+  // AMM Pool Factory (for Pool-type markets)
+  AMM_POOL_FACTORY: "0x8a7FF8A21F0B775dB661986bD0299e06A76583Db",
 } as const;
 
 export const NETWORK_CONFIG = {

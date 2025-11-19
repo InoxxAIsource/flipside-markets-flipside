@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { web3Service } from "./contracts/web3Service";
+import { ammService } from "./contracts/ammService";
 import { relayerService } from "./services/relayerService";
 import { orderMatcher } from "./services/orderMatcher";
 import { insertMarketSchema, insertOrderSchema } from "@shared/schema";
@@ -519,6 +520,240 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error resolving market:', error);
       res.status(500).json({ error: 'Failed to resolve market' });
+    }
+  });
+
+  // ========== AMM Pool Routes ==========
+
+  // POST /api/markets/pool - Create a Pool-type market with AMM
+  app.post('/api/markets/pool', async (req, res) => {
+    try {
+      const poolMarketSchema = insertMarketSchema.extend({
+        initialYesLiquidity: z.string().min(1, 'Initial YES liquidity required'),
+        initialNoLiquidity: z.string().min(1, 'Initial NO liquidity required'),
+        lpName: z.string().optional(),
+        lpSymbol: z.string().optional(),
+      });
+
+      const validation = poolMarketSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        const error = fromZodError(validation.error);
+        return res.status(400).json({ error: error.message });
+      }
+
+      const marketData = validation.data;
+
+      // Verify market data is complete
+      if (!marketData.conditionId || !marketData.yesTokenId || !marketData.noTokenId || !marketData.creationTxHash) {
+        return res.status(400).json({ 
+          error: 'Missing blockchain data: conditionId, yesTokenId, noTokenId, and creationTxHash are required' 
+        });
+      }
+
+      // Verify the condition was prepared on-chain (same validation as CLOB markets)
+      const { ethers } = await import('ethers');
+      const provider = web3Service.getProvider();
+      
+      const receipt = await provider.getTransactionReceipt(marketData.creationTxHash);
+      if (!receipt || receipt.status !== 1) {
+        return res.status(400).json({ 
+          error: 'Transaction not confirmed or failed on-chain' 
+        });
+      }
+
+      // Create the AMM pool using factory
+      if (!process.env.OWNER_PRIVATE_KEY) {
+        return res.status(500).json({ error: 'Owner private key not configured' });
+      }
+
+      const signer = ammService.getSigner(process.env.OWNER_PRIVATE_KEY);
+      
+      const lpName = marketData.lpName || `${marketData.question.slice(0, 30)} LP`;
+      const lpSymbol = marketData.lpSymbol || 'FLP';
+
+      const poolResult = await ammService.createPool({
+        name: lpName,
+        symbol: lpSymbol,
+        conditionId: marketData.conditionId,
+        oracle: marketData.creatorAddress, // Creator is oracle for pool markets
+        yesPositionId: marketData.yesTokenId,
+        noPositionId: marketData.noTokenId,
+        signer,
+      });
+
+      // Save market to database with pool type and address
+      const market = await storage.createMarket({
+        ...marketData,
+        marketType: 'POOL',
+        poolAddress: poolResult.poolAddress,
+      });
+
+      res.status(201).json({
+        ...market,
+        poolTxHash: poolResult.txHash,
+      });
+
+    } catch (error: any) {
+      console.error('Error creating pool market:', error);
+      res.status(500).json({ error: error.message || 'Failed to create pool market' });
+    }
+  });
+
+  // GET /api/pool/:poolAddress/info - Get AMM pool information
+  app.get('/api/pool/:poolAddress/info', async (req, res) => {
+    try {
+      const poolInfo = await ammService.getPoolInfo(req.params.poolAddress);
+      res.json(poolInfo);
+    } catch (error: any) {
+      console.error('Error fetching pool info:', error);
+      res.status(500).json({ error: 'Failed to fetch pool information' });
+    }
+  });
+
+  // POST /api/pool/swap - Execute an AMM swap
+  app.post('/api/pool/swap', async (req, res) => {
+    try {
+      const swapSchema = z.object({
+        poolAddress: z.string(),
+        buyYes: z.boolean(),
+        amountIn: z.string(),
+        minAmountOut: z.string(),
+        userAddress: z.string(),
+        privateKey: z.string(), // In production, use ProxyWallet meta-tx
+      });
+
+      const validation = swapSchema.safeParse(req.body);
+      if (!validation.success) {
+        const error = fromZodError(validation.error);
+        return res.status(400).json({ error: error.message });
+      }
+
+      const { poolAddress, buyYes, amountIn, minAmountOut, privateKey } = validation.data;
+
+      const signer = ammService.getSigner(privateKey);
+      
+      const result = await ammService.swap({
+        poolAddress,
+        buyYes,
+        amountIn,
+        minAmountOut,
+        signer,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error executing swap:', error);
+      res.status(500).json({ error: error.message || 'Failed to execute swap' });
+    }
+  });
+
+  // GET /api/pool/:poolAddress/quote - Get swap quote (no transaction)
+  app.get('/api/pool/:poolAddress/quote', async (req, res) => {
+    try {
+      const { buyYes, amountIn } = req.query;
+      
+      if (!buyYes || !amountIn) {
+        return res.status(400).json({ error: 'Missing required parameters: buyYes, amountIn' });
+      }
+
+      const quote = await ammService.getSwapQuote(
+        req.params.poolAddress,
+        buyYes === 'true',
+        amountIn as string
+      );
+
+      res.json(quote);
+    } catch (error: any) {
+      console.error('Error getting swap quote:', error);
+      res.status(500).json({ error: 'Failed to get swap quote' });
+    }
+  });
+
+  // POST /api/pool/liquidity/add - Add liquidity to a pool
+  app.post('/api/pool/liquidity/add', async (req, res) => {
+    try {
+      const liquiditySchema = z.object({
+        poolAddress: z.string(),
+        yesAmount: z.string(),
+        noAmount: z.string(),
+        minLPTokens: z.string(),
+        privateKey: z.string(), // In production, use ProxyWallet meta-tx
+      });
+
+      const validation = liquiditySchema.safeParse(req.body);
+      if (!validation.success) {
+        const error = fromZodError(validation.error);
+        return res.status(400).json({ error: error.message });
+      }
+
+      const { poolAddress, yesAmount, noAmount, minLPTokens, privateKey } = validation.data;
+
+      const signer = ammService.getSigner(privateKey);
+      
+      const result = await ammService.addLiquidity({
+        poolAddress,
+        yesAmount,
+        noAmount,
+        minLPTokens,
+        signer,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error adding liquidity:', error);
+      res.status(500).json({ error: error.message || 'Failed to add liquidity' });
+    }
+  });
+
+  // POST /api/pool/liquidity/remove - Remove liquidity from a pool
+  app.post('/api/pool/liquidity/remove', async (req, res) => {
+    try {
+      const liquiditySchema = z.object({
+        poolAddress: z.string(),
+        lpTokens: z.string(),
+        minYesAmount: z.string(),
+        minNoAmount: z.string(),
+        privateKey: z.string(), // In production, use ProxyWallet meta-tx
+      });
+
+      const validation = liquiditySchema.safeParse(req.body);
+      if (!validation.success) {
+        const error = fromZodError(validation.error);
+        return res.status(400).json({ error: error.message });
+      }
+
+      const { poolAddress, lpTokens, minYesAmount, minNoAmount, privateKey } = validation.data;
+
+      const signer = ammService.getSigner(privateKey);
+      
+      const result = await ammService.removeLiquidity({
+        poolAddress,
+        lpTokens,
+        minYesAmount,
+        minNoAmount,
+        signer,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error removing liquidity:', error);
+      res.status(500).json({ error: error.message || 'Failed to remove liquidity' });
+    }
+  });
+
+  // GET /api/pool/:poolAddress/user/:userAddress - Get user's pool position
+  app.get('/api/pool/:poolAddress/user/:userAddress', async (req, res) => {
+    try {
+      const userShare = await ammService.getUserPoolShare(
+        req.params.poolAddress,
+        req.params.userAddress
+      );
+
+      res.json(userShare);
+    } catch (error: any) {
+      console.error('Error fetching user pool position:', error);
+      res.status(500).json({ error: 'Failed to fetch user pool position' });
     }
   });
 

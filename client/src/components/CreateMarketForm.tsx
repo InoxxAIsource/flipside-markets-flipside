@@ -32,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { TransactionStatus } from '@/pages/CreateMarket';
 
 const formSchema = z.object({
+  marketType: z.enum(['CLOB', 'POOL']).default('CLOB'),
   question: z.string().min(10, 'Question must be at least 10 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   imageUrl: z.string().refine(
@@ -46,6 +47,9 @@ const formSchema = z.object({
   expiresAt: z.date({ required_error: 'Please select an expiration date' }),
   pythPriceFeedId: z.string().optional(),
   baselinePrice: z.string().transform(val => val === '' ? undefined : Number(val)).optional(),
+  // Pool-specific fields
+  initialYesLiquidity: z.string().optional(),
+  initialNoLiquidity: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -65,12 +69,15 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      marketType: 'CLOB',
       question: '',
       description: '',
       imageUrl: '',
       category: '',
     },
   });
+
+  const marketType = form.watch('marketType');
 
   // Image upload mutation
   const uploadImageMutation = useMutation({
@@ -223,6 +230,33 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
               Create a prediction market for any future event
             </p>
           </div>
+
+          <FormField
+            control={form.control}
+            name="marketType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Market Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-market-type">
+                      <SelectValue placeholder="Select market type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="CLOB">Order Book (CLOB) - Limit/Market Orders</SelectItem>
+                    <SelectItem value="POOL">LP Pool (AMM) - Constant-Sum Pricing</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  {marketType === 'CLOB' 
+                    ? 'Traditional order book with limit and market orders'
+                    : 'Automated market maker with constant-sum pricing (x + y = k)'}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -453,6 +487,78 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
               )}
             />
           </div>
+
+          {marketType === 'POOL' && (
+            <div className="space-y-4 p-4 bg-muted/50 rounded-md border">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Initial Liquidity for AMM Pool</h3>
+                <p className="text-xs text-muted-foreground">
+                  Provide initial liquidity to bootstrap the automated market maker. Equal amounts create a 50/50 starting price.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="initialYesLiquidity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Initial YES Liquidity (USDT)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="100.00"
+                          className="font-mono"
+                          data-testid="input-initial-yes-liquidity"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Amount of USDT for YES tokens
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="initialNoLiquidity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Initial NO Liquidity (USDT)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="100.00"
+                          className="font-mono"
+                          data-testid="input-initial-no-liquidity"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Amount of USDT for NO tokens
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="text-xs text-muted-foreground">
+                <p>
+                  <strong>Initial Price:</strong> YES price = YES liquidity ÷ (YES liquidity + NO liquidity)
+                </p>
+                <p>
+                  Example: 100 YES + 100 NO = 50% starting price for both
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-4">
             <Button 

@@ -29,6 +29,19 @@ The UI/UX is inspired by Polymarket, utilizing shadcn/ui (Radix UI) and Tailwind
 -   **Frontend:** React 18, TypeScript, Vite, Wouter for routing, TanStack Query for server state, Ethers.js v6 for Web3.
 -   **Backend:** Node.js with Express and TypeScript, Drizzle ORM for PostgreSQL. Includes a WebSocket server for real-time updates.
 -   **Blockchain Integration:** Ethereum Sepolia testnet, using ConditionalTokens, MarketFactory, CTFExchange (order book DEX), PythPriceResolver, ProxyWallet (for gasless meta-transactions), and MockUSDT contracts. EIP-712 signed meta-transactions enable gasless trading.
+-   **Dual Trading Systems (November 19, 2025):**
+    -   **CLOB (Order Book):** Existing system with gasless limit/market orders via CTFExchange and ProxyWallet
+    -   **AMM Pool (NEW):** Constant-sum AMM (x + y = k) for automated market making:
+        -   Deployed factory: `AMMPoolFactorySimple` at 0x8a7FF8A21F0B775dB661986bD0299e06A76583Db
+        -   Individual AMMPool contracts with LP tokens (ERC20)
+        -   Fee structure: 2.0% total (1.5% to LPs auto-compounding, 0.5% to protocol treasury)
+        -   Constant-sum formula chosen for better price discovery in binary markets
+    -   **⚠️ KNOWN ISSUES (Requires immediate fixes):**
+        -   **CRITICAL SECURITY FLAW:** API routes accept raw private keys in request body - must migrate to ProxyWallet/relayer pattern
+        -   Missing ERC20/ERC1155 approval handling - swaps/liquidity operations will fail
+        -   BigInt precision loss when converting to Number for fee calculations
+        -   Missing numeric validation/conversion in API routes
+        -   Need to integrate with existing ProxyWallet gasless transaction system
 -   **Background Services:** Includes an `Event Indexer` for blockchain sync, a `Pyth Worker` for oracle updates, an `Order Matcher` for trade processing, and a `Rewards Cron` for hourly points recalculation and weekly resets.
 -   **Liquidity Mining:** Off-chain rewards system tracks user points for trading volume, market making, and market creation, stored in PostgreSQL and calculated hourly.
 -   **AI Integration:** Leverages Replit AI Integrations for OpenAI's GPT-4o-mini via a dedicated backend service.

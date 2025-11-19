@@ -160,3 +160,64 @@ export const ProxyWalletABI = [
   "event ExecutionSuccess(address indexed to, uint256 value, bytes data, bytes returnData)",
   "event ExecutionFailure(address indexed to, uint256 value, bytes data)",
 ] as const;
+
+// AMMPoolFactorySimple - Factory for creating constant-sum AMM pools
+export const AMMPoolFactoryABI = [
+  // Pool Creation
+  "function createPool(string name, string symbol, bytes32 conditionId, address oracle, uint256 yesPositionId, uint256 noPositionId, uint256 lpFee, uint256 protocolFee) returns (address)",
+  "function createPoolWithDefaults(string name, string symbol, bytes32 conditionId, address oracle, uint256 yesPositionId, uint256 noPositionId) returns (address)",
+  
+  // Pool Lookup
+  "function getPool(bytes32 conditionId) view returns (address)",
+  "function getPoolCount() view returns (uint256)",
+  "function pools(bytes32 conditionId) view returns (address)",
+  "function allPools(uint256 index) view returns (address)",
+  
+  // Configuration
+  "function collateralToken() view returns (address)",
+  "function conditionalTokens() view returns (address)",
+  "function treasury() view returns (address)",
+  "function defaultLPFee() view returns (uint256)",
+  "function defaultProtocolFee() view returns (uint256)",
+  
+  // Events
+  "event PoolCreated(address indexed pool, bytes32 indexed conditionId, uint256 yesPositionId, uint256 noPositionId, uint256 lpFee, uint256 protocolFee)",
+] as const;
+
+// AMMPool - Constant-sum AMM for binary prediction markets
+export const AMMPoolABI = [
+  // Swap
+  "function swap(bool buyYes, uint256 amountIn, uint256 minAmountOut) returns (uint256 amountOut)",
+  
+  // Liquidity Management
+  "function addLiquidity(uint256 yesAmount, uint256 noAmount, uint256 minLPTokens) returns (uint256 lpTokens)",
+  "function removeLiquidity(uint256 lpTokens, uint256 minYesAmount, uint256 minNoAmount) returns (uint256 yesAmount, uint256 noAmount)",
+  
+  // Views
+  "function getSwapQuote(bool buyYes, uint256 amountIn) view returns (uint256 amountOut, uint256 lpFee, uint256 protocolFee)",
+  "function yesReserve() view returns (uint256)",
+  "function noReserve() view returns (uint256)",
+  "function resolved() view returns (bool)",
+  "function winningOutcome() view returns (uint256)",
+  
+  // ERC20 (LP Tokens)
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)",
+  "function totalSupply() view returns (uint256)",
+  "function balanceOf(address account) view returns (uint256)",
+  
+  // Market Info
+  "function conditionId() view returns (bytes32)",
+  "function yesPositionId() view returns (uint256)",
+  "function noPositionId() view returns (uint256)",
+  "function oracle() view returns (address)",
+  "function lpFeeRate() view returns (uint256)",
+  "function protocolFeeRate() view returns (uint256)",
+  
+  // Events
+  "event Swap(address indexed user, bool buyYes, uint256 amountIn, uint256 amountOut, uint256 lpFee, uint256 protocolFee)",
+  "event LiquidityAdded(address indexed provider, uint256 yesAmount, uint256 noAmount, uint256 lpTokens)",
+  "event LiquidityRemoved(address indexed provider, uint256 yesAmount, uint256 noAmount, uint256 lpTokens)",
+  "event MarketResolved(uint256 winningOutcome)",
+] as const;
