@@ -29,6 +29,7 @@ contract AMMPool is ERC20, ReentrancyGuard {
     bytes32 public immutable conditionId;
     uint256 public immutable yesPositionId;
     uint256 public immutable noPositionId;
+    address public immutable oracle; // Oracle that can resolve the market
     
     // Fee configuration (in basis points, 1% = 100)
     uint256 public immutable lpFeeRate;        // e.g., 150 = 1.5%
@@ -83,7 +84,8 @@ contract AMMPool is ERC20, ReentrancyGuard {
         uint256 _noPositionId,
         uint256 _lpFeeRate,
         uint256 _protocolFeeRate,
-        address _treasury
+        address _treasury,
+        address _oracle
     ) ERC20(name, symbol) {
         collateralToken = IERC20(_collateralToken);
         conditionalTokens = IConditionalTokens(_conditionalTokens);
@@ -93,6 +95,7 @@ contract AMMPool is ERC20, ReentrancyGuard {
         lpFeeRate = _lpFeeRate;
         protocolFeeRate = _protocolFeeRate;
         treasury = _treasury;
+        oracle = _oracle;
     }
     
     /**
@@ -201,8 +204,8 @@ contract AMMPool is ERC20, ReentrancyGuard {
             // Transfer NO tokens from user
             conditionalTokens.safeTransferFrom(msg.sender, address(this), noPositionId, amountIn, "");
             
-            // Update reserves (LP fee stays in pool)
-            noReserve += amountInAfterFee;
+            // Update reserves (LP fee stays in pool for auto-compounding)
+            noReserve += (amountIn - protocolFee);
             yesReserve -= amountOut;
             
             // Transfer YES tokens to user
@@ -218,8 +221,8 @@ contract AMMPool is ERC20, ReentrancyGuard {
             // Transfer YES tokens from user
             conditionalTokens.safeTransferFrom(msg.sender, address(this), yesPositionId, amountIn, "");
             
-            // Update reserves (LP fee stays in pool)
-            yesReserve += amountInAfterFee;
+            // Update reserves (LP fee stays in pool for auto-compounding)
+            yesReserve += (amountIn - protocolFee);
             noReserve -= amountOut;
             
             // Transfer NO tokens to user
@@ -236,9 +239,10 @@ contract AMMPool is ERC20, ReentrancyGuard {
     
     /**
      * Resolve market with winning outcome
-     * Can only be called by oracle/admin
+     * Can only be called by oracle
      */
     function resolve(uint256 _winningOutcome) external {
+        require(msg.sender == oracle, "Only oracle can resolve");
         require(!resolved, "Already resolved");
         require(_winningOutcome == 0 || _winningOutcome == 1, "Invalid outcome");
         
@@ -283,11 +287,12 @@ contract AMMPool is ERC20, ReentrancyGuard {
     
     /**
      * Get current price of YES token (in basis points)
-     * price = YES_reserve / (YES_reserve + NO_reserve)
+     * price = NO_reserve / (YES_reserve + NO_reserve)
+     * Higher NO reserves = higher YES price (scarcity pricing)
      */
     function getYesPrice() external view returns (uint256) {
         if (yesReserve + noReserve == 0) return 5000; // 50% if no liquidity
-        return (yesReserve * BASIS_POINTS) / (yesReserve + noReserve);
+        return (noReserve * BASIS_POINTS) / (yesReserve + noReserve);
     }
     
     /**

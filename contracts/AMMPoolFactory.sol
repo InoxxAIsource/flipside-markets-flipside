@@ -118,10 +118,13 @@ contract AMMPoolFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         // Prepare the condition (creates YES/NO outcome slots)
         ct.prepareCondition(oracle, questionId, 2);
         
-        // Get position IDs for YES (index 1) and NO (index 2)
+        // Get position IDs using bit flags (indexSet)
+        // Binary partition: [0b01, 0b10] = [1, 2]
+        // indexSet 1 (0b01) = outcome 0 (NO)
+        // indexSet 2 (0b10) = outcome 1 (YES)
         bytes32 parentCollectionId = bytes32(0);
-        bytes32 yesCollectionId = ct.getCollectionId(parentCollectionId, conditionId, 1);
-        bytes32 noCollectionId = ct.getCollectionId(parentCollectionId, conditionId, 2);
+        bytes32 yesCollectionId = ct.getCollectionId(parentCollectionId, conditionId, 1 << 1); // 2
+        bytes32 noCollectionId = ct.getCollectionId(parentCollectionId, conditionId, 1 << 0);  // 1
         
         uint256 yesPositionId = ct.getPositionId(IERC20(collateralToken), yesCollectionId);
         uint256 noPositionId = ct.getPositionId(IERC20(collateralToken), noCollectionId);
@@ -137,7 +140,8 @@ contract AMMPoolFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
             noPositionId,
             lpFee,
             protocolFee,
-            treasury
+            treasury,
+            oracle
         ));
         
         // Track pool
