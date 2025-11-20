@@ -69,6 +69,33 @@ Preferred communication style: Simple, everyday language.
 - `client/src/components/WalletButton.tsx` - Integration with wallet selector
 - `client/src/contexts/Web3Provider.tsx` - Extended context with setProvider method
 
+### November 20, 2025 - Optional Twitter Posting & Custom Domain URLs ✅
+
+**Feature Built:** User-controlled Twitter/X posting with custom domain integration
+
+**What Was Built:**
+1. **Optional Twitter Toggle:** Added Switch component to market creation form allowing users to choose whether to post new markets to Twitter/X
+2. **Consistent Behavior:** Both CLOB and AMM Pool market types respect the postToTwitter flag
+3. **Custom Domain URLs:** Changed tweet URLs from Replit domain to flipside.exchange custom domain for professional branding
+4. **Default Behavior:** Toggle defaults to OFF (unchecked), putting users in control of social media sharing
+
+**User Experience:**
+- Market creators see "Post to X (Twitter)" switch on the creation form
+- Toggling ON automatically posts market to connected Twitter account upon successful creation
+- Toggling OFF skips Twitter posting entirely
+- Works for both Order Book (CLOB) and LP Pool (AMM) market types
+
+**Technical Implementation:**
+- Frontend: `postToTwitter` boolean field in CreateMarketForm schema with Switch UI component
+- Data flow: Form field → CreateMarket mutation → Backend API via spread operator
+- Backend: Both `/api/markets` and `/api/markets/pool` routes extract flag and conditionally call `postMarketToTwitter()`
+- URL handling: Hardcoded `https://flipside.exchange` base URL for all tweet links
+- Database: Tweet URLs saved to market records for tracking
+
+**Files Modified:**
+- `client/src/components/CreateMarketForm.tsx` - Added postToTwitter field and Switch UI
+- `server/routes.ts` - Updated both market creation routes with conditional Twitter posting logic
+
 ## System Architecture
 
 ### UI/UX Decisions
@@ -79,7 +106,7 @@ The UI/UX is inspired by Polymarket, utilizing shadcn/ui (Radix UI) and Tailwind
 -   **Market Detail Page:** Includes a real-time `CountdownTimer`, an enhanced `PriceChart`, `OracleInfo` display, and an embedded `TradingView Widget`. Conditionally renders either CLOB `OrderBook` interface or AMM `AMMSwapPanel` based on market type.
 -   **Image Upload:** Users can upload custom images which are automatically resized, converted to WebP, and previewed.
 -   **AI-Powered Analysis:** An "Ask AI" button provides instant market analysis using OpenAI's GPT-4o-mini.
--   **X (Twitter) Auto-Posting:** New markets are automatically posted to X with engaging formats and details.
+-   **X (Twitter) Optional Posting:** Market creators can optionally share new markets to X via a toggle switch on the creation form. Tweet URLs use the custom domain flipside.exchange.
 -   **Trading Interface:**
     -   **CLOB Markets:** Features a `Buy/Sell Toggle` and full Central Limit Order Book functionality.
     -   **AMM Pool Markets:** `AMMSwapPanel` with tabbed interface (Swap/Liquidity) offering real-time quote calculations, slippage protection, price impact warnings, constant-sum pricing display, and fee breakdown. Liquidity tab includes add/remove panels, LP token balance, pool share, and proportional token distribution preview.
