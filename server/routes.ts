@@ -1527,5 +1527,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // SEO & SEARCH ENGINE ENDPOINTS
+  // ============================================
+
+  // GET /sitemap.xml - Dynamic XML sitemap for search engines
+  app.get('/sitemap.xml', async (req, res) => {
+    try {
+      const baseUrl = 'https://flipside.exchange';
+      const markets = await storage.getAllMarkets();
+      
+      // Filter to only active markets (not resolved)
+      const activeMarkets = markets.filter(m => !m.resolved);
+      
+      const urls = [
+        // Static pages
+        { loc: baseUrl, priority: '1.0', changefreq: 'daily' },
+        { loc: `${baseUrl}/create`, priority: '0.8', changefreq: 'weekly' },
+        { loc: `${baseUrl}/portfolio`, priority: '0.7', changefreq: 'daily' },
+        { loc: `${baseUrl}/leaderboard`, priority: '0.7', changefreq: 'daily' },
+        { loc: `${baseUrl}/docs`, priority: '0.6', changefreq: 'monthly' },
+        
+        // Market pages (active markets only)
+        ...activeMarkets.map(market => ({
+          loc: `${baseUrl}/market/${market.id}`,
+          priority: '0.9',
+          changefreq: 'hourly',
+          lastmod: new Date().toISOString().split('T')[0], // Today's date
+        })),
+      ];
+      
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(url => `  <url>
+    <loc>${url.loc}</loc>
+    <changefreq>${url.changefreq}</changefreq>
+    <priority>${url.priority}</priority>${url.lastmod ? `\n    <lastmod>${url.lastmod}</lastmod>` : ''}
+  </url>`).join('\n')}
+</urlset>`;
+      
+      res.header('Content-Type', 'application/xml');
+      res.send(sitemap);
+    } catch (error: any) {
+      console.error('Error generating sitemap:', error);
+      res.status(500).send('Error generating sitemap');
+    }
+  });
+
+  // GET /robots.txt - Robots exclusion protocol file
+  app.get('/robots.txt', (req, res) => {
+    const robotsTxt = `User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://flipside.exchange/sitemap.xml
+
+# Disallow admin/internal routes
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+
+# Crawl-delay (be nice to servers)
+Crawl-delay: 1`;
+    
+    res.header('Content-Type', 'text/plain');
+    res.send(robotsTxt);
+  });
+
   return httpServer;
 }
