@@ -156,6 +156,32 @@ export const ammSwaps = pgTable("amm_swaps", {
   txHashIdx: index("amm_swaps_tx_hash_idx").on(table.txHash),
 }));
 
+// Position Merges - tracks when users merge YES+NO positions back to USDT
+export const positionMerges = pgTable("position_merges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketId: varchar("market_id").notNull().references(() => markets.id, { onDelete: 'cascade' }),
+  
+  // Merge participant
+  userAddress: text("user_address").notNull(),
+  
+  // Merge details
+  amount: real("amount").notNull(), // Amount of USDT received (9.955 in your case)
+  conditionId: text("condition_id").notNull(), // Condition ID for the market
+  
+  // Transaction type
+  mergeType: text("merge_type").notNull().default('merge'), // 'merge' or 'redeem'
+  
+  // Blockchain transaction
+  txHash: text("tx_hash").notNull(),
+  blockNumber: integer("block_number"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => ({
+  marketIdx: index("position_merges_market_idx").on(table.marketId),
+  userIdx: index("position_merges_user_idx").on(table.userAddress),
+  txHashIdx: index("position_merges_tx_hash_idx").on(table.txHash),
+}));
+
 // LP Positions - tracks liquidity provider holdings in AMM pools
 export const lpPositions = pgTable("lp_positions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -312,6 +338,11 @@ export const insertAmmSwapSchema = createInsertSchema(ammSwaps).omit({
   createdAt: true,
 });
 
+export const insertPositionMergeSchema = createInsertSchema(positionMerges).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertPositionSchema = createInsertSchema(positions).omit({
   id: true,
   updatedAt: true,
@@ -359,6 +390,9 @@ export type InsertOrderFill = z.infer<typeof insertOrderFillSchema>;
 
 export type AmmSwap = typeof ammSwaps.$inferSelect;
 export type InsertAmmSwap = z.infer<typeof insertAmmSwapSchema>;
+
+export type PositionMerge = typeof positionMerges.$inferSelect;
+export type InsertPositionMerge = z.infer<typeof insertPositionMergeSchema>;
 
 export type Position = typeof positions.$inferSelect;
 export type InsertPosition = z.infer<typeof insertPositionSchema>;
