@@ -1542,11 +1542,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const urls = [
         // Static pages
-        { loc: baseUrl, priority: '1.0', changefreq: 'daily' },
-        { loc: `${baseUrl}/create`, priority: '0.8', changefreq: 'weekly' },
-        { loc: `${baseUrl}/portfolio`, priority: '0.7', changefreq: 'daily' },
-        { loc: `${baseUrl}/leaderboard`, priority: '0.7', changefreq: 'daily' },
-        { loc: `${baseUrl}/docs`, priority: '0.6', changefreq: 'monthly' },
+        { loc: baseUrl, priority: '1.0', changefreq: 'daily', lastmod: undefined },
+        { loc: `${baseUrl}/create`, priority: '0.8', changefreq: 'weekly', lastmod: undefined },
+        { loc: `${baseUrl}/portfolio`, priority: '0.7', changefreq: 'daily', lastmod: undefined },
+        { loc: `${baseUrl}/leaderboard`, priority: '0.7', changefreq: 'daily', lastmod: undefined },
+        { loc: `${baseUrl}/docs`, priority: '0.6', changefreq: 'monthly', lastmod: undefined },
         
         // Market pages (active markets only)
         ...activeMarkets.map(market => ({

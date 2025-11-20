@@ -1,5 +1,6 @@
 import { useRoute } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -63,35 +64,93 @@ export default function MarketPage() {
   const targetPrice = market.targetPrice || market.baselinePrice || extractTargetPrice(market.question);
   const isOracleMarket = !!market.pythPriceFeedId;
 
+  // SEO metadata
+  const pageTitle = `${market.question} | Flipside`;
+  const pageDescription = market.description || `Prediction market: ${market.question}. YES: ${yesPercentage}%, NO: ${noPercentage}%. Trade on Flipside's decentralized prediction market platform.`;
+  const pageUrl = `https://flipside.exchange/market/${market.id}`;
+  const imageUrl = market.imageUrl || 'https://flipside.exchange/og-image.png';
+
+  // JSON-LD structured data for search engines
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": market.question,
+    "description": pageDescription,
+    "image": imageUrl,
+    "brand": {
+      "@type": "Brand",
+      "name": "Flipside"
+    },
+    "offers": {
+      "@type": "AggregateOffer",
+      "priceCurrency": "USD",
+      "lowPrice": market.noPrice.toFixed(2),
+      "highPrice": market.yesPrice.toFixed(2),
+      "offerCount": "2"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": market.yesPrice.toFixed(2),
+      "bestRating": "1.00",
+      "worstRating": "0.00"
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Badge variant="secondary">{market.category}</Badge>
-          {market.marketType === 'POOL' ? (
-            <Badge variant="default" className="bg-primary/20 text-primary border border-primary/30">
-              LP Pool (AMM)
-            </Badge>
-          ) : (
-            <Badge variant="outline">Order Book (CLOB)</Badge>
-          )}
-          {market.resolved && (
-            <Badge variant={market.outcome ? 'default' : 'destructive'}>
-              Resolved: {market.outcome ? 'YES' : 'NO'}
-            </Badge>
-          )}
-          {market.pythPriceFeedId && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-              Pyth Oracle
-            </Badge>
-          )}
-        </div>
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:site_name" content="Flipside" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={pageUrl} />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={imageUrl} />
+        
+        {/* JSON-LD Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      </Helmet>
+
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Button variant="ghost" size="icon" data-testid="button-back">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Badge variant="secondary">{market.category}</Badge>
+            {market.marketType === 'POOL' ? (
+              <Badge variant="default" className="bg-primary/20 text-primary border border-primary/30">
+                LP Pool (AMM)
+              </Badge>
+            ) : (
+              <Badge variant="outline">Order Book (CLOB)</Badge>
+            )}
+            {market.resolved && (
+              <Badge variant={market.outcome ? 'default' : 'destructive'}>
+                Resolved: {market.outcome ? 'YES' : 'NO'}
+              </Badge>
+            )}
+            {market.pythPriceFeedId && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                Pyth Oracle
+              </Badge>
+            )}
+          </div>
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <h1 className="text-3xl md:text-4xl font-bold flex-1">
@@ -198,5 +257,6 @@ export default function MarketPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
