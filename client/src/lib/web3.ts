@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { createWalletConnectProvider, disconnectWalletConnect, getWalletConnectProvider } from './web3modal';
+import { isMobile } from './device';
 
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const NETWORK_NAME = 'Sepolia';
@@ -28,6 +29,29 @@ export function getAlchemyProvider(): ethers.AlchemyProvider | null {
   return new ethers.AlchemyProvider('sepolia', apiKey);
 }
 
+/**
+ * Connect to a specific wallet by ID
+ */
+export async function connectWalletById(walletId: string) {
+  switch (walletId) {
+    case 'metamask':
+      return connectViaMetaMask();
+    case 'walletconnect':
+      return connectViaWalletConnect();
+    case 'trust':
+      return connectViaTrustWallet();
+    case 'rainbow':
+      return connectViaRainbow();
+    case 'coinbase':
+      return connectViaCoinbaseWallet();
+    default:
+      throw new Error(`Unknown wallet: ${walletId}`);
+  }
+}
+
+/**
+ * Legacy connect function - use connectWalletById for explicit wallet selection
+ */
 export async function connectWallet() {
   // Use MetaMask if available, otherwise fall back to WalletConnect
   if (window.ethereum) {
@@ -62,11 +86,11 @@ export async function connectViaMetaMask() {
   }
 }
 
-export async function connectViaWalletConnect() {
+export async function connectViaWalletConnect(walletName?: string) {
   try {
-    const wcProvider = await createWalletConnectProvider();
+    const wcProvider = await createWalletConnectProvider(walletName);
     
-    // Enable session (shows QR modal)
+    // Enable session (shows QR modal on desktop, deep link on mobile)
     const accounts = await wcProvider.enable();
     
     if (!accounts || accounts.length === 0) {
@@ -85,6 +109,120 @@ export async function connectViaWalletConnect() {
     };
   } catch (error: any) {
     throw new Error(`Failed to connect via WalletConnect: ${error.message}`);
+  }
+}
+
+/**
+ * Connect via Trust Wallet using deep link on mobile
+ */
+export async function connectViaTrustWallet() {
+  if (!isMobile()) {
+    throw new Error('Trust Wallet is only available on mobile devices');
+  }
+  
+  try {
+    const wcProvider = await createWalletConnectProvider('Trust Wallet');
+    
+    // Create deep link for Trust Wallet
+    const uri = await wcProvider.connect();
+    if (uri) {
+      const trustDeepLink = `trust://wc?uri=${encodeURIComponent(uri)}`;
+      window.location.href = trustDeepLink;
+    }
+    
+    const accounts = await wcProvider.enable();
+    
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts returned from Trust Wallet');
+    }
+
+    const provider = new ethers.BrowserProvider(wcProvider as any);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+
+    return {
+      address,
+      provider,
+      signer,
+    };
+  } catch (error: any) {
+    throw new Error(`Failed to connect via Trust Wallet: ${error.message}`);
+  }
+}
+
+/**
+ * Connect via Rainbow wallet using deep link on mobile
+ */
+export async function connectViaRainbow() {
+  if (!isMobile()) {
+    throw new Error('Rainbow is only available on mobile devices');
+  }
+  
+  try {
+    const wcProvider = await createWalletConnectProvider('Rainbow');
+    
+    // Create deep link for Rainbow
+    const uri = await wcProvider.connect();
+    if (uri) {
+      const rainbowDeepLink = `rainbow://wc?uri=${encodeURIComponent(uri)}`;
+      window.location.href = rainbowDeepLink;
+    }
+    
+    const accounts = await wcProvider.enable();
+    
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts returned from Rainbow');
+    }
+
+    const provider = new ethers.BrowserProvider(wcProvider as any);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+
+    return {
+      address,
+      provider,
+      signer,
+    };
+  } catch (error: any) {
+    throw new Error(`Failed to connect via Rainbow: ${error.message}`);
+  }
+}
+
+/**
+ * Connect via Coinbase Wallet using deep link on mobile
+ */
+export async function connectViaCoinbaseWallet() {
+  if (!isMobile()) {
+    throw new Error('Coinbase Wallet is only available on mobile devices');
+  }
+  
+  try {
+    const wcProvider = await createWalletConnectProvider('Coinbase Wallet');
+    
+    // Create deep link for Coinbase Wallet
+    const uri = await wcProvider.connect();
+    if (uri) {
+      const coinbaseDeepLink = `cbwallet://wc?uri=${encodeURIComponent(uri)}`;
+      window.location.href = coinbaseDeepLink;
+    }
+    
+    const accounts = await wcProvider.enable();
+    
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts returned from Coinbase Wallet');
+    }
+
+    const provider = new ethers.BrowserProvider(wcProvider as any);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+
+    return {
+      address,
+      provider,
+      signer,
+    };
+  } catch (error: any) {
+    throw new Error(`Failed to connect via Coinbase Wallet: ${error.message}`);
   }
 }
 
