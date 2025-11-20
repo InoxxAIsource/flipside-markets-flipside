@@ -48,6 +48,12 @@ export default function Portfolio() {
     enabled: isConnected && !!account,
   });
 
+  // Fetch position merge/redeem history
+  const { data: positionMerges = [], isLoading: mergesLoading } = useQuery<any[]>({
+    queryKey: [`/api/positions/merges/${account}`],
+    enabled: isConnected && !!account,
+  });
+
   // Get open orders (filter from history)
   const openOrders = history.filter((order: any) => order.status === 'open');
 
@@ -395,6 +401,68 @@ export default function Portfolio() {
                           </Badge>
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(swap.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Position Merges Section */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Position Merges & Redemptions</h2>
+            {mergesLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}
+              </div>
+            ) : positionMerges.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground text-sm">No position merges yet</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2 mb-6">
+                {positionMerges.map((merge: any) => (
+                  <Card 
+                    key={merge.id} 
+                    className="hover-elevate cursor-pointer"
+                    onClick={() => navigate(`/market/${merge.marketId}`)}
+                    data-testid={`card-position-merge-${merge.id}`}
+                  >
+                    <CardContent className="py-4">
+                      <div className="flex justify-between items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex gap-2 items-center flex-wrap">
+                            <Badge variant="outline" className="text-xs">
+                              {merge.yesAmount > 0 ? 'MERGE' : 'REDEEM'}
+                            </Badge>
+                            {merge.yesAmount > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                {merge.yesAmount.toFixed(2)} YES + {merge.noAmount.toFixed(2)} NO → ${merge.collateralReceived.toFixed(2)} USDT
+                              </span>
+                            )}
+                            {merge.yesAmount === 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                ${merge.collateralReceived.toFixed(2)} USDT claimed
+                              </span>
+                            )}
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            {formatDistanceToNow(new Date(merge.createdAt), { addSuffix: true })}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="default" className="text-xs">
+                            COMPLETED
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(merge.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
