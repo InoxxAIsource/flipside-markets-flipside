@@ -8,6 +8,7 @@ import {
   orders,
   orderFills,
   ammSwaps,
+  positionMerges,
   positions,
   pythPriceUpdates,
   userNonces,
@@ -21,6 +22,8 @@ import {
   type InsertOrderFill,
   type AmmSwap,
   type InsertAmmSwap,
+  type PositionMerge,
+  type InsertPositionMerge,
   type Position,
   type InsertPosition,
   type PythPriceUpdate,
@@ -67,6 +70,11 @@ export interface IStorage {
   getMarketAmmSwaps(marketId: string): Promise<AmmSwap[]>;
   getPoolAmmSwaps(poolAddress: string): Promise<AmmSwap[]>;
   getAllAmmSwaps(): Promise<AmmSwap[]>;
+  
+  // Position merge methods
+  createPositionMerge(merge: InsertPositionMerge): Promise<PositionMerge>;
+  getUserPositionMerges(userAddress: string): Promise<PositionMerge[]>;
+  getMarketPositionMerges(marketId: string): Promise<PositionMerge[]>;
   
   // Position methods
   getUserPosition(userAddress: string, marketId: string): Promise<Position | undefined>;
@@ -311,6 +319,31 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(ammSwaps)
       .orderBy(desc(ammSwaps.createdAt));
+  }
+
+  // Position merge methods
+  async createPositionMerge(merge: InsertPositionMerge): Promise<PositionMerge> {
+    const result = await db
+      .insert(positionMerges)
+      .values(merge)
+      .returning();
+    return result[0];
+  }
+
+  async getUserPositionMerges(userAddress: string): Promise<PositionMerge[]> {
+    return await db
+      .select()
+      .from(positionMerges)
+      .where(eq(positionMerges.userAddress, userAddress))
+      .orderBy(desc(positionMerges.createdAt));
+  }
+
+  async getMarketPositionMerges(marketId: string): Promise<PositionMerge[]> {
+    return await db
+      .select()
+      .from(positionMerges)
+      .where(eq(positionMerges.marketId, marketId))
+      .orderBy(desc(positionMerges.createdAt));
   }
 
   // Position methods
