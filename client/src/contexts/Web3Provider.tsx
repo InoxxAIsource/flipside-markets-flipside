@@ -147,6 +147,7 @@ interface Web3ContextValue extends Web3State {
   setExecutionContext: (context: ExecutionContext) => void;
   setProxyInfo: (info: ProxyWalletInfo | null) => void;
   switchNetwork: () => Promise<void>;
+  setProvider: (provider: ethers.BrowserProvider) => Promise<void>;
   isConnecting: boolean;
   isConnected: boolean;
 }
@@ -305,6 +306,37 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_PROXY_INFO', payload: info });
   }, []);
 
+  const setProvider = useCallback(async (provider: ethers.BrowserProvider) => {
+    try {
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+      const network = await provider.getNetwork();
+      const chainId = Number(network.chainId);
+
+      if (chainId !== SEPOLIA_CHAIN_ID) {
+        dispatch({ type: 'WRONG_NETWORK', payload: { chainId } });
+        toast({
+          title: 'Wrong Network',
+          description: 'Please switch to Sepolia testnet',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      dispatch({
+        type: 'CONNECTED',
+        payload: { account: address, chainId, signer, provider },
+      });
+    } catch (error: any) {
+      dispatch({ type: 'ERROR', payload: error.message });
+      toast({
+        title: 'Connection Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
+
   const value: Web3ContextValue = {
     ...state,
     connect,
@@ -312,6 +344,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setExecutionContext,
     setProxyInfo,
     switchNetwork,
+    setProvider,
     isConnecting: state.status === ConnectionStatus.CONNECTING,
     isConnected: state.status === ConnectionStatus.CONNECTED,
   };

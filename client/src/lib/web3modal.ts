@@ -41,10 +41,11 @@ export async function createWalletConnectProvider(walletName?: string) {
     window.dispatchEvent(new CustomEvent('walletAccountsChanged', { detail: accounts }));
   });
 
-  walletConnectProvider.on('chainChanged', (chainId: number) => {
-    console.log('WalletConnect chain changed:', chainId);
+  walletConnectProvider.on('chainChanged', (chainId: string | number) => {
+    const numericChainId = typeof chainId === 'string' ? parseInt(chainId, 16) : chainId;
+    console.log('WalletConnect chain changed:', numericChainId);
     // Trigger custom event for the app to listen to
-    window.dispatchEvent(new CustomEvent('walletChainChanged', { detail: chainId }));
+    window.dispatchEvent(new CustomEvent('walletChainChanged', { detail: numericChainId }));
   });
 
   walletConnectProvider.on('disconnect', () => {

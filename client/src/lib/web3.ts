@@ -123,13 +123,7 @@ export async function connectViaTrustWallet() {
   try {
     const wcProvider = await createWalletConnectProvider('Trust Wallet');
     
-    // Create deep link for Trust Wallet
-    const uri = await wcProvider.connect();
-    if (uri) {
-      const trustDeepLink = `trust://wc?uri=${encodeURIComponent(uri)}`;
-      window.location.href = trustDeepLink;
-    }
-    
+    // Enable the provider first to get accounts
     const accounts = await wcProvider.enable();
     
     if (!accounts || accounts.length === 0) {
@@ -161,13 +155,7 @@ export async function connectViaRainbow() {
   try {
     const wcProvider = await createWalletConnectProvider('Rainbow');
     
-    // Create deep link for Rainbow
-    const uri = await wcProvider.connect();
-    if (uri) {
-      const rainbowDeepLink = `rainbow://wc?uri=${encodeURIComponent(uri)}`;
-      window.location.href = rainbowDeepLink;
-    }
-    
+    // Enable the provider first to get accounts
     const accounts = await wcProvider.enable();
     
     if (!accounts || accounts.length === 0) {
@@ -199,13 +187,7 @@ export async function connectViaCoinbaseWallet() {
   try {
     const wcProvider = await createWalletConnectProvider('Coinbase Wallet');
     
-    // Create deep link for Coinbase Wallet
-    const uri = await wcProvider.connect();
-    if (uri) {
-      const coinbaseDeepLink = `cbwallet://wc?uri=${encodeURIComponent(uri)}`;
-      window.location.href = coinbaseDeepLink;
-    }
-    
+    // Enable the provider first to get accounts
     const accounts = await wcProvider.enable();
     
     if (!accounts || accounts.length === 0) {

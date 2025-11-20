@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Wallet, ExternalLink, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,13 +11,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { formatAddress } from '@/lib/web3';
+import { formatAddress, connectWalletById } from '@/lib/web3';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/contexts/Web3Provider';
 import { useSyncProxyInfo } from '@/hooks/use-proxy-wallet-status';
+import { WalletSelector } from './WalletSelector';
 
 export function WalletButton() {
-  const { account: address, isConnecting, connect, disconnect, provider } = useWallet();
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
+  const { account: address, isConnecting, connect, disconnect, provider, setProvider } = useWallet();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -50,12 +53,20 @@ export function WalletButton() {
 
   const hasBalanceError = !!balanceError;
 
-  const handleConnect = async () => {
+  const handleOpenWalletSelector = () => {
+    setShowWalletSelector(true);
+  };
+
+  const handleSelectWallet = async (walletId: string) => {
     try {
-      const connectedAddress = await connect();
+      const { address: connectedAddress, provider: walletProvider } = await connectWalletById(walletId);
+      
+      // Update wallet context with the new provider
+      await setProvider(walletProvider);
+      
       toast({
         title: 'Wallet Connected',
-        description: `Connected to ${connectedAddress ? formatAddress(connectedAddress) : 'wallet'}`,
+        description: `Connected to ${formatAddress(connectedAddress)}`,
       });
     } catch (error: any) {
       toast({
@@ -63,6 +74,7 @@ export function WalletButton() {
         description: error.message,
         variant: 'destructive',
       });
+      throw error;
     }
   };
 
@@ -88,14 +100,21 @@ export function WalletButton() {
 
   if (!address) {
     return (
-      <Button 
-        onClick={handleConnect} 
-        disabled={isConnecting}
-        data-testid="button-connect-wallet"
-      >
-        <Wallet className="mr-2 h-4 w-4" />
-        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-      </Button>
+      <>
+        <Button 
+          onClick={handleOpenWalletSelector} 
+          disabled={isConnecting}
+          data-testid="button-connect-wallet"
+        >
+          <Wallet className="mr-2 h-4 w-4" />
+          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        </Button>
+        <WalletSelector 
+          open={showWalletSelector}
+          onOpenChange={setShowWalletSelector}
+          onSelectWallet={handleSelectWallet}
+        />
+      </>
     );
   }
 
