@@ -297,6 +297,24 @@ export class Web3Service {
   }
 
   /**
+   * Listen to PositionsMerge events (when users merge YES+NO tokens back to collateral)
+   */
+  onPositionsMerge(callback: (stakeholder: string, collateralToken: string, conditionId: string, amount: bigint, event: any) => void) {
+    this.conditionalTokens.on('PositionsMerge', (stakeholder, collateralToken, parentCollectionId, conditionId, partition, amount, event) => {
+      callback(stakeholder, collateralToken, conditionId, amount, event);
+    });
+  }
+
+  /**
+   * Listen to PayoutRedemption events (when users redeem winning tokens after resolution)
+   */
+  onPayoutRedemption(callback: (redeemer: string, collateralToken: string, conditionId: string, payout: bigint, event: any) => void) {
+    this.conditionalTokens.on('PayoutRedemption', (redeemer, collateralToken, parentCollectionId, conditionId, indexSets, payout, event) => {
+      callback(redeemer, collateralToken, conditionId, payout, event);
+    });
+  }
+
+  /**
    * Create a market on-chain via ConditionalTokens.prepareCondition
    * Returns the conditionId and token IDs
    * 

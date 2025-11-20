@@ -819,6 +819,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/positions/merges/:userAddress - Get user's position merge/redeem history
+  app.get('/api/positions/merges/:userAddress', async (req, res) => {
+    try {
+      const merges = await storage.getUserPositionMerges(req.params.userAddress.toLowerCase());
+      res.json(merges);
+    } catch (error: any) {
+      console.error('Error fetching user position merges:', error);
+      res.status(500).json({ error: 'Failed to fetch user position merges' });
+    }
+  });
+
   // GET /api/pool/:poolAddress/volume - Get pool trading volume
   app.get('/api/pool/:poolAddress/volume', async (req, res) => {
     try {

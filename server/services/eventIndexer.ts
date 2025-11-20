@@ -75,6 +75,103 @@ export class EventIndexer {
       }
     });
 
+    // Listen to PositionsMerge events (Sell All feature)
+    web3Service.onPositionsMerge(async (stakeholder, collateralToken, conditionId, amount, event) => {
+      console.log('PositionsMerge event:', { 
+        stakeholder, 
+        collateralToken, 
+        conditionId, 
+        amount: amount.toString() 
+      });
+      
+      try {
+        // Find the market by conditionId
+        const markets = await storage.getAllMarkets();
+        const market = markets.find(m => m.conditionId === conditionId);
+        
+        if (!market) {
+          console.warn(`Market not found for conditionId: ${conditionId}`);
+          return;
+        }
+
+        // Get transaction details
+        const txHash = event.log?.transactionHash || '';
+        const blockNumber = event.log?.blockNumber || 0;
+
+        // Calculate USDT received (amount is in wei, convert to USDT with 18 decimals)
+        const collateralReceived = Number(amount) / 1e18;
+
+        // For merge operations, the user is merging equal amounts of YES and NO tokens
+        // The amount parameter represents how much collateral they receive back
+        const tokenAmount = collateralReceived;
+
+        console.log(`Creating position merge record: ${tokenAmount} YES+NO → ${collateralReceived} USDT`);
+
+        // Store the merge transaction
+        await storage.createPositionMerge({
+          marketId: market.id,
+          userAddress: stakeholder.toLowerCase(),
+          conditionId,
+          yesAmount: tokenAmount,
+          noAmount: tokenAmount,
+          collateralReceived,
+          txHash,
+          blockNumber,
+        });
+
+        console.log(`✅ Position merge indexed: ${collateralReceived} USDT returned to ${stakeholder}`);
+      } catch (error) {
+        console.error('Error processing PositionsMerge event:', error);
+      }
+    });
+
+    // Listen to PayoutRedemption events (claiming winnings after resolution)
+    web3Service.onPayoutRedemption(async (redeemer, collateralToken, conditionId, payout, event) => {
+      console.log('PayoutRedemption event:', { 
+        redeemer, 
+        collateralToken, 
+        conditionId, 
+        payout: payout.toString() 
+      });
+      
+      try {
+        // Find the market by conditionId
+        const markets = await storage.getAllMarkets();
+        const market = markets.find(m => m.conditionId === conditionId);
+        
+        if (!market) {
+          console.warn(`Market not found for conditionId: ${conditionId}`);
+          return;
+        }
+
+        // Get transaction details
+        const txHash = event.log?.transactionHash || '';
+        const blockNumber = event.log?.blockNumber || 0;
+
+        // Calculate USDT received (payout is in wei, convert to USDT with 18 decimals)
+        const collateralReceived = Number(payout) / 1e18;
+
+        console.log(`Creating payout redemption record: ${collateralReceived} USDT claimed`);
+
+        // Store the redemption as a position merge (it's essentially the same - converting tokens to collateral)
+        // For redemptions, we don't know the exact split of YES/NO, so we record the payout amount
+        await storage.createPositionMerge({
+          marketId: market.id,
+          userAddress: redeemer.toLowerCase(),
+          conditionId,
+          yesAmount: 0, // Unknown for redemptions
+          noAmount: 0, // Unknown for redemptions
+          collateralReceived,
+          txHash,
+          blockNumber,
+        });
+
+        console.log(`✅ Payout redemption indexed: ${collateralReceived} USDT claimed by ${redeemer}`);
+      } catch (error) {
+        console.error('Error processing PayoutRedemption event:', error);
+      }
+    });
+
     // Set up AMM pool swap event listeners
     this.setupAMMPoolListeners().catch(error => {
       console.error('Error setting up AMM pool listeners:', error);
