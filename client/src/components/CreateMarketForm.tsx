@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, CheckCircle2, Clock, Loader2, ExternalLink, Upload, X } from 'lucide-react';
+import { CalendarIcon, CheckCircle2, Clock, Loader2, ExternalLink, Upload, X, Twitter } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +51,8 @@ const formSchema = z.object({
   // Pool-specific fields
   initialYesLiquidity: z.string().optional(),
   initialNoLiquidity: z.string().optional(),
+  // Twitter/X posting
+  postToTwitter: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -74,6 +77,7 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
       description: '',
       imageUrl: '',
       category: '',
+      postToTwitter: false,
     },
   });
 
@@ -450,6 +454,32 @@ export function CreateMarketForm({ onSubmit, isSubmitting = false, txStatus = 'i
               )}
             />
           </div>
+
+          {/* Twitter/X Posting Toggle */}
+          <FormField
+            control={form.control}
+            name="postToTwitter"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base flex items-center gap-2">
+                    <Twitter className="h-4 w-4" />
+                    Post to X (Twitter)
+                  </FormLabel>
+                  <FormDescription>
+                    Automatically share this market on your X account when created
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    data-testid="switch-post-twitter"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField

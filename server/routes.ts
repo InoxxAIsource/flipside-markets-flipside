@@ -189,6 +189,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const marketData = validation.data;
       
+      // Extract postToTwitter flag from request body (not validated by insertMarketSchema)
+      const postToTwitter = req.body.postToTwitter === true;
+      
       if (!marketData.conditionId || !marketData.yesTokenId || !marketData.noTokenId || !marketData.creationTxHash) {
         return res.status(400).json({ 
           error: 'Missing blockchain data: conditionId, yesTokenId, noTokenId, and creationTxHash are required' 
@@ -349,33 +352,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`Market ${market.id} saved to database with conditionId: ${market.conditionId}`);
         
-        // Post to Twitter asynchronously (don't block market creation)
-        // Use REPLIT_DOMAINS for production URL, fallback to request headers
-        const replitDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
-        const baseUrl = replitDomain 
-          ? `https://${replitDomain}` 
-          : `${req.protocol}://${req.get('host')}`;
-        console.log('🐦 Attempting to post market to Twitter:', { marketId: market.id, baseUrl, replitDomain });
-        postMarketToTwitter({
-          id: market.id,
-          question: market.question,
-          imageUrl: market.imageUrl,
-          yesPrice: market.yesPrice,
-          noPrice: market.noPrice,
-          category: market.category,
-        }, baseUrl).then(async (tweetUrl) => {
-          if (tweetUrl) {
-            // Update market with tweet URL
-            try {
-              await storage.updateMarket(market.id, { tweetUrl });
-              console.log(`✅ Updated market ${market.id} with tweet URL: ${tweetUrl}`);
-            } catch (err) {
-              console.error('Failed to update market with tweet URL:', err);
+        // Post to Twitter asynchronously if enabled (don't block market creation)
+        if (postToTwitter) {
+          const baseUrl = 'https://flipside.exchange';
+          console.log('🐦 Attempting to post market to Twitter:', { marketId: market.id, baseUrl });
+          postMarketToTwitter({
+            id: market.id,
+            question: market.question,
+            imageUrl: market.imageUrl,
+            yesPrice: market.yesPrice,
+            noPrice: market.noPrice,
+            category: market.category,
+          }, baseUrl).then(async (tweetUrl) => {
+            if (tweetUrl) {
+              // Update market with tweet URL
+              try {
+                await storage.updateMarket(market.id, { tweetUrl });
+                console.log(`✅ Updated market ${market.id} with tweet URL: ${tweetUrl}`);
+              } catch (err) {
+                console.error('Failed to update market with tweet URL:', err);
+              }
             }
-          }
-        }).catch((err) => {
-          console.error('Failed to post market to Twitter:', err);
-        });
+          }).catch((err) => {
+            console.error('Failed to post market to Twitter:', err);
+          });
+        } else {
+          console.log('⏭️ Twitter posting skipped (postToTwitter = false)');
+        }
         
         res.status(201).json(market);
       } catch (dbError: any) {
@@ -543,6 +546,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const marketData = validation.data;
+      
+      // Extract postToTwitter flag from request body (not validated by schema)
+      const postToTwitter = req.body.postToTwitter === true;
 
       // Verify market data is complete
       if (!marketData.conditionId || !marketData.yesTokenId || !marketData.noTokenId || !marketData.creationTxHash) {
@@ -588,6 +594,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         marketType: 'POOL',
         poolAddress: poolResult.poolAddress,
       });
+
+      // Post to Twitter asynchronously if enabled (don't block market creation)
+      if (postToTwitter) {
+        const baseUrl = 'https://flipside.exchange';
+        console.log('🐦 Attempting to post pool market to Twitter:', { marketId: market.id, baseUrl });
+        postMarketToTwitter({
+          id: market.id,
+          question: market.question,
+          imageUrl: market.imageUrl,
+          yesPrice: market.yesPrice,
+          noPrice: market.noPrice,
+          category: market.category,
+        }, baseUrl).then(async (tweetUrl) => {
+          if (tweetUrl) {
+            // Update market with tweet URL
+            try {
+              await storage.updateMarket(market.id, { tweetUrl });
+              console.log(`✅ Updated pool market ${market.id} with tweet URL: ${tweetUrl}`);
+            } catch (err) {
+              console.error('Failed to update pool market with tweet URL:', err);
+            }
+          }
+        }).catch((err) => {
+          console.error('Failed to post pool market to Twitter:', err);
+        });
+      } else {
+        console.log('⏭️ Twitter posting skipped for pool market (postToTwitter = false)');
+      }
 
       res.status(201).json({
         ...market,
