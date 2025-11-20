@@ -30,16 +30,22 @@ export default function MarketPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-16 w-full" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+      <>
+        <Helmet>
+          <title>Loading Market | Flipside</title>
+          <meta name="description" content="Flipside - Decentralized prediction market platform on Ethereum" />
+        </Helmet>
+        <div className="container mx-auto px-4 py-6 space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-16 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="h-96 w-full" />
+            </div>
             <Skeleton className="h-96 w-full" />
           </div>
-          <Skeleton className="h-96 w-full" />
         </div>
-      </div>
+      </>
     );
   }
 
@@ -68,7 +74,7 @@ export default function MarketPage() {
   const pageTitle = `${market.question} | Flipside`;
   const pageDescription = market.description || `Prediction market: ${market.question}. YES: ${yesPercentage}%, NO: ${noPercentage}%. Trade on Flipside's decentralized prediction market platform.`;
   const pageUrl = `https://flipside.exchange/market/${market.id}`;
-  const imageUrl = market.imageUrl || 'https://flipside.exchange/og-image.png';
+  const imageUrl = market.imageUrl;
 
   // JSON-LD structured data for search engines
   const structuredData = {
@@ -76,7 +82,7 @@ export default function MarketPage() {
     "@type": "Product",
     "name": market.question,
     "description": pageDescription,
-    "image": imageUrl,
+    ...(imageUrl && { "image": imageUrl }),
     "brand": {
       "@type": "Brand",
       "name": "Flipside"
@@ -107,7 +113,7 @@ export default function MarketPage() {
         <meta property="og:url" content={pageUrl} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
-        <meta property="og:image" content={imageUrl} />
+        {imageUrl && <meta property="og:image" content={imageUrl} />}
         <meta property="og:site_name" content="Flipside" />
         
         {/* Twitter */}
@@ -115,7 +121,7 @@ export default function MarketPage() {
         <meta name="twitter:url" content={pageUrl} />
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content={imageUrl} />
+        {imageUrl && <meta name="twitter:image" content={imageUrl} />}
         
         {/* JSON-LD Structured Data */}
         <script type="application/ld+json">
