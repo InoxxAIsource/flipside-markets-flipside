@@ -165,11 +165,10 @@ export const positionMerges = pgTable("position_merges", {
   userAddress: text("user_address").notNull(),
   
   // Merge details
-  amount: real("amount").notNull(), // Amount of USDT received (9.955 in your case)
   conditionId: text("condition_id").notNull(), // Condition ID for the market
-  
-  // Transaction type
-  mergeType: text("merge_type").notNull().default('merge'), // 'merge' or 'redeem'
+  yesAmount: real("yes_amount").notNull().default(0), // Amount of YES tokens merged
+  noAmount: real("no_amount").notNull().default(0), // Amount of NO tokens merged
+  collateralReceived: real("collateral_received").notNull(), // Amount of USDT received
   
   // Blockchain transaction
   txHash: text("tx_hash").notNull(),
