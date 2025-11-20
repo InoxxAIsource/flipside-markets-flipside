@@ -8,6 +8,38 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Updates
+
+### November 20, 2025 - Mobile Wallet Connection & Wallet Selector ✅
+
+**Feature Built:** Complete mobile wallet integration with intelligent wallet selection
+
+**What Was Built:**
+1. **Mobile Detection System:** Automatic device detection that adapts connection flow (QR modal on desktop, deep links on mobile)
+2. **Wallet Selector Dialog:** Beautiful modal with popular wallet options including MetaMask, WalletConnect, Trust Wallet, Rainbow, and Coinbase Wallet
+3. **Smart Deep Linking:** Mobile wallets open directly via deep links (`trust://wc`, `rainbow://wc`, `cbwallet://wc`) instead of showing confusing QR codes
+4. **Universal Support:** Works seamlessly on desktop browser extensions and mobile wallet apps
+5. **Improved UX:** Clear wallet icons, descriptions, and connection status with proper error handling
+
+**Technical Implementation:**
+- Device detection utilities (`isMobile()`, `isIOS()`, `isAndroid()`, `canUseMetaMask()`)
+- WalletConnect configuration auto-adapts based on device type
+- Explicit wallet selection via `connectWalletById()` function
+- Web3Provider extended with `setProvider()` for external wallet connections
+- WalletConnect Project ID properly configured from environment secrets
+
+**Connection Flow:**
+- **Desktop**: Click "Connect" → Choose wallet → Browser extension opens → Approve
+- **Mobile**: Click "Connect" → Choose wallet → Redirects to wallet app → Approve → Returns to site
+
+**Files Modified:**
+- `client/src/lib/device.ts` - Device detection utilities (new)
+- `client/src/lib/web3modal.ts` - Mobile-optimized WalletConnect config
+- `client/src/lib/web3.ts` - Wallet-specific connection functions with deep linking
+- `client/src/components/WalletSelector.tsx` - Wallet selection modal UI (new)
+- `client/src/components/WalletButton.tsx` - Integration with wallet selector
+- `client/src/contexts/Web3Provider.tsx` - Extended context with setProvider method
+
 ## System Architecture
 
 ### UI/UX Decisions
