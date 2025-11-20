@@ -8,6 +8,58 @@ Flipside is a full-stack prediction market platform on the Ethereum Sepolia test
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Updates
+
+### November 20, 2025 - Google Search Console Integration & SEO Enhancement ✅
+
+**Feature Built:** Complete Google Search Console integration with comprehensive SEO optimization
+
+**What Was Built:**
+1. **Google Verification System:** Environment variable-based meta tag system (`VITE_GOOGLE_SITE_VERIFICATION`) in index.html for Search Console ownership verification
+2. **Dynamic Sitemap.xml:** Auto-generated XML sitemap at `/sitemap.xml` listing all active markets and key pages with proper priorities, change frequencies, and last modified dates
+3. **Robots.txt:** Search engine crawler guidance at `/robots.txt` with sitemap reference and crawl rules
+4. **Market Page SEO:** Comprehensive meta tags for each market page using react-helmet-async:
+   - Title tags with market question
+   - Meta descriptions with market details
+   - Open Graph tags for Facebook/LinkedIn sharing (og:image only if market has custom image)
+   - Twitter Card tags for Twitter sharing (twitter:image only if market has custom image)
+   - JSON-LD structured data (schema.org Product type) for rich search results
+5. **Custom Domain URLs:** All SEO URLs use production domain `https://flipside.exchange` for consistency
+
+**Technical Implementation:**
+- `client/index.html` - Google verification meta tag with environment variable placeholder
+- `server/routes.ts` - Added `/sitemap.xml` and `/robots.txt` endpoints
+- `client/src/pages/MarketPage.tsx` - Dynamic SEO meta tags with Helmet (renders even during loading state)
+- `client/src/App.tsx` - Wrapped app with HelmetProvider for meta tag management
+- Sitemap includes static pages (home, create, portfolio, leaderboard, docs) and all active markets
+- Markets have highest priority (0.9) with hourly change frequency for freshness
+- JSON-LD structured data helps Google display rich snippets in search results
+- og:image and twitter:image conditionally rendered only when markets have custom images (prevents 404s)
+
+**Setup Instructions:**
+1. Visit [Google Search Console](https://search.google.com/search-console/welcome)
+2. Add property for `https://flipside.exchange`
+3. Choose "HTML tag" verification method
+4. Copy the verification code (content value from meta tag)
+5. **REQUIRED:** Add to Replit Secrets: `VITE_GOOGLE_SITE_VERIFICATION=your_code_here`
+   - Without this, verification meta tag will show as `%VITE_GOOGLE_SITE_VERIFICATION%` in HTML
+   - Required for Google to verify domain ownership
+   - Must be prefixed with `VITE_` to be accessible in frontend build
+6. Deploy and click "Verify" in Search Console
+7. Submit sitemap URL: `https://flipside.exchange/sitemap.xml`
+
+**Important Notes:**
+- SEO meta tags render in initial HTML during loading state (crawler-friendly)
+- Markets with custom images include og:image tags; markets without images omit og:image to prevent 404s
+- JSON-LD structured data uses schema.org Product type for enhanced search results
+- Sitemap auto-updates as new markets are created (no manual regeneration needed)
+
+**Files Modified:**
+- `client/index.html` - Added Google verification meta tag placeholder
+- `server/routes.ts` - Added sitemap.xml and robots.txt endpoints
+- `client/src/App.tsx` - Wrapped with HelmetProvider
+- `client/src/pages/MarketPage.tsx` - Added comprehensive SEO meta tags with conditional rendering
+
 ## System Architecture
 
 ### UI/UX Decisions
