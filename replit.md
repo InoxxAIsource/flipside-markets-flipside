@@ -10,6 +10,35 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### November 20, 2025 - Position Merge & Redemption Tracking ✅
+
+**Feature Built:** Complete transaction history tracking for position merges and redemptions
+
+**What Was Built:**
+1. **Database Schema:** Created `position_merges` table to track all merge and redeem transactions with columns for marketId, userAddress, conditionId, yesAmount, noAmount, collateralReceived, txHash, and blockNumber
+2. **Event Indexer Integration:** Added blockchain event listeners for `PositionsMerge` and `PayoutRedemption` events from ConditionalTokens contract (0xdC8CB01c328795C007879B2C030AbF1c1b580D84)
+3. **Storage Layer Methods:** Implemented `createPositionMerge()`, `getUserPositionMerges()`, and `getMarketPositionMerges()` for data persistence and retrieval
+4. **API Endpoint:** Created `GET /api/positions/merges/:userAddress` to fetch complete merge/redeem history by wallet address
+5. **Portfolio UI Enhancement:** Updated Portfolio page History tab with "Position Merges & Redemptions" section showing chronological list of all merge/redeem transactions
+
+**Transaction Types Tracked:**
+- **Position Merges:** When users combine equal amounts of YES and NO tokens back into USDT collateral (via "Sell All" feature)
+- **Payout Redemptions:** When users redeem winning positions after market resolution to claim their USDT winnings
+
+**Technical Implementation:**
+- EventIndexer subscribes to both PositionsMerge and PayoutRedemption events and normalizes amounts
+- Database schema uses yesAmount, noAmount, and collateralReceived to track all transaction details
+- Frontend differentiates between merge and redeem operations based on token amounts
+- Full blockchain-to-UI pipeline ensures complete transaction visibility
+
+**Files Modified:**
+- `shared/schema.ts` - Added position_merges table schema
+- `server/storage.ts` - Added storage methods for merge tracking
+- `server/services/eventIndexer.ts` - Added event listeners for merge/redeem events
+- `server/contracts/web3Service.ts` - Added ConditionalTokens ABI with merge events
+- `server/routes.ts` - Added API endpoint for fetching merge history
+- `client/src/pages/Portfolio.tsx` - Enhanced History tab with merge/redeem section
+
 ### November 20, 2025 - Mobile Wallet Connection & Wallet Selector ✅
 
 **Feature Built:** Complete mobile wallet integration with intelligent wallet selection
