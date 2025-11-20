@@ -1,22 +1,29 @@
 import EthereumProvider from '@walletconnect/ethereum-provider';
 import { SEPOLIA_CHAIN_ID } from './web3';
+import { isMobile } from './device';
 
-// WalletConnect Project ID (public identifier, safe to use client-side)
-// Falls back to known public ID if env var not set
-export const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '7cb724bf60c8e3b1b67fdadd7bafcace';
+// WalletConnect Project ID from environment
+export const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+
+if (!projectId) {
+  console.error('VITE_WALLETCONNECT_PROJECT_ID is not set! WalletConnect will not work.');
+}
 
 let walletConnectProvider: Awaited<ReturnType<typeof EthereumProvider.init>> | null = null;
 
-export async function createWalletConnectProvider() {
+export async function createWalletConnectProvider(walletName?: string) {
   if (walletConnectProvider) {
     return walletConnectProvider;
   }
 
+  const mobile = isMobile();
+
   walletConnectProvider = await EthereumProvider.init({
     projectId,
     chains: [SEPOLIA_CHAIN_ID],
-    showQrModal: true,
-    qrModalOptions: {
+    // Show QR modal only on desktop, use deep links on mobile
+    showQrModal: !mobile,
+    qrModalOptions: mobile ? undefined : {
       themeMode: 'dark',
     },
     metadata: {
