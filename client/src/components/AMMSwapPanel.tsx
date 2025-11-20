@@ -260,47 +260,50 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
   // Sell mutation to convert specified side (YES or NO) to USDT
   const sellToUsdtMutation = useMutation({
     mutationFn: async (params: { sellYes: boolean }) => {
-      if (!account || !userBalances || !market) {
-        throw new Error('Missing required data');
-      }
+      try {
+        if (!account || !userBalances || !market) {
+          throw new Error('Missing required data');
+        }
 
-      let yesBalance = parseFloat(userBalances.yesBalance) / 1e6;
-      let noBalance = parseFloat(userBalances.noBalance) / 1e6;
-      
-      const targetBalance = params.sellYes ? yesBalance : noBalance;
-      if (targetBalance === 0) {
-        throw new Error(`No ${params.sellYes ? 'YES' : 'NO'} tokens to sell`);
-      }
+        let yesBalance = parseFloat(userBalances.yesBalance) / 1e6;
+        let noBalance = parseFloat(userBalances.noBalance) / 1e6;
+        
+        const targetBalance = params.sellYes ? yesBalance : noBalance;
+        if (targetBalance === 0) {
+          throw new Error(`No ${params.sellYes ? 'YES' : 'NO'} tokens to sell`);
+        }
 
-      const { ethers } = await import('ethers');
-      const provider = new ethers.BrowserProvider(window.ethereum as any);
-      const signer = await provider.getSigner();
+        const { ethers } = await import('ethers');
+        const provider = new ethers.BrowserProvider(window.ethereum as any);
+        const signer = await provider.getSigner();
 
-      const CONDITIONAL_TOKENS = '0xdC8CB01c328795C007879B2C030AbF1c1b580D84';
-      const USDT = '0xAf24D4DDbA993F6b11372528C678edb718a097Aa';
+        const CONDITIONAL_TOKENS = '0xdC8CB01c328795C007879B2C030AbF1c1b580D84';
+        const USDT = '0xAf24D4DDbA993F6b11372528C678edb718a097Aa';
 
-      const conditionalTokensABI = [
-        'function setApprovalForAll(address operator, bool approved)',
-        'function mergePositions(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)',
-        'function balanceOf(address account, uint256 id) view returns (uint256)',
-        'function getPositionId(address collateralToken, bytes32 collectionId) view returns (uint256)',
-      ];
-      const poolABI = ['function swap(bool buyYes, uint256 amountIn, uint256 minAmountOut) returns (uint256)'];
+        const conditionalTokensABI = [
+          'function setApprovalForAll(address operator, bool approved)',
+          'function mergePositions(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] partition, uint256 amount)',
+          'function balanceOf(address account, uint256 id) view returns (uint256)',
+          'function getPositionId(address collateralToken, bytes32 collectionId) view returns (uint256)',
+        ];
+        const poolABI = ['function swap(bool buyYes, uint256 amountIn, uint256 minAmountOut) returns (uint256)'];
 
-      const ct = new ethers.Contract(CONDITIONAL_TOKENS, conditionalTokensABI, signer);
-      const pool = new ethers.Contract(poolAddress, poolABI, signer);
+        const ct = new ethers.Contract(CONDITIONAL_TOKENS, conditionalTokensABI, signer);
+        const pool = new ethers.Contract(poolAddress, poolABI, signer);
 
-      console.log(`💰 Selling ${params.sellYes ? 'YES' : 'NO'} tokens to USDT:`, {
-        yesBalance,
-        noBalance,
-        targetSide: params.sellYes ? 'YES' : 'NO',
-        targetAmount: targetBalance,
-      });
+        console.log(`💰 Selling ${params.sellYes ? 'YES' : 'NO'} tokens to USDT:`, {
+          yesBalance,
+          noBalance,
+          targetSide: params.sellYes ? 'YES' : 'NO',
+          targetAmount: targetBalance,
+        });
 
-      // Step 1: Approve tokens to pool (do this once upfront)
-      const approveTx = await ct.setApprovalForAll(poolAddress, true);
-      await approveTx.wait();
-      console.log('✅ Tokens approved');
+        // Step 1: Approve tokens to pool (do this once upfront)
+        console.log('📝 Requesting approval...');
+        const approveTx = await ct.setApprovalForAll(poolAddress, true);
+        console.log('⏳ Waiting for approval confirmation...');
+        await approveTx.wait();
+        console.log('✅ Tokens approved');
 
       let totalMerged = 0;
       const DUST_THRESHOLD = 0.001; // Minimum amount worth processing
@@ -410,10 +413,34 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
         // Continue loop to merge the newly created pair
       }
 
-      return {
-        mergedAmount: totalMerged,
-        side: params.sellYes ? 'YES' : 'NO',
-      };
+        return {
+          mergedAmount: totalMerged,
+          side: params.sellYes ? 'YES' : 'NO',
+        };
+      } catch (error: any) {
+        console.error('❌ Sell All Error:', {
+          code: error.code,
+          message: error.message,
+          reason: error.reason,
+          fullError: error
+        });
+        
+        // Map specific blockchain errors to user-friendly messages
+        if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+          throw new Error('Transaction was rejected in your wallet');
+        } else if (error.code === 'INSUFFICIENT_FUNDS' || error.code === -32000) {
+          throw new Error('Insufficient ETH for gas fees. Please add ETH to your wallet.');
+        } else if (error.message?.includes('insufficient') && error.message?.includes('balance')) {
+          throw new Error('Insufficient token balance to complete the swap');
+        } else if (error.message?.includes('slippage') || error.message?.includes('MIN_AMOUNT_OUT')) {
+          throw new Error('Slippage too high - pool liquidity may be low. Try a smaller amount.');
+        } else if (error.message?.includes('user rejected')) {
+          throw new Error('Transaction was rejected in your wallet');
+        } else if (error.reason) {
+          throw new Error(`Blockchain error: ${error.reason}`);
+        }
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
@@ -421,15 +448,18 @@ export function AMMSwapPanel({ poolAddress, marketId }: AMMSwapPanelProps) {
         description: `Converted to ${data.mergedAmount.toFixed(2)} USDT`,
       });
 
-      // Invalidate queries to refresh balances
+      // Invalidate queries to refresh all transaction data
       queryClient.invalidateQueries({ queryKey: ['/api/user-balances'] });
       queryClient.invalidateQueries({ queryKey: ['/api/pool', poolAddress] });
       queryClient.invalidateQueries({ queryKey: ['/api/markets'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/positions/merges/${account}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/amm/swaps/${account}`] });
     },
     onError: (error: any) => {
+      console.error('Sell mutation error:', error);
       toast({
         title: 'Sell Failed',
-        description: error.message || 'Failed to sell tokens',
+        description: error.message || 'Failed to sell tokens. Please try again.',
         variant: 'destructive',
       });
     },
