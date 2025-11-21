@@ -282,7 +282,7 @@ export default function Portfolio() {
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/market/${position.market.id}?action=sell&outcome=yes&size=${position.yesShares.toFixed(2)}`);
+                                navigate(`/market/${position.market.id}?action=sell&outcome=yes&size=${position.yesShares.toFixed(2)}&balance=${position.yesShares.toFixed(2)}`);
                               }}
                               data-testid={`button-sell-yes-${position.id}`}
                             >
@@ -295,7 +295,7 @@ export default function Portfolio() {
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/market/${position.market.id}?action=sell&outcome=no&size=${position.noShares.toFixed(2)}`);
+                                navigate(`/market/${position.market.id}?action=sell&outcome=no&size=${position.noShares.toFixed(2)}&balance=${position.noShares.toFixed(2)}`);
                               }}
                               data-testid={`button-sell-no-${position.id}`}
                             >
