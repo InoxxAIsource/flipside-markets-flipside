@@ -12,6 +12,7 @@ import { TrendingUp, TrendingDown, Info, ArrowLeftRight, Combine, Wallet } from 
 import { useWallet } from '@/hooks/use-wallet';
 import { useProxyWallet } from '@/hooks/use-proxy-wallet';
 import { useToast } from '@/hooks/use-toast';
+import { useMarketWebSocket } from '@/hooks/useMarketWebSocket';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CONTRACT_ADDRESSES } from '@/lib/web3';
 import { formatSharePrice } from '@/lib/priceParser';
@@ -47,6 +48,9 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
   const { account } = useWallet();
   const { proxyBalance, split, merge, isSplitting, isMerging, getPositionBalance } = useProxyWallet();
   const { toast } = useToast();
+  
+  // Connect to WebSocket for real-time order book updates
+  const isWsConnected = useMarketWebSocket(marketId);
 
   const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
   const [limitSide, setLimitSide] = useState<'yes' | 'no'>('yes');
@@ -73,7 +77,8 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
       return response.json();
     },
     enabled: !!marketId,
-    refetchInterval: 5000,
+    // Polling fallback if WebSocket disconnected (5s interval)
+    refetchInterval: isWsConnected ? false : 5000,
   });
 
   const { data: market } = useQuery<{

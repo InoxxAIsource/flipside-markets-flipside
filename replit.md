@@ -10,6 +10,51 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### November 21, 2025 - WebSocket Real-Time Updates with Polling Fallback ✅
+
+**Feature Built:** Production-ready WebSocket implementation with intelligent polling fallback
+
+**What Was Built:**
+1. **WebSocket Hook (`useMarketWebSocket.ts`):** Frontend hook for real-time order book updates
+   - Auto-connects to `/ws` endpoint (no authentication required)
+   - Subscribes to market-specific updates via JSON messages
+   - Auto-reconnects on disconnect (3s delay)
+   - Returns connection state (boolean) for components to check status
+   - Invalidates React Query caches when orders match/fill using predicate matching
+
+2. **Intelligent Polling Fallback:**
+   - 5-second polling activates ONLY when WebSocket disconnected
+   - When WebSocket connected → Real-time updates only, no polling
+   - Uses connection state to dynamically control `refetchInterval`
+   - Ensures data freshness even if WebSocket fails
+
+3. **Query Invalidation Strategy:**
+   - Market queries: Predicate matches all `['/api/markets', marketId, ...]` queries
+   - User queries: Predicate matches any query key containing `/api/users`, `/api/portfolio`, `/api/proxy`, `/api/positions`
+   - Triggers automatic React Query refetch across all relevant pages
+
+4. **Order Matching Behavior (CTF mechanics):**
+   - **Buy YES** matches with **Sell YES** (same outcome, opposite side)
+   - **Buy NO** matches with **Sell NO** (same outcome, opposite side)
+   - **Buy YES** and **Buy NO** do NOT match (different outcomes)
+
+**Technical Implementation:**
+- `client/src/hooks/useMarketWebSocket.ts` - WebSocket hook with connection state
+- `client/src/components/TradingPanel.tsx` - Integrated WebSocket + polling fallback
+- `server/routes.ts` - Backend broadcasts via `broadcastOrderBookUpdate`
+- Connection state tracked with `useState` (not `useRef`) to trigger re-renders
+
+**How It Works:**
+1. Component calls `useMarketWebSocket(marketId)` → Returns boolean connection state
+2. WebSocket connects → Sets `isConnected = true` → Polling disabled
+3. Order placed/filled → Backend broadcasts → Frontend invalidates queries → UI updates instantly
+4. WebSocket disconnects → Sets `isConnected = false` → Polling activates
+5. Auto-reconnect attempts every 3s until connection restored
+
+**Files Modified:**
+- `client/src/hooks/useMarketWebSocket.ts` - Created WebSocket hook with state management
+- `client/src/components/TradingPanel.tsx` - Added WebSocket integration with polling fallback
+
 ### November 20, 2025 - Google Search Console Integration & SEO Enhancement ✅
 
 **Feature Built:** Complete Google Search Console integration with comprehensive SEO optimization
