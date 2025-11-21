@@ -403,7 +403,7 @@ export default function Profile() {
                           <div className="flex items-center justify-between mb-1">
                             <div className="text-muted-foreground">YES Shares</div>
                             {position.yesShares > 0 && (
-                              <Link href={`/market/${position.marketId}?action=sell&outcome=yes&size=${position.yesShares.toFixed(2)}`}>
+                              <Link href={`/market/${position.marketId}?action=sell&outcome=yes&size=${position.yesShares.toFixed(2)}&balance=${position.yesShares.toFixed(2)}`}>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
@@ -427,7 +427,7 @@ export default function Profile() {
                           <div className="flex items-center justify-between mb-1">
                             <div className="text-muted-foreground">NO Shares</div>
                             {position.noShares > 0 && (
-                              <Link href={`/market/${position.marketId}?action=sell&outcome=no&size=${position.noShares.toFixed(2)}`}>
+                              <Link href={`/market/${position.marketId}?action=sell&outcome=no&size=${position.noShares.toFixed(2)}&balance=${position.noShares.toFixed(2)}`}>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
