@@ -55,26 +55,28 @@ Preferred communication style: Simple, everyday language.
 - `client/src/hooks/useMarketWebSocket.ts` - Created WebSocket hook with state management
 - `client/src/components/TradingPanel.tsx` - Added WebSocket integration with polling fallback
 
-### November 21, 2025 - Quick Sell Feature ✅
+### November 21, 2025 - Quick Sell Feature with Instant Balance Display ✅
 
-**Feature Built:** One-click position selling from Profile and Portfolio pages with URL-based form pre-filling
+**Feature Built:** One-click position selling from Profile and Portfolio pages with instant balance feedback (Polymarket-style UX)
 
 **What Was Built:**
 1. **URL Parameter System:** Market pages accept query parameters to pre-fill trading form
-   - Format: `/market/{id}?action=sell&outcome=yes&size=100`
-   - Strict validation: Only accepts valid `action` (buy|sell), `outcome` (yes|no), and positive numeric `size`
+   - Format: `/market/{id}?action=sell&outcome=yes&size=100&balance=100`
+   - Strict validation: Only accepts valid `action` (buy|sell), `outcome` (yes|no), positive numeric `size`, and positive numeric `balance`
    - Invalid parameters are coerced to `null` and ignored for security
 
-2. **Trading Panel Pre-Fill:**
-   - Accepts optional props: `prefillAction`, `prefillOutcome`, `prefillSize`
+2. **Trading Panel Pre-Fill with Instant Balance:**
+   - Accepts optional props: `prefillAction`, `prefillOutcome`, `prefillSize`, `prefillBalance`
    - Auto-populates form fields on component mount
-   - Shows "Quick Sell" badge ONLY when all 3 parameters are valid
+   - **Shows balance immediately** from URL param (no "0 shares" flicker)
+   - Blockchain data fetches in background and updates balance within 1-2 seconds
+   - Shows "Quick Sell" badge ONLY when all required parameters are valid
    - Badge prevents user confusion about form state
 
 3. **Profile Page Sell Buttons:**
    - Each position card displays "Sell" button for YES/NO shares (if > 0)
-   - Button navigates to market with pre-filled sell form
-   - Clicking button routes to: `/market/{marketId}?action=sell&outcome={yes|no}&size={shares}`
+   - Button navigates to market with pre-filled sell form including balance
+   - Clicking button routes to: `/market/{marketId}?action=sell&outcome={yes|no}&size={shares}&balance={shares}`
 
 4. **Portfolio Page Sell Buttons:**
    - Separate "Sell YES" and "Sell NO" buttons on each position card
@@ -86,31 +88,34 @@ Preferred communication style: Simple, everyday language.
 1. User navigates to Profile or Portfolio page
 2. Sees position with 217 YES shares
 3. Clicks "Sell YES" button
-4. Instantly routes to `/market/{id}?action=sell&outcome=yes&size=217`
+4. Instantly routes to `/market/{id}?action=sell&outcome=yes&size=217&balance=217`
 5. Trading panel opens with:
    - "Sell" side pre-selected
    - "YES" outcome pre-selected
    - Size: "217" pre-filled
+   - **Balance: "217" shown immediately** (no loading delay)
    - "Quick Sell" badge visible (orange background)
-6. User sets price and executes trade immediately
+6. Blockchain validates balance in background (~1-2s)
+7. User sets price and executes trade immediately
 
 **Security Features:**
 - URL parameter validation prevents injection attacks
 - Only accepts whitelisted values for action/outcome
-- Size must be positive numeric value
+- Size and balance must be positive numeric values
 - Malformed URLs gracefully fall back to default form state
+- Balance prefill is display-only; actual trades require blockchain signature (cannot be spoofed)
 
 **Technical Implementation:**
-- `client/src/pages/MarketPage.tsx` - URL param parsing with validation
-- `client/src/components/TradingPanel.tsx` - Pre-fill logic and badge display
-- `client/src/pages/Profile.tsx` - Added "Sell" buttons to position cards
-- `client/src/pages/Portfolio.tsx` - Added "Sell YES/NO" buttons with stopPropagation
+- `client/src/pages/MarketPage.tsx` - URL param parsing with validation for balance
+- `client/src/components/TradingPanel.tsx` - Pre-fill logic, instant balance display, and badge
+- `client/src/pages/Profile.tsx` - Added "Sell" buttons with balance param
+- `client/src/pages/Portfolio.tsx` - Added "Sell YES/NO" buttons with balance param
 
 **Files Modified:**
-- `client/src/pages/MarketPage.tsx` - Added URL parameter parsing and validation
-- `client/src/components/TradingPanel.tsx` - Added pre-fill props and "Quick Sell" badge
-- `client/src/pages/Profile.tsx` - Added sell buttons to position cards
-- `client/src/pages/Portfolio.tsx` - Added sell buttons with event propagation control
+- `client/src/pages/MarketPage.tsx` - Added balance parameter parsing and validation
+- `client/src/components/TradingPanel.tsx` - Added prefillBalance prop and instant balance initialization
+- `client/src/pages/Profile.tsx` - Added sell buttons with balance parameter
+- `client/src/pages/Portfolio.tsx` - Added sell buttons with balance parameter and stopPropagation
 
 ### November 20, 2025 - Google Search Console Integration & SEO Enhancement ✅
 
