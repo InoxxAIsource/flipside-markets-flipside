@@ -23,6 +23,7 @@ interface TradingPanelProps {
   prefillAction?: 'buy' | 'sell' | null;
   prefillOutcome?: 'yes' | 'no' | null;
   prefillSize?: string | null;
+  prefillBalance?: string | null;
 }
 
 const EIP712_DOMAIN = {
@@ -51,7 +52,8 @@ export function TradingPanel({
   marketId, 
   prefillAction, 
   prefillOutcome, 
-  prefillSize 
+  prefillSize,
+  prefillBalance 
 }: TradingPanelProps) {
   const { account } = useWallet();
   const { proxyBalance, split, merge, isSplitting, isMerging, getPositionBalance } = useProxyWallet();
@@ -73,8 +75,9 @@ export function TradingPanel({
   const [splitAmount, setSplitAmount] = useState('');
   const [mergeAmount, setMergeAmount] = useState('');
 
-  const [yesBalance, setYesBalance] = useState('0');
-  const [noBalance, setNoBalance] = useState('0');
+  // Initialize balance with prefill if available (shows immediately, then updates from blockchain)
+  const [yesBalance, setYesBalance] = useState(prefillBalance && prefillOutcome === 'yes' ? prefillBalance : '0');
+  const [noBalance, setNoBalance] = useState(prefillBalance && prefillOutcome === 'no' ? prefillBalance : '0');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Show badge when form is pre-filled from URL params (all must be present and valid)
