@@ -20,6 +20,9 @@ import type { Order } from '@shared/schema';
 
 interface TradingPanelProps {
   marketId: string;
+  prefillAction?: 'buy' | 'sell' | null;
+  prefillOutcome?: 'yes' | 'no' | null;
+  prefillSize?: string | null;
 }
 
 const EIP712_DOMAIN = {
@@ -44,7 +47,12 @@ const ORDER_TYPES = {
   ],
 };
 
-export function TradingPanel({ marketId }: TradingPanelProps) {
+export function TradingPanel({ 
+  marketId, 
+  prefillAction, 
+  prefillOutcome, 
+  prefillSize 
+}: TradingPanelProps) {
   const { account } = useWallet();
   const { proxyBalance, split, merge, isSplitting, isMerging, getPositionBalance } = useProxyWallet();
   const { toast } = useToast();
@@ -52,14 +60,14 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
   // Connect to WebSocket for real-time order book updates
   const isWsConnected = useMarketWebSocket(marketId);
 
-  const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
-  const [limitSide, setLimitSide] = useState<'yes' | 'no'>('yes');
+  const [orderSide, setOrderSide] = useState<'buy' | 'sell'>(prefillAction || 'buy');
+  const [limitSide, setLimitSide] = useState<'yes' | 'no'>(prefillOutcome || 'yes');
   const [limitPrice, setLimitPrice] = useState('');
-  const [limitSize, setLimitSize] = useState('');
+  const [limitSize, setLimitSize] = useState(prefillSize || '');
   const [isPlacingLimit, setIsPlacingLimit] = useState(false);
 
-  const [marketSide, setMarketSide] = useState<'yes' | 'no'>('yes');
-  const [marketSize, setMarketSize] = useState('');
+  const [marketSide, setMarketSide] = useState<'yes' | 'no'>(prefillOutcome || 'yes');
+  const [marketSize, setMarketSize] = useState(prefillSize || '');
   const [isExecutingMarket, setIsExecutingMarket] = useState(false);
 
   const [splitAmount, setSplitAmount] = useState('');
@@ -68,6 +76,9 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
   const [yesBalance, setYesBalance] = useState('0');
   const [noBalance, setNoBalance] = useState('0');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Show badge when form is pre-filled from URL params (all must be present and valid)
+  const isPreFilled = Boolean(prefillAction && prefillOutcome && prefillSize);
 
   const { data: orders, isLoading: isLoadingOrders } = useQuery<Order[]>({
     queryKey: ['/api/markets', marketId, 'orders'],
@@ -478,6 +489,15 @@ export function TradingPanel({ marketId }: TradingPanelProps) {
           {proxyBalanceFormatted.toFixed(2)} USDT
         </Badge>
       </div>
+
+      {isPreFilled && (
+        <div className="mb-4">
+          <Badge variant="default" className="gap-1">
+            <ArrowLeftRight className="h-3 w-3" />
+            Quick Sell
+          </Badge>
+        </div>
+      )}
 
       <Separator className="mb-4" />
 

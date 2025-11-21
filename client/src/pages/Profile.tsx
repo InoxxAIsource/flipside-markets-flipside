@@ -400,7 +400,21 @@ export default function Profile() {
 
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
-                          <div className="text-muted-foreground mb-1">YES Shares</div>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="text-muted-foreground">YES Shares</div>
+                            {position.yesShares > 0 && (
+                              <Link href={`/market/${position.marketId}?action=sell&outcome=yes&size=${position.yesShares.toFixed(2)}`}>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-6 text-xs"
+                                  data-testid={`button-sell-yes-${position.id}`}
+                                >
+                                  Sell
+                                </Button>
+                              </Link>
+                            )}
+                          </div>
                           <div className="font-mono font-semibold" data-testid={`position-yes-${position.id}`}>
                             {position.yesShares.toFixed(2)}
                           </div>
@@ -410,7 +424,21 @@ export default function Profile() {
                         </div>
 
                         <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3">
-                          <div className="text-muted-foreground mb-1">NO Shares</div>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="text-muted-foreground">NO Shares</div>
+                            {position.noShares > 0 && (
+                              <Link href={`/market/${position.marketId}?action=sell&outcome=no&size=${position.noShares.toFixed(2)}`}>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-6 text-xs"
+                                  data-testid={`button-sell-no-${position.id}`}
+                                >
+                                  Sell
+                                </Button>
+                              </Link>
+                            )}
+                          </div>
                           <div className="font-mono font-semibold" data-testid={`position-no-${position.id}`}>
                             {position.noShares.toFixed(2)}
                           </div>

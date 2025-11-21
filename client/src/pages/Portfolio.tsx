@@ -266,13 +266,43 @@ export default function Portfolio() {
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Current Value</p>
-                        <p className="text-2xl font-bold">${position.currentValue.toFixed(2)}</p>
-                        <p className={`text-sm font-semibold ${position.unrealizedPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {position.unrealizedPnl >= 0 ? '+' : ''}${position.unrealizedPnl.toFixed(2)} 
-                          ({position.unrealizedPnlPercent >= 0 ? '+' : ''}{position.unrealizedPnlPercent.toFixed(2)}%)
-                        </p>
+                      <div className="text-right space-y-2">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Current Value</p>
+                          <p className="text-2xl font-bold">${position.currentValue.toFixed(2)}</p>
+                          <p className={`text-sm font-semibold ${position.unrealizedPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {position.unrealizedPnl >= 0 ? '+' : ''}${position.unrealizedPnl.toFixed(2)} 
+                            ({position.unrealizedPnlPercent >= 0 ? '+' : ''}{position.unrealizedPnlPercent.toFixed(2)}%)
+                          </p>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          {position.yesShares > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/market/${position.market.id}?action=sell&outcome=yes&size=${position.yesShares.toFixed(2)}`);
+                              }}
+                              data-testid={`button-sell-yes-${position.id}`}
+                            >
+                              Sell YES
+                            </Button>
+                          )}
+                          {position.noShares > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/market/${position.market.id}?action=sell&outcome=no&size=${position.noShares.toFixed(2)}`);
+                              }}
+                              data-testid={`button-sell-no-${position.id}`}
+                            >
+                              Sell NO
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardHeader>

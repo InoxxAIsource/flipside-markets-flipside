@@ -23,6 +23,17 @@ export default function MarketPage() {
   const [, params] = useRoute('/market/:id');
   const marketId = params?.id;
 
+  // Parse URL query params for pre-filling trading form (e.g., ?action=sell&outcome=yes&size=100)
+  const searchParams = new URLSearchParams(window.location.search);
+  const actionParam = searchParams.get('action');
+  const outcomeParam = searchParams.get('outcome');
+  const sizeParam = searchParams.get('size');
+
+  // Validate and sanitize URL parameters
+  const prefillAction = (actionParam === 'buy' || actionParam === 'sell') ? actionParam : null;
+  const prefillOutcome = (outcomeParam === 'yes' || outcomeParam === 'no') ? outcomeParam : null;
+  const prefillSize = sizeParam && !isNaN(parseFloat(sizeParam)) && parseFloat(sizeParam) > 0 ? sizeParam : null;
+
   const { data: market, isLoading, error } = useQuery<Market>({
     queryKey: ['/api/markets', marketId],
     enabled: !!marketId,
@@ -251,7 +262,12 @@ export default function MarketPage() {
           <div className="space-y-6">
             <DepositWithdrawPanel />
             {market.marketType !== 'POOL' && (
-              <TradingPanel marketId={market.id} />
+              <TradingPanel 
+                marketId={market.id}
+                prefillAction={prefillAction}
+                prefillOutcome={prefillOutcome}
+                prefillSize={prefillSize}
+              />
             )}
             <OracleInfo 
               pythPriceFeedId={market.pythPriceFeedId}
