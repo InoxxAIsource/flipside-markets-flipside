@@ -5,6 +5,7 @@ import { eventIndexer } from "./services/eventIndexer";
 import { pythWorker } from "./services/pythWorker";
 import { relayerService } from "./services/relayerService";
 import { rewardsCron } from "./services/rewardsCron";
+import { stopLossMonitor } from "./services/stopLossMonitor";
 import { web3Service } from "./contracts/web3Service";
 import { getSplitMergeService } from "./services/splitMergeService";
 import { getProxyWalletService } from "./services/proxyWalletService";
@@ -115,6 +116,7 @@ app.use((req, res, next) => {
     eventIndexer.start();
     pythWorker.start();
     rewardsCron.start();
+    stopLossMonitor.start();
     
     // Relayer service starts automatically on initialization
     const relayerAddress = (relayerService as any).relayerWallet.address;
@@ -128,6 +130,7 @@ app.use((req, res, next) => {
     eventIndexer.stop();
     pythWorker.stop();
     rewardsCron.stop();
+    stopLossMonitor.stop();
     server.close(() => {
       log('Server closed');
       process.exit(0);
