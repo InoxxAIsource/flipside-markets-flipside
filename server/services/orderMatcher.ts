@@ -11,7 +11,7 @@ export class OrderMatcher {
     const oppositeSide = newOrder.side === 'buy' ? 'sell' : 'buy';
     const existingOrders = await storage.getMarketOrders(newOrder.marketId, 'open');
     
-    console.log(`[OrderMatcher] New ${newOrder.side} order: price=${newOrder.price}, size=${newOrder.size}`);
+    console.log(`[OrderMatcher] New ${newOrder.side} order: price=${newOrder.price}, size=${newOrder.size}, type=${newOrder.orderType}, timeInForce=${newOrder.timeInForce}`);
     console.log(`[OrderMatcher] Found ${existingOrders.length} existing open orders`);
     
     // Filter for opposite side with same outcome
@@ -38,6 +38,22 @@ export class OrderMatcher {
         return a.createdAt.getTime() - b.createdAt.getTime();
       }
     });
+
+    // For FOK (Fill-or-Kill) orders, check if we can fill completely before proceeding
+    if (newOrder.timeInForce === 'FOK') {
+      let potentialFillSize = 0;
+      for (const order of matchableOrders) {
+        potentialFillSize += (order.size - order.filled);
+        if (potentialFillSize >= newOrder.size) break;
+      }
+      
+      if (potentialFillSize < newOrder.size) {
+        console.log(`[OrderMatcher] FOK order cannot be filled completely. Cancelling order.`);
+        await storage.updateOrder(newOrder.id, { status: 'cancelled' });
+        return;
+      }
+      console.log(`[OrderMatcher] FOK order can be filled completely. Proceeding with matching.`);
+    }
 
     // Track total filled amount across all matches
     let totalFilled = newOrder.filled;
