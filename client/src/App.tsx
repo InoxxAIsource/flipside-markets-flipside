@@ -15,6 +15,8 @@ import Leaderboard from "@/pages/Leaderboard";
 import Docs from "@/pages/Docs";
 import NotFound from "@/pages/not-found";
 
+// Force rebuild - v1.0.1
+
 function Router() {
   return (
     <Switch>
