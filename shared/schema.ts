@@ -85,6 +85,11 @@ export const orders = pgTable("orders", {
   size: real("size").notNull(), // Number of shares
   filled: real("filled").notNull().default(0), // Amount filled
   
+  // Advanced order types
+  orderType: text("order_type").notNull().default('limit'), // 'limit', 'market', 'fok', 'stop-loss'
+  timeInForce: text("time_in_force").notNull().default('GTC'), // 'GTC' (Good-til-Cancelled), 'FOK' (Fill-or-Kill), 'IOC' (Immediate-or-Cancel)
+  stopPrice: real("stop_price"), // Trigger price for stop-loss orders (nullable)
+  
   // EIP-712 signature data
   signature: text("signature").notNull(), // Maker's signature
   salt: text("salt").notNull(), // Random salt for uniqueness
@@ -325,6 +330,9 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   side: z.enum(['buy', 'sell']),
   nonce: z.coerce.bigint(),
   expiration: z.coerce.date(),
+  orderType: z.enum(['limit', 'market', 'fok', 'stop-loss']).default('limit'),
+  timeInForce: z.enum(['GTC', 'FOK', 'IOC']).default('GTC'),
+  stopPrice: z.coerce.number().min(0.01).max(0.99).optional(),
 });
 
 export const insertOrderFillSchema = createInsertSchema(orderFills).omit({
