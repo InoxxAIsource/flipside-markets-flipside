@@ -1009,7 +1009,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Validate Fill-or-Kill (FOK) orders - must have enough liquidity
+      if (orderData.timeInForce === 'FOK') {
+        const marketOrders = await storage.getMarketOrders(orderData.marketId, 'open');
+        
+        // Get opposite-side orders that can fill this FOK order
+        const oppositeSide = orderData.side === 'buy' ? 'sell' : 'buy';
+        const sameOutcome = orderData.outcome;
+        const matchableOrders = marketOrders.filter(o => 
+          o.side === oppositeSide && 
+          o.outcome === sameOutcome &&
+          (orderData.side === 'buy' ? o.price <= orderData.price : o.price >= orderData.price)
+        ).sort((a, b) => orderData.side === 'buy' ? a.price - b.price : b.price - a.price);
+        
+        // Calculate total available liquidity
+        let availableLiquidity = 0;
+        for (const matchOrder of matchableOrders) {
+          availableLiquidity += (matchOrder.size - matchOrder.filled);
+          if (availableLiquidity >= orderData.size) break;
+        }
+        
+        if (availableLiquidity < orderData.size) {
+          return res.status(400).json({ 
+            error: `Fill-or-Kill order rejected: Insufficient liquidity. Need ${orderData.size} shares, only ${availableLiquidity.toFixed(2)} available.` 
+          });
+        }
+      }
+
+      // Validate Stop-Loss orders - require stopPrice
+      if (orderData.orderType === 'stop-loss') {
+        if (!orderData.stopPrice) {
+          return res.status(400).json({ error: 'Stop-loss orders require a stop price' });
+        }
+        if (orderData.side !== 'sell') {
+          return res.status(400).json({ error: 'Stop-loss orders must be sell orders' });
+        }
+      }
+
       const order = await storage.createOrder(validation.data);
+
+      // Stop-loss orders don't match immediately - they wait for price trigger
+      if (orderData.orderType === 'stop-loss') {
+        console.log(`[StopLoss] Created stop-loss order ${order.id} with trigger at ${orderData.stopPrice}`);
+        // Broadcast but don't match
+        broadcastOrderBookUpdate(order.marketId, { type: 'new_order', order });
+        return res.status(201).json(order);
+      }
 
       // Automatically match the order against existing opposite-side orders
       console.log(`[OrderMatcher] Attempting to match order ${order.id}...`);
