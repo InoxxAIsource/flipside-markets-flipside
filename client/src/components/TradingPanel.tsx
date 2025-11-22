@@ -67,6 +67,11 @@ export function TradingPanel({
   const [limitPrice, setLimitPrice] = useState('');
   const [limitSize, setLimitSize] = useState(prefillSize || '');
   const [isPlacingLimit, setIsPlacingLimit] = useState(false);
+  
+  // Advanced order types
+  const [orderType, setOrderType] = useState<'limit' | 'fok' | 'stop-loss'>('limit');
+  const [stopPrice, setStopPrice] = useState('');
+  const [expirationDays, setExpirationDays] = useState('1');
 
   const [marketSide, setMarketSide] = useState<'yes' | 'no'>(prefillOutcome || 'yes');
   const [marketSize, setMarketSize] = useState(prefillSize || '');
@@ -220,6 +225,19 @@ export function TradingPanel({
       return;
     }
 
+    // Validate stop price for stop-loss orders
+    if (orderType === 'stop-loss') {
+      const stopPriceValue = parseFloat(stopPrice);
+      if (!stopPriceValue || stopPriceValue < 0.01 || stopPriceValue > 0.99) {
+        toast({
+          title: 'Invalid Stop Price',
+          description: 'Stop price must be between 0.01 and 0.99',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setIsPlacingLimit(true);
 
     try {
@@ -227,7 +245,7 @@ export function TradingPanel({
       const signer = await provider.getSigner();
 
       const nonce = Date.now();
-      const expiration = Math.floor(Date.now() / 1000) + 86400;
+      const expirationSeconds = Math.floor(Date.now() / 1000) + (parseInt(expirationDays) * 86400);
       const tokenId = limitSide === 'yes' ? yesTokenId : noTokenId;
 
       const orderMessage = {
@@ -240,7 +258,7 @@ export function TradingPanel({
         feeRateBps: 250,
         nonce: BigInt(nonce),
         signer: account,
-        expiration: BigInt(expiration),
+        expiration: BigInt(expirationSeconds),
       };
 
       toast({
@@ -261,7 +279,10 @@ export function TradingPanel({
         signature,
         salt: ethers.hexlify(ethers.randomBytes(32)),
         nonce: nonce.toString(),
-        expiration: new Date(expiration * 1000),
+        expiration: new Date(expirationSeconds * 1000),
+        orderType: orderType,
+        timeInForce: orderType === 'fok' ? 'FOK' : 'GTC',
+        stopPrice: orderType === 'stop-loss' ? parseFloat(stopPrice) : undefined,
       };
 
       toast({
@@ -567,6 +588,39 @@ export function TradingPanel({
             </div>
           </div>
 
+          <div>
+            <Label className="mb-2 block">Order Type</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                variant={orderType === 'limit' ? 'default' : 'outline'}
+                onClick={() => setOrderType('limit')}
+                data-testid="button-order-type-limit"
+                className="w-full text-xs"
+                size="sm"
+              >
+                Limit
+              </Button>
+              <Button
+                variant={orderType === 'fok' ? 'default' : 'outline'}
+                onClick={() => setOrderType('fok')}
+                data-testid="button-order-type-fok"
+                className="w-full text-xs"
+                size="sm"
+              >
+                Fill-or-Kill
+              </Button>
+              <Button
+                variant={orderType === 'stop-loss' ? 'default' : 'outline'}
+                onClick={() => setOrderType('stop-loss')}
+                data-testid="button-order-type-stop-loss"
+                className="w-full text-xs"
+                size="sm"
+              >
+                Stop-Loss
+              </Button>
+            </div>
+          </div>
+
           {!isLoadingOrders && (
             <div className="p-3 bg-muted rounded-md">
               <div className="text-xs text-muted-foreground mb-1">Order Book</div>
@@ -601,6 +655,27 @@ export function TradingPanel({
             />
           </div>
 
+          {orderType === 'stop-loss' && (
+            <div className="space-y-2">
+              <Label htmlFor="stop-price">Stop Price (USDT)</Label>
+              <Input
+                id="stop-price"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max="0.99"
+                placeholder="0.40"
+                value={stopPrice}
+                onChange={(e) => setStopPrice(e.target.value)}
+                data-testid="input-stop-price"
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Order will trigger when market price reaches this level
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="limit-size">Size (shares)</Label>
             <Input
@@ -614,6 +689,25 @@ export function TradingPanel({
               data-testid="input-limit-size"
               className="font-mono"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="expiration-days">Expiration (days)</Label>
+            <Input
+              id="expiration-days"
+              type="number"
+              step="1"
+              min="1"
+              max="30"
+              placeholder="1"
+              value={expirationDays}
+              onChange={(e) => setExpirationDays(e.target.value)}
+              data-testid="input-expiration-days"
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              Order expires {expirationDays} day{parseInt(expirationDays) !== 1 ? 's' : ''} from now
+            </p>
           </div>
 
           {limitTotal > 0 && (
@@ -639,7 +733,7 @@ export function TradingPanel({
             className="w-full"
             size="lg"
             onClick={placeLimitOrder}
-            disabled={!account || !limitPrice || !limitSize || isPlacingLimit}
+            disabled={!account || !limitPrice || !limitSize || isPlacingLimit || (orderType === 'stop-loss' && !stopPrice)}
             data-testid="button-place-limit-order"
             variant={limitSide === 'yes' ? 'default' : 'destructive'}
           >
@@ -648,10 +742,13 @@ export function TradingPanel({
 
           <div className="flex items-start gap-2 text-xs text-muted-foreground p-3 bg-muted/50 rounded-md">
             <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <p>
-              Limit orders are placed at your specified price and will be filled when matched with opposite orders.
-              This is a gasless operation using meta-transactions.
-            </p>
+            <div className="space-y-1">
+              <p className="font-semibold">Order Types:</p>
+              <p>• <strong>Limit:</strong> Filled when matched with opposite orders at your price</p>
+              <p>• <strong>Fill-or-Kill:</strong> Executes completely or cancels immediately</p>
+              <p>• <strong>Stop-Loss:</strong> Triggers automatically when stop price is reached</p>
+              <p className="mt-2">All orders are gasless using meta-transactions.</p>
+            </div>
           </div>
         </TabsContent>
 

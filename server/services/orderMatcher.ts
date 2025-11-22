@@ -77,8 +77,15 @@ export class OrderMatcher {
 
     // Re-query the order from database to get latest state after all fills
     const updatedOrder = await storage.getOrder(newOrder.id);
-    if (updatedOrder && updatedOrder.filled >= updatedOrder.size) {
-      await storage.updateOrder(newOrder.id, { status: 'filled' });
+    if (updatedOrder) {
+      if (updatedOrder.filled >= updatedOrder.size) {
+        await storage.updateOrder(newOrder.id, { status: 'filled' });
+      } else if (updatedOrder.timeInForce === 'FOK' && updatedOrder.filled < updatedOrder.size) {
+        // FOK orders must fill completely or be cancelled
+        // If partially filled, cancel the remaining unfilled amount
+        console.log(`[OrderMatcher] FOK order ${updatedOrder.id} partially filled (${updatedOrder.filled}/${updatedOrder.size}). Cancelling residual.`);
+        await storage.updateOrder(newOrder.id, { status: 'cancelled' });
+      }
     }
   }
 

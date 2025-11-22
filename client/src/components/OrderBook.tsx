@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Zap, TrendingDown as StopLoss } from 'lucide-react';
 import type { Order } from '@shared/schema';
 
 interface OrderBookProps {
@@ -34,21 +36,56 @@ export function OrderBook({ marketId }: OrderBookProps) {
     const remaining = order.size - order.filled;
     const total = order.price * remaining;
     
+    // Calculate time until expiration
+    const expiresAt = new Date(order.expiration);
+    const now = new Date();
+    const msUntilExpiry = expiresAt.getTime() - now.getTime();
+    const isExpired = msUntilExpiry <= 0;
+    const hoursUntilExpiry = Math.max(0, msUntilExpiry / (1000 * 60 * 60));
+    
     return (
       <div 
-        className={`grid grid-cols-3 gap-4 p-2 rounded text-sm hover-elevate ${
+        className={`p-2 rounded text-sm hover-elevate ${
+          isExpired ? 'opacity-50 text-muted-foreground' :
           isBuy ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
         }`}
         data-testid={`order-${order.id}`}
       >
-        <div className="font-mono" data-testid={`order-price-${order.id}`}>
-          ${order.price.toFixed(2)}
+        <div className="grid grid-cols-3 gap-4 mb-1">
+          <div className="font-mono" data-testid={`order-price-${order.id}`}>
+            ${order.price.toFixed(2)}
+          </div>
+          <div className="font-mono text-right" data-testid={`order-size-${order.id}`}>
+            {remaining.toFixed(2)}
+          </div>
+          <div className="font-mono text-right" data-testid={`order-total-${order.id}`}>
+            ${total.toFixed(2)}
+          </div>
         </div>
-        <div className="font-mono text-right" data-testid={`order-size-${order.id}`}>
-          {remaining.toFixed(2)}
-        </div>
-        <div className="font-mono text-right" data-testid={`order-total-${order.id}`}>
-          ${total.toFixed(2)}
+        <div className="flex items-center gap-1 flex-wrap">
+          {order.orderType === 'fok' && (
+            <Badge variant="secondary" className="text-[10px] h-4 px-1" data-testid={`badge-fok-${order.id}`}>
+              <Zap className="h-2.5 w-2.5 mr-0.5" />
+              FOK
+            </Badge>
+          )}
+          {order.orderType === 'stop-loss' && order.stopPrice && (
+            <Badge variant="secondary" className="text-[10px] h-4 px-1" data-testid={`badge-stop-loss-${order.id}`}>
+              <StopLoss className="h-2.5 w-2.5 mr-0.5" />
+              Stop ${order.stopPrice.toFixed(2)}
+            </Badge>
+          )}
+          <Badge 
+            variant={isExpired ? "destructive" : "outline"} 
+            className="text-[10px] h-4 px-1" 
+            data-testid={`badge-expiry-${order.id}`}
+          >
+            <Clock className="h-2.5 w-2.5 mr-0.5" />
+            {isExpired ? 'Expired' :
+             hoursUntilExpiry < 1 ? `${Math.floor(hoursUntilExpiry * 60)}m` : 
+             hoursUntilExpiry < 24 ? `${Math.floor(hoursUntilExpiry)}h` : 
+             `${Math.floor(hoursUntilExpiry / 24)}d`}
+          </Badge>
         </div>
       </div>
     );
