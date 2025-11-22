@@ -36,6 +36,9 @@ export function MarketCard({ market }: MarketCardProps) {
   const yesPercentage = Math.round(market.yesPrice * 100);
   const noPercentage = Math.round(market.noPrice * 100);
   
+  // Check if market is expired
+  const isExpired = new Date(market.expiresAt) < new Date();
+  
   // Detect crypto token for auto logo
   const cryptoToken = detectCryptoFromQuestion(market.question);
   const CryptoIcon = cryptoToken ? cryptoIcons[cryptoToken.iconName] : null;
@@ -76,7 +79,9 @@ export function MarketCard({ market }: MarketCardProps) {
     <>
       <Link href={`/market/${market.id}`}>
         <Card 
-          className="group overflow-hidden hover-elevate cursor-pointer transition-all duration-300 h-full flex flex-col border-border/60"
+          className={`group overflow-hidden hover-elevate cursor-pointer transition-all duration-300 h-full flex flex-col border-border/60 ${
+            isExpired ? 'opacity-60 grayscale-[50%]' : ''
+          }`}
           data-testid={`card-market-${market.id}`}
         >
         {/* Featured Image or Crypto Logo */}
@@ -110,6 +115,11 @@ export function MarketCard({ market }: MarketCardProps) {
             <Badge variant="secondary" className="text-xs font-medium uppercase tracking-wide">
               {market.category}
             </Badge>
+            {isExpired && !market.resolved && (
+              <Badge variant="destructive" className="text-xs font-semibold" data-testid={`badge-expired-${market.id}`}>
+                EXPIRED
+              </Badge>
+            )}
             {market.marketType === 'POOL' ? (
               <Badge variant="default" className="text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
                 LP Pool
@@ -237,12 +247,16 @@ export function MarketCard({ market }: MarketCardProps) {
 
           {/* Footer - Volume/Liquidity, AI & Countdown */}
           <div className="pt-2 mt-auto border-t flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1 text-muted-foreground">
+            <div className="flex items-center gap-1 text-muted-foreground" data-testid={`text-volume-${market.id}`}>
               <TrendingUp className="h-3.5 w-3.5" />
               <span className="font-mono font-medium">
                 {market.marketType === 'POOL' 
-                  ? `$${(market.liquidity / 1000).toFixed(1)}k` 
-                  : `$${(market.volume / 1000).toFixed(1)}k`}
+                  ? market.liquidity >= 1000 
+                    ? `$${(market.liquidity / 1000).toFixed(1)}k`
+                    : `$${market.liquidity.toFixed(0)}`
+                  : market.volume >= 1000
+                    ? `$${(market.volume / 1000).toFixed(1)}k`
+                    : `$${market.volume.toFixed(0)}`}
               </span>
             </div>
             <Button
