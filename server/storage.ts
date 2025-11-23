@@ -12,6 +12,8 @@ import {
   positions,
   pythPriceUpdates,
   userNonces,
+  comments,
+  commentVotes,
   type User,
   type InsertUser,
   type Market,
@@ -29,6 +31,10 @@ import {
   type PythPriceUpdate,
   type InsertPythPriceUpdate,
   type UserNonce,
+  type Comment,
+  type InsertComment,
+  type CommentVote,
+  type InsertCommentVote,
 } from "@shared/schema";
 
 // Initialize database connection
@@ -90,6 +96,16 @@ export interface IStorage {
   // Nonce management methods
   getUserNonce(userAddress: string): Promise<bigint>;
   validateAndUpdateNonce(userAddress: string, nonce: bigint): Promise<boolean>;
+  
+  // Comment methods
+  createComment(comment: InsertComment): Promise<Comment>;
+  getMarketComments(marketId: string): Promise<Comment[]>;
+  getComment(id: string): Promise<Comment | undefined>;
+  
+  // Comment vote methods
+  getUserCommentVote(commentId: string, userAddress: string): Promise<CommentVote | undefined>;
+  upsertCommentVote(vote: InsertCommentVote): Promise<CommentVote>;
+  deleteCommentVote(commentId: string, userAddress: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -428,7 +444,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userNonces.userAddress, userAddress))
       .limit(1);
     
-    return result[0]?.highestNonce ?? 0n;
+    return result[0]?.highestNonce ?? BigInt(0);
   }
 
   async validateAndUpdateNonce(userAddress: string, nonce: bigint): Promise<boolean> {
@@ -464,6 +480,69 @@ export class DatabaseStorage implements IStorage {
     }
     
     return true;
+  }
+
+  // Comment methods
+  async createComment(comment: InsertComment): Promise<Comment> {
+    const result = await db
+      .insert(comments)
+      .values(comment)
+      .returning();
+    return result[0] as Comment;
+  }
+
+  async getMarketComments(marketId: string): Promise<Comment[]> {
+    return await db
+      .select()
+      .from(comments)
+      .where(eq(comments.marketId, marketId))
+      .orderBy(desc(comments.createdAt));
+  }
+
+  async getComment(id: string): Promise<Comment | undefined> {
+    const result = await db
+      .select()
+      .from(comments)
+      .where(eq(comments.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  // Comment vote methods (vote counts updated automatically by database triggers)
+  async getUserCommentVote(commentId: string, userAddress: string): Promise<CommentVote | undefined> {
+    const result = await db
+      .select()
+      .from(commentVotes)
+      .where(and(eq(commentVotes.commentId, commentId), eq(commentVotes.userAddress, userAddress)))
+      .limit(1);
+    return result[0];
+  }
+
+  async upsertCommentVote(vote: InsertCommentVote): Promise<CommentVote> {
+    const existing = await this.getUserCommentVote(vote.commentId, vote.userAddress);
+    
+    if (existing) {
+      // Update existing vote
+      const result = await db
+        .update(commentVotes)
+        .set({ vote: vote.vote })
+        .where(and(eq(commentVotes.commentId, vote.commentId), eq(commentVotes.userAddress, vote.userAddress)))
+        .returning();
+      return result[0];
+    } else {
+      // Create new vote
+      const result = await db
+        .insert(commentVotes)
+        .values(vote)
+        .returning();
+      return result[0];
+    }
+  }
+
+  async deleteCommentVote(commentId: string, userAddress: string): Promise<void> {
+    await db
+      .delete(commentVotes)
+      .where(and(eq(commentVotes.commentId, commentId), eq(commentVotes.userAddress, userAddress)));
   }
 }
 

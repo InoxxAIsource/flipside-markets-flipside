@@ -1129,6 +1129,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Comment Routes ==========
+
+  // GET /api/markets/:marketId/comments - Get all comments for a market
+  app.get('/api/markets/:marketId/comments', async (req, res) => {
+    try {
+      const comments = await storage.getMarketComments(req.params.marketId);
+      res.json(comments);
+    } catch (error: any) {
+      console.error('Error fetching comments:', error);
+      res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+  });
+
+  // POST /api/markets/:marketId/comments - Create a new comment
+  app.post('/api/markets/:marketId/comments', async (req, res) => {
+    try {
+      const { insertCommentSchema } = await import('@shared/schema');
+      
+      // Validate request body
+      const validationResult = insertCommentSchema.safeParse({
+        ...req.body,
+        marketId: req.params.marketId,
+      });
+
+      if (!validationResult.success) {
+        const { fromZodError } = await import('zod-validation-error');
+        return res.status(400).json({ error: fromZodError(validationResult.error).toString() });
+      }
+
+      // Verify market exists
+      const market = await storage.getMarket(req.params.marketId);
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+
+      const comment = await storage.createComment(validationResult.data);
+      res.json(comment);
+    } catch (error: any) {
+      console.error('Error creating comment:', error);
+      res.status(500).json({ error: 'Failed to create comment' });
+    }
+  });
+
+  // POST /api/comments/:commentId/vote - Vote on a comment
+  app.post('/api/comments/:commentId/vote', async (req, res) => {
+    try {
+      const { userAddress, vote } = req.body;
+
+      if (!userAddress) {
+        return res.status(400).json({ error: 'User address is required' });
+      }
+
+      // Allow 0 (remove), 1 (upvote), -1 (downvote)
+      if (vote !== 1 && vote !== -1 && vote !== 0) {
+        return res.status(400).json({ error: 'Vote must be 1 (upvote), -1 (downvote), or 0 (remove vote)' });
+      }
+
+      // Verify comment exists
+      const comment = await storage.getComment(req.params.commentId);
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' });
+      }
+
+      if (vote === 0) {
+        // Remove vote - delete vote record and decrement counters atomically
+        await storage.deleteCommentVote(req.params.commentId, userAddress);
+      } else {
+        // Validate with schema (for 1 or -1)
+        const { insertCommentVoteSchema } = await import('@shared/schema');
+        const validationResult = insertCommentVoteSchema.safeParse({
+          commentId: req.params.commentId,
+          userAddress,
+          vote,
+        });
+
+        if (!validationResult.success) {
+          const { fromZodError } = await import('zod-validation-error');
+          return res.status(400).json({ error: fromZodError(validationResult.error).toString() });
+        }
+
+        // Upsert vote (handles both new votes and vote changes)
+        await storage.upsertCommentVote(validationResult.data);
+      }
+
+      // Return updated comment with fresh vote counts
+      const updatedComment = await storage.getComment(req.params.commentId);
+      res.json(updatedComment);
+    } catch (error: any) {
+      console.error('Error voting on comment:', error);
+      res.status(500).json({ error: 'Failed to vote on comment' });
+    }
+  });
+
   // ========== User Routes ==========
 
   // POST /api/users - Create or get user by wallet

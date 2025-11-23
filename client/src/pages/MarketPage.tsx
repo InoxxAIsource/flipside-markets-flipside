@@ -16,12 +16,15 @@ import { OrderBook } from '@/components/OrderBook';
 import { AMMSwapPanel } from '@/components/AMMSwapPanel';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { OracleInfo } from '@/components/OracleInfo';
+import { CommentThread } from '@/components/CommentThread';
 import { extractTargetPrice } from '@/lib/priceParser';
+import { useWallet } from '@/hooks/use-wallet';
 import type { Market } from '@shared/schema';
 
 export default function MarketPage() {
   const [, params] = useRoute('/market/:id');
   const marketId = params?.id;
+  const { account } = useWallet();
 
   // Parse URL query params for pre-filling trading form (e.g., ?action=sell&outcome=yes&size=100&balance=100)
   const searchParams = new URLSearchParams(window.location.search);
@@ -279,6 +282,11 @@ export default function MarketPage() {
             />
             <MarketDetails market={market} />
           </div>
+        </div>
+
+        {/* Comment Section */}
+        <div className="mt-8">
+          <CommentThread marketId={market.id} userAddress={account || undefined} />
         </div>
       </div>
     </div>

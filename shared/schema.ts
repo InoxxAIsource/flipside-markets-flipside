@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, real, bigint, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, real, bigint, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -297,6 +297,48 @@ export const rewardsHistory = pgTable("rewards_history", {
   reasonIdx: index("rewards_history_reason_idx").on(table.reason),
 }));
 
+// Comments - Reddit-style discussions on markets
+export const comments = pgTable("comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketId: varchar("market_id").notNull().references(() => markets.id, { onDelete: 'cascade' }),
+  userAddress: text("user_address").notNull(),
+  
+  // Comment content
+  content: text("content").notNull(),
+  
+  // Threading support for nested replies
+  parentCommentId: varchar("parent_comment_id").references(() => comments.id, { onDelete: 'cascade' }),
+  
+  // Vote counts
+  upvotes: integer("upvotes").notNull().default(0),
+  downvotes: integer("downvotes").notNull().default(0),
+  
+  // Metadata
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  marketIdx: index("comments_market_idx").on(table.marketId),
+  userIdx: index("comments_user_idx").on(table.userAddress),
+  parentIdx: index("comments_parent_idx").on(table.parentCommentId),
+  createdAtIdx: index("comments_created_at_idx").on(table.createdAt),
+}));
+
+// Comment votes - tracks upvotes/downvotes per user
+export const commentVotes = pgTable("comment_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  commentId: varchar("comment_id").notNull().references(() => comments.id, { onDelete: 'cascade' }),
+  userAddress: text("user_address").notNull(),
+  
+  // Vote direction: 1 for upvote, -1 for downvote
+  vote: integer("vote").notNull(), // 1 or -1
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => ({
+  commentIdx: index("comment_votes_comment_idx").on(table.commentId),
+  userIdx: index("comment_votes_user_idx").on(table.userAddress),
+  uniqueVote: uniqueIndex("comment_votes_unique_idx").on(table.commentId, table.userAddress),
+}));
+
 // Insert schemas with validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -382,6 +424,23 @@ export const insertLPPositionSchema = createInsertSchema(lpPositions).omit({
   updatedAt: true,
 });
 
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  upvotes: true,
+  downvotes: true,
+}).extend({
+  content: z.string().min(1).max(5000),
+});
+
+export const insertCommentVoteSchema = createInsertSchema(commentVotes).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  vote: z.number().refine(v => v === 1 || v === -1, { message: "Vote must be 1 or -1" }),
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -418,3 +477,9 @@ export type InsertRewardsPoints = z.infer<typeof insertRewardsPointsSchema>;
 
 export type RewardsHistory = typeof rewardsHistory.$inferSelect;
 export type InsertRewardsHistory = z.infer<typeof insertRewardsHistorySchema>;
+
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+
+export type CommentVote = typeof commentVotes.$inferSelect;
+export type InsertCommentVote = z.infer<typeof insertCommentVoteSchema>;
