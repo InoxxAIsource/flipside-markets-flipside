@@ -526,6 +526,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Sports Market Routes ==========
+
+  // POST /api/markets/sports/generate - Generate sports markets from ESPN
+  app.post('/api/markets/sports/generate', async (req, res) => {
+    try {
+      const { fetchAllSportsScoreboards, filterUpcomingGames } = await import('./services/espn');
+      
+      // Fetch all upcoming games from ESPN
+      const allGames = await fetchAllSportsScoreboards();
+      const upcomingGames = filterUpcomingGames(allGames);
+      
+      if (upcomingGames.length === 0) {
+        return res.json({ 
+          message: 'No upcoming games found', 
+          created: 0,
+          markets: [] 
+        });
+      }
+      
+      // Define sports market schema once (outside loop)
+      const sportsMarketSchema = insertMarketSchema.extend({
+        espnEventId: z.string().optional(),
+        homeTeam: z.string().optional(),
+        awayTeam: z.string().optional(),
+        homeTeamLogo: z.string().optional(),
+        awayTeamLogo: z.string().optional(),
+        homeTeamColor: z.string().optional(),
+        awayTeamColor: z.string().optional(),
+        sport: z.string().optional(),
+        gameDate: z.date().optional(),  // Date object
+        venue: z.string().optional(),
+        spread: z.string().optional(),
+        overUnder: z.number().optional(),
+        gameStatus: z.string().optional(),
+        homeScore: z.number().optional(),
+        awayScore: z.number().optional(),
+      }).omit({
+        // Sports markets don't need blockchain fields
+        conditionId: true,
+        yesTokenId: true,
+        noTokenId: true,
+        creationTxHash: true,
+        questionId: true,
+        questionTimestamp: true,
+        oracle: true,
+      });
+      
+      // Check which games already have markets (by ESPN event ID)
+      const createdMarkets = [];
+      const skippedGames = [];
+      
+      for (const game of upcomingGames) {
+        // Skip if market already exists for this ESPN event
+        const existingMarket = await storage.getMarketByEspnEventId(game.espnEventId);
+        if (existingMarket) {
+          skippedGames.push(game.espnEventId);
+          continue;
+        }
+        
+        // Set expiration to game date (markets expire when games start)
+        const expiresAt = new Date(game.gameDate);
+        
+        // Create market without blockchain data (admin-created sports markets)
+        const marketData = {
+          question: game.question,
+          description: game.description,
+          category: game.category,
+          expiresAt,  // Pass Date object directly
+          marketType: 'CLOB' as const,
+          creatorAddress: '0x0000000000000000000000000000000000000000', // System address
+          
+          // Required market fields (defaults for new sports markets)
+          liquidity: 0,
+          volume: 0,
+          yesPrice: 0.5,
+          noPrice: 0.5,
+          resolved: false,
+          resolvedAt: null,  // Not resolved yet
+          outcome: null,  // No outcome yet
+          imageUrl: '',  // Empty string for sports markets (use team logos instead)
+          
+          // Sports-specific fields
+          espnEventId: game.espnEventId,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          homeTeamLogo: game.homeTeamLogo,
+          awayTeamLogo: game.awayTeamLogo,
+          homeTeamColor: game.homeTeamColor,
+          awayTeamColor: game.awayTeamColor,
+          sport: game.sport,
+          gameDate: game.gameDate,  // Pass Date object directly
+          venue: game.venue,
+          spread: game.spread,
+          overUnder: game.overUnder,
+          gameStatus: game.gameStatus,
+          homeScore: game.homeScore,
+          awayScore: game.awayScore,
+        };
+        
+        // Validate data before insert
+        const validation = sportsMarketSchema.safeParse(marketData);
+        if (!validation.success) {
+          console.error(`Skipping invalid sports market for ${game.espnEventId}:`, validation.error);
+          skippedGames.push(game.espnEventId);
+          continue;
+        }
+        
+        const market = await storage.createSportsMarket(validation.data);
+        createdMarkets.push(market);
+      }
+      
+      res.json({
+        message: `Created ${createdMarkets.length} sports markets`,
+        created: createdMarkets.length,
+        skipped: skippedGames.length,
+        markets: createdMarkets,
+      });
+    } catch (error: any) {
+      console.error('Error generating sports markets:', error);
+      res.status(500).json({ error: error.message || 'Failed to generate sports markets' });
+    }
+  });
+
+  // GET /api/markets/sports/upcoming - Get upcoming sports games from ESPN
+  app.get('/api/markets/sports/upcoming', async (req, res) => {
+    try {
+      const { fetchAllSportsScoreboards, filterUpcomingGames } = await import('./services/espn');
+      
+      const allGames = await fetchAllSportsScoreboards();
+      const upcomingGames = filterUpcomingGames(allGames);
+      
+      res.json({
+        count: upcomingGames.length,
+        games: upcomingGames,
+      });
+    } catch (error: any) {
+      console.error('Error fetching upcoming games:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch upcoming games' });
+    }
+  });
+
   // ========== AMM Pool Routes ==========
 
   // POST /api/markets/pool - Create a Pool-type market with AMM

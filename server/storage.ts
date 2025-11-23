@@ -214,6 +214,36 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Sports market methods
+  async getMarketByEspnEventId(espnEventId: string): Promise<Market | undefined> {
+    const result = await db
+      .select()
+      .from(markets)
+      .where(eq(markets.espnEventId, espnEventId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createSportsMarket(marketData: any): Promise<Market> {
+    const result = await db
+      .insert(markets)
+      .values(marketData)
+      .returning();
+    return result[0];
+  }
+
+  async updateSportsMarketScores(
+    espnEventId: string,
+    updates: { gameStatus: string; homeScore: number; awayScore: number }
+  ): Promise<Market | undefined> {
+    const result = await db
+      .update(markets)
+      .set(updates)
+      .where(eq(markets.espnEventId, espnEventId))
+      .returning();
+    return result[0];
+  }
+
   // Order methods
   async getOrder(id: string): Promise<Order | undefined> {
     const result = await db

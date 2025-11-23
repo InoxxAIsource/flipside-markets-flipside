@@ -39,6 +39,9 @@ export function MarketCard({ market }: MarketCardProps) {
   // Check if market is expired
   const isExpired = new Date(market.expiresAt) < new Date();
   
+  // Detect if this is a sports market
+  const isSportsMarket = !!(market.homeTeam && market.awayTeam && market.sport);
+  
   // Detect crypto token for auto logo
   const cryptoToken = detectCryptoFromQuestion(market.question);
   const CryptoIcon = cryptoToken ? cryptoIcons[cryptoToken.iconName] : null;
@@ -84,8 +87,90 @@ export function MarketCard({ market }: MarketCardProps) {
           }`}
           data-testid={`card-market-${market.id}`}
         >
-        {/* Featured Image or Crypto Logo */}
-        {hasCustomImage ? (
+        {/* Featured Image or Sports Teams or Crypto Logo */}
+        {isSportsMarket ? (
+          <div 
+            className="relative w-full h-40 overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, #${market.awayTeamColor || '000000'}20 0%, #${market.homeTeamColor || '000000'}20 100%)`,
+            }}
+          >
+            {/* Game Status Badge */}
+            {market.gameStatus === 'in' && (
+              <div className="absolute top-2 left-2 z-10">
+                <Badge variant="destructive" className="text-xs font-semibold animate-pulse">
+                  LIVE
+                </Badge>
+              </div>
+            )}
+            
+            {/* Team Logos */}
+            <div className="absolute inset-0 flex items-center justify-between px-8">
+              {/* Away Team */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-lg border-2 border-background/60">
+                  {market.awayTeamLogo ? (
+                    <img 
+                      src={market.awayTeamLogo} 
+                      alt={market.awayTeam || 'Away'}
+                      className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                    />
+                  ) : (
+                    <div className="text-xl font-bold text-foreground/60">
+                      {market.awayTeam?.split(' ').map(w => w[0]).join('').slice(0, 3) || 'A'}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs font-bold text-foreground/90 bg-background/60 backdrop-blur-sm px-2 py-0.5 rounded">
+                  {market.awayTeam?.split(' ').pop()}
+                </span>
+              </div>
+
+              {/* VS or Score */}
+              <div className="flex flex-col items-center gap-1">
+                {market.gameStatus === 'in' || market.gameStatus === 'post' ? (
+                  <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
+                    <span className="text-2xl font-bold">{market.awayScore}</span>
+                    <span className="text-sm text-muted-foreground">-</span>
+                    <span className="text-2xl font-bold">{market.homeScore}</span>
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold text-muted-foreground bg-background/60 backdrop-blur-sm px-4 py-1 rounded-lg">
+                    @
+                  </div>
+                )}
+                {market.gameStatus === 'in' && (
+                  <Badge variant="secondary" className="text-xs">
+                    Live
+                  </Badge>
+                )}
+              </div>
+
+              {/* Home Team */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-lg border-2 border-background/60">
+                  {market.homeTeamLogo ? (
+                    <img 
+                      src={market.homeTeamLogo} 
+                      alt={market.homeTeam || 'Home'}
+                      className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                    />
+                  ) : (
+                    <div className="text-xl font-bold text-foreground/60">
+                      {market.homeTeam?.split(' ').map(w => w[0]).join('').slice(0, 3) || 'H'}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs font-bold text-foreground/90 bg-background/60 backdrop-blur-sm px-2 py-0.5 rounded">
+                  {market.homeTeam?.split(' ').pop()}
+                </span>
+              </div>
+            </div>
+
+            {/* Gradient overlay on hover */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+        ) : hasCustomImage ? (
           <div className="relative w-full h-40 bg-muted overflow-hidden">
             <img 
               src={market.imageUrl!} 
@@ -159,6 +244,25 @@ export function MarketCard({ market }: MarketCardProps) {
           <h3 className="font-semibold text-sm leading-snug line-clamp-2 flex-1 min-h-[2.5rem]">
             {market.question}
           </h3>
+
+          {/* Sports Markets: Show Odds Context */}
+          {isSportsMarket && (market.spread || market.overUnder) && (
+            <div className="flex items-center justify-center gap-3 py-2 text-xs text-muted-foreground border-t border-b bg-muted/30">
+              {market.spread && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">Spread:</span>
+                  <span className="font-mono">{market.spread}</span>
+                </div>
+              )}
+              {market.spread && market.overUnder && <span className="text-border">|</span>}
+              {market.overUnder && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">O/U:</span>
+                  <span className="font-mono">{market.overUnder}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Oracle Markets: Show Current Price */}
           {isOracleMarket && priceData ? (
