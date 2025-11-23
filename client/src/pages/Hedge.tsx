@@ -43,6 +43,13 @@ export default function Hedge() {
 
   const { data, isLoading, error } = useQuery<HedgeSuggestionsResponse>({
     queryKey: ['/api/hedge-suggestions', account],
+    queryFn: async () => {
+      const response = await fetch(`/api/hedge-suggestions?address=${account}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch hedge suggestions');
+      }
+      return response.json();
+    },
     enabled: !!account,
   });
 
