@@ -61,6 +61,23 @@ export const markets = pgTable("markets", {
   // AI analysis
   aiAnalysis: text("ai_analysis"), // JSON string containing AI analysis results
   
+  // Sports market fields (for ESPN integration)
+  espnEventId: text("espn_event_id"), // ESPN event ID for sports markets
+  homeTeam: text("home_team"), // Home team name
+  awayTeam: text("away_team"), // Away team name
+  homeTeamLogo: text("home_team_logo"), // Home team logo URL
+  awayTeamLogo: text("away_team_logo"), // Away team logo URL
+  homeTeamColor: text("home_team_color"), // Home team primary color (hex)
+  awayTeamColor: text("away_team_color"), // Away team primary color (hex)
+  sport: text("sport"), // NFL, NBA, MLB, NHL, Soccer
+  gameDate: timestamp("game_date"), // Scheduled game date/time
+  venue: text("venue"), // Venue name and location
+  spread: text("spread"), // Betting spread (e.g., "BUF -2.5")
+  overUnder: real("over_under"), // Over/Under total points
+  gameStatus: text("game_status"), // pre, in, post
+  homeScore: integer("home_score"), // Current/final home team score
+  awayScore: integer("away_score"), // Current/final away team score
+  
   // Status
   resolved: boolean("resolved").notNull().default(false),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
@@ -69,6 +86,9 @@ export const markets = pgTable("markets", {
   expiresAtIdx: index("markets_expires_at_idx").on(table.expiresAt),
   resolvedIdx: index("markets_resolved_idx").on(table.resolved),
   marketTypeIdx: index("markets_market_type_idx").on(table.marketType),
+  espnEventIdx: index("markets_espn_event_idx").on(table.espnEventId),
+  sportIdx: index("markets_sport_idx").on(table.sport),
+  gameDateIdx: index("markets_game_date_idx").on(table.gameDate),
 }));
 
 // Orders table - limit orders for trading
