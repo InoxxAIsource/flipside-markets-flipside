@@ -44,6 +44,17 @@ export default function MarketPage() {
     enabled: !!marketId,
   });
 
+  // Fetch real market statistics
+  const { data: stats } = useQuery<{
+    traders: number;
+    trades24h: number;
+    volume: number;
+    liquidity: number;
+  }>({
+    queryKey: ['/api/markets', marketId, 'stats'],
+    enabled: !!marketId,
+  });
+
   if (isLoading) {
     return (
       <>
@@ -182,10 +193,10 @@ export default function MarketPage() {
         </div>
 
         <MarketStats 
-          volume={market.volume}
-          liquidity={market.liquidity}
-          traders={342}
-          activity={1247}
+          volume={stats?.volume ?? market.volume}
+          liquidity={stats?.liquidity ?? market.liquidity}
+          traders={stats?.traders ?? 0}
+          activity={stats?.trades24h ?? 0}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

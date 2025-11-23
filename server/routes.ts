@@ -1,12 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
+import { storage, db } from "./storage";
 import { web3Service } from "./contracts/web3Service";
 import { ammService } from "./contracts/ammService";
 import { relayerService } from "./services/relayerService";
 import { orderMatcher } from "./services/orderMatcher";
-import { insertMarketSchema, insertOrderSchema } from "@shared/schema";
+import { insertMarketSchema, insertOrderSchema, orders, orderFills } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { MarketDepthCalculator } from "./services/marketDepth";
@@ -18,6 +18,7 @@ import fs from "fs/promises";
 import { randomBytes } from "crypto";
 import { postMarketToTwitter } from "./services/twitter";
 import { rewardsService } from "./services/rewardsService";
+import { sql } from "drizzle-orm";
 
 // Module-level variable for ProxyWalletService (set by server/index.ts)
 let proxyWalletServiceInstance: ProxyWalletService | null = null;
@@ -174,6 +175,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching market:', error);
       res.status(500).json({ error: 'Failed to fetch market' });
+    }
+  });
+
+  // GET /api/markets/:id/stats - Get real market statistics
+  app.get('/api/markets/:id/stats', async (req, res) => {
+    try {
+      const marketId = req.params.id;
+      const market = await storage.getMarket(marketId);
+      
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+
+      // Calculate unique traders from orders (both makers and takers)
+      const tradersResult = await db.execute(sql`
+        SELECT COUNT(DISTINCT user_address) as traders
+        FROM (
+          SELECT maker_address as user_address FROM orders WHERE market_id = ${marketId}
+          UNION
+          SELECT taker_address as user_address FROM order_fills WHERE market_id = ${marketId} AND taker_address IS NOT NULL
+        ) as all_traders
+      `);
+      
+      const traders = Number(tradersResult.rows[0]?.traders || 0);
+
+      // Calculate 24h trades count from order fills
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const tradesResult = await db.execute(sql`
+        SELECT COUNT(*) as trades_24h
+        FROM order_fills
+        WHERE market_id = ${marketId}
+        AND created_at >= ${twentyFourHoursAgo.toISOString()}
+      `);
+      
+      const trades24h = Number(tradesResult.rows[0]?.trades_24h || 0);
+
+      res.json({
+        traders,
+        trades24h,
+        volume: Number(market.volume) || 0,
+        liquidity: Number(market.liquidity) || 0
+      });
+    } catch (error: any) {
+      console.error('Error fetching market stats:', error);
+      console.error('Error details:', error.message, error.stack);
+      res.status(500).json({ error: 'Failed to fetch market statistics' });
     }
   });
 

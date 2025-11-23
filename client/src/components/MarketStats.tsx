@@ -41,7 +41,6 @@ export function MarketStats({ volume, liquidity, traders = 0, activity = 0 }: Ma
         icon={<TrendingUp className="h-5 w-5 text-primary" />}
         label="24h Volume"
         value={`$${volume.toLocaleString()}`}
-        trend="+12.5%"
       />
       <StatCard
         icon={<DollarSign className="h-5 w-5 text-primary" />}
