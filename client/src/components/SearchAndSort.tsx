@@ -13,9 +13,10 @@ interface SearchAndSortProps {
   onSearchChange: (query: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
+  customSortOptions?: Array<{ id: string; label: string; icon: any }>;
 }
 
-const sortOptions = [
+const defaultSortOptions = [
   { id: 'volume', label: 'Most Volume', icon: TrendingUp },
   { id: 'ending-soon', label: 'Ending Soon', icon: Clock },
 ];
@@ -25,7 +26,9 @@ export function SearchAndSort({
   onSearchChange,
   sortBy,
   onSortChange,
+  customSortOptions,
 }: SearchAndSortProps) {
+  const sortOptions = customSortOptions || defaultSortOptions;
   const currentSort = sortOptions.find(opt => opt.id === sortBy) || sortOptions[0];
   const SortIcon = currentSort.icon;
 

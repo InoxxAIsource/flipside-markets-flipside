@@ -31,6 +31,10 @@ export default function Home() {
     
     // Create a copy of markets to avoid mutating React Query cache
     let filtered = [...markets].filter(market => {
+      // Exclude expired markets from home page
+      const isExpired = new Date(market.expiresAt).getTime() <= now;
+      if (isExpired) return false;
+      
       // Category filter with normalization
       const normalizedCat = market.category?.trim()?.toLowerCase() || 'other';
       const matchesCategory = selectedCategory === 'all' || normalizedCat === selectedCategory;

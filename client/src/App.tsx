@@ -14,6 +14,7 @@ import Profile from "@/pages/Profile";
 import Leaderboard from "@/pages/Leaderboard";
 import Docs from "@/pages/Docs";
 import Hedge from "@/pages/Hedge";
+import Archived from "@/pages/Archived";
 import NotFound from "@/pages/not-found";
 
 // Force rebuild - v1.0.1
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/market/:id" component={MarketPage} />
       <Route path="/create" component={CreateMarket} />
       <Route path="/hedge" component={Hedge} />
+      <Route path="/archived" component={Archived} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/profile" component={Profile} />
       <Route path="/leaderboard" component={Leaderboard} />
