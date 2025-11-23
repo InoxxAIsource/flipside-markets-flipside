@@ -222,7 +222,7 @@ export class EventIndexer {
             const tx = await event.getTransaction();
             const blockNumber = event.blockNumber;
 
-            // Convert amounts from wei (6 decimals for USDT)
+            // Convert amounts: all values inherit collateral token decimals (6 for USDT)
             const amountInUSDT = Number(amountIn) / 1e6;
             const amountOutUSDT = Number(amountOut) / 1e6;
             const lpFeeUSDT = Number(lpFee) / 1e6;
@@ -242,10 +242,12 @@ export class EventIndexer {
               blockNumber,
             });
 
-            // Update market volume atomically (prevents race conditions)
+            // Update market volume with USDT equivalent (for analytics)
+            // Note: AMM swaps are YES<->NO token swaps, not USDT purchases
+            // Volume tracking uses an estimated USDT value for analytics purposes
             await storage.incrementMarketVolume(market.id, amountInUSDT);
 
-            console.log(`✅ AMM swap indexed: ${amountInUSDT} USDT → ${amountOutUSDT} tokens (${buyYes ? 'YES' : 'NO'})`);
+            console.log(`✅ AMM swap indexed: ${amountOutUSDT} ${buyYes ? 'NO→YES' : 'YES→NO'} tokens swapped`);
           } catch (error) {
             console.error('Error processing AMM swap event:', error);
           }
