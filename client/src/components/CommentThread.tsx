@@ -168,13 +168,10 @@ function CommentForm({ marketId, userAddress, parentCommentId, onSuccess }: Comm
 
   const createCommentMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/markets/${marketId}/comments`, {
-        method: "POST",
-        body: JSON.stringify({
-          userAddress,
-          content,
-          parentCommentId: parentCommentId || null,
-        }),
+      return await apiRequest("POST", `/api/markets/${marketId}/comments`, {
+        userAddress,
+        content,
+        parentCommentId: parentCommentId || null,
       });
     },
     onSuccess: () => {
@@ -243,12 +240,9 @@ function CommentCard({ comment, replies, userAddress, marketId, isReply = false 
 
   const voteMutation = useMutation({
     mutationFn: async (vote: number) => {
-      return await apiRequest(`/api/comments/${comment.id}/vote`, {
-        method: "POST",
-        body: JSON.stringify({
-          userAddress,
-          vote,
-        }),
+      return await apiRequest("POST", `/api/comments/${comment.id}/vote`, {
+        userAddress,
+        vote,
       });
     },
     onSuccess: () => {
