@@ -594,6 +594,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Define sports market schema once (outside loop)
       const sportsMarketSchema = insertMarketSchema.extend({
+        // Market prices (calculated from ESPN odds)
+        yesPrice: z.number().min(0).max(1),
+        noPrice: z.number().min(0).max(1),
+        volume: z.number().default(0),
+        liquidity: z.number().default(0),
+        resolved: z.boolean().default(false),
+        resolvedAt: z.date().nullable().default(null),
+        outcome: z.boolean().nullable().default(null),
+        
+        // Sports-specific ESPN fields
         espnEventId: z.string().optional(),
         homeTeam: z.string().optional(),
         awayTeam: z.string().optional(),
@@ -647,8 +657,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Required market fields (defaults for new sports markets)
           liquidity: 0,
           volume: 0,
-          yesPrice: 0.5,
-          noPrice: 0.5,
+          yesPrice: game.yesPrice, // Calculated from ESPN odds
+          noPrice: game.noPrice,   // Calculated from ESPN odds
           resolved: false,
           resolvedAt: null,  // Not resolved yet
           outcome: null,  // No outcome yet

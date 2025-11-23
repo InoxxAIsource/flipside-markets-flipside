@@ -40,6 +40,10 @@ export interface ESPNGame {
   spread?: string;
   overUnder?: number;
   
+  // Calculated market prices (derived from odds)
+  yesPrice: number; // Away team win probability
+  noPrice: number;  // Home team win probability
+  
   // Status
   gameStatus: "pre" | "in" | "post";
   homeScore: number;
@@ -49,6 +53,70 @@ export interface ESPNGame {
   // Market metadata
   question: string; // "Will [Away Team] beat [Home Team]?"
   description: string;
+}
+
+/**
+ * Convert American odds (moneyline) to implied probability
+ * @param odds - American odds format (e.g., -150 for favorite, +130 for underdog)
+ * @returns Implied probability as decimal (0 to 1)
+ */
+export function americanOddsToProb(odds: number): number {
+  if (odds < 0) {
+    // Favorite: -150 means bet $150 to win $100
+    // Probability = |odds| / (|odds| + 100)
+    return Math.abs(odds) / (Math.abs(odds) + 100);
+  } else {
+    // Underdog: +130 means bet $100 to win $130
+    // Probability = 100 / (odds + 100)
+    return 100 / (odds + 100);
+  }
+}
+
+/**
+ * Convert spread to implied probabilities for home and away teams
+ * Standard spread odds are typically -110 on both sides (4.55% vig)
+ * @param spread - Spread string like "BUF -7" or "SF -3.5"
+ * @param homeTeam - Home team abbreviation
+ * @returns { homeProb, awayProb } - Probabilities for home and away teams
+ */
+export function spreadToProb(spread: string | undefined, homeTeam: string): { homeProb: number; awayProb: number } {
+  if (!spread) {
+    // No spread data, return 50-50
+    return { homeProb: 0.5, awayProb: 0.5 };
+  }
+
+  // Parse spread (e.g., "BUF -7" → -7 for BUF)
+  const spreadMatch = spread.match(/([\-+]?\d+\.?\d*)/);
+  if (!spreadMatch) {
+    return { homeProb: 0.5, awayProb: 0.5 };
+  }
+
+  const spreadValue = parseFloat(spreadMatch[1]);
+  const favoredTeam = spread.split(' ')[0];
+  
+  // Standard -110 odds on both sides = 52.38% implied probability (with vig)
+  // Remove vig: 52.38% / (52.38% + 52.38%) = 50% true probability each side
+  // But larger spreads imply stronger favorites
+  
+  // Simple heuristic: each point of spread = ~3% shift in probability
+  // This is approximate but reasonable for market making
+  const probabilityShift = Math.min(Math.abs(spreadValue) * 0.03, 0.25); // Cap at 25% shift
+  
+  const isFavoredHome = favoredTeam.toUpperCase().includes(homeTeam.substring(0, 3).toUpperCase());
+  
+  if (isFavoredHome) {
+    // Home team is favored
+    return {
+      homeProb: Math.min(0.5 + probabilityShift, 0.80), // Cap at 80%
+      awayProb: Math.max(0.5 - probabilityShift, 0.20), // Floor at 20%
+    };
+  } else {
+    // Away team is favored
+    return {
+      homeProb: Math.max(0.5 - probabilityShift, 0.20),
+      awayProb: Math.min(0.5 + probabilityShift, 0.80),
+    };
+  }
 }
 
 /**
@@ -157,6 +225,13 @@ function parseESPNEvent(event: any, sport: Sport): ESPNGame {
     `Venue: ${venueStr}`,
   ].filter(Boolean).join("\n");
   
+  // Calculate market prices from spread odds
+  // Question is "Will [Away Team] beat [Home Team]?" so YES = away wins, NO = home wins
+  const homeTeamAbbr = homeTeam?.team?.abbreviation || homeTeam?.team?.displayName || "HOME";
+  const probabilities = spreadToProb(spread, homeTeamAbbr);
+  const yesPrice = probabilities.awayProb; // YES = away team wins
+  const noPrice = probabilities.homeProb;  // NO = home team wins
+  
   return {
     espnEventId: event.id,
     sport,
@@ -181,6 +256,10 @@ function parseESPNEvent(event: any, sport: Sport): ESPNGame {
     // Odds
     spread,
     overUnder,
+    
+    // Calculated market prices (from odds)
+    yesPrice,
+    noPrice,
     
     // Status
     gameStatus,
