@@ -245,22 +245,30 @@ export function MarketCard({ market }: MarketCardProps) {
             {market.question}
           </h3>
 
-          {/* Sports Markets: Show Odds Context */}
+          {/* Sports Markets: Show Sportsbook Odds */}
           {isSportsMarket && (market.spread || market.overUnder) && (
-            <div className="flex items-center justify-center gap-3 py-2 text-xs text-muted-foreground border-t border-b bg-muted/30">
-              {market.spread && (
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold">Spread:</span>
-                  <span className="font-mono">{market.spread}</span>
-                </div>
-              )}
-              {market.spread && market.overUnder && <span className="text-border">|</span>}
-              {market.overUnder && (
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold">O/U:</span>
-                  <span className="font-mono">{market.overUnder}</span>
-                </div>
-              )}
+            <div className="flex flex-col gap-1.5 py-2.5 px-3 border-t border-b bg-primary/5 border-primary/20">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-primary/80 uppercase tracking-wide">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Sportsbook Odds</span>
+              </div>
+              <div className="flex items-center justify-center gap-4 text-sm">
+                {market.spread && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground font-medium">Spread:</span>
+                    <span className="font-bold text-foreground font-mono">{market.spread}</span>
+                  </div>
+                )}
+                {market.spread && market.overUnder && <span className="text-border">•</span>}
+                {market.overUnder && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground font-medium">O/U:</span>
+                    <span className="font-bold text-foreground font-mono">{market.overUnder}</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
