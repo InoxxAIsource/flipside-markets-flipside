@@ -19,6 +19,7 @@ import { randomBytes } from "crypto";
 import { postMarketToTwitter } from "./services/twitter";
 import { rewardsService } from "./services/rewardsService";
 import { sql } from "drizzle-orm";
+import { generateMarketEmbedding, findSimilarMarkets } from "./services/embeddingService";
 
 // Module-level variable for ProxyWalletService (set by server/index.ts)
 let proxyWalletServiceInstance: ProxyWalletService | null = null;
@@ -1794,6 +1795,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching order history:', error);
       res.status(500).json({ error: 'Failed to fetch order history' });
+    }
+  });
+
+  // GET /api/hedge-suggestions - Get AI-powered hedge recommendations for user positions
+  app.get('/api/hedge-suggestions', async (req, res) => {
+    try {
+      const userAddress = req.query.address as string;
+      
+      if (!userAddress) {
+        return res.status(400).json({ error: 'User address is required' });
+      }
+
+      // Get user's current positions
+      const positions = await storage.getUserPositions(userAddress);
+      
+      // Filter to only active positions with shares
+      const activePositions = positions.filter(p => p.yesShares > 0 || p.noShares > 0);
+      
+      if (activePositions.length === 0) {
+        return res.json({ suggestions: [] });
+      }
+
+      // Get all markets for correlation analysis
+      const allMarkets = await storage.getAllMarkets();
+      
+      // Filter to unresolved, non-expired markets
+      const now = new Date();
+      const candidateMarkets = allMarkets.filter(m => 
+        !m.resolved && 
+        new Date(m.expiresAt) > now
+      );
+
+      // Generate hedge suggestions for each position
+      const suggestions = await Promise.all(
+        activePositions.map(async (position) => {
+          const positionMarket = await storage.getMarket(position.marketId);
+          if (!positionMarket) return null;
+
+          // Generate embedding for position market if it doesn't exist
+          let positionEmbedding = positionMarket.embedding as number[] | null;
+          if (!positionEmbedding || positionEmbedding.length === 0) {
+            try {
+              positionEmbedding = await generateMarketEmbedding(
+                positionMarket.question,
+                positionMarket.description || undefined
+              );
+              // Update market with embedding
+              await storage.updateMarket(positionMarket.id, { embedding: positionEmbedding as any });
+            } catch (error) {
+              console.error(`Failed to generate embedding for market ${positionMarket.id}:`, error);
+              return null;
+            }
+          }
+
+          // Find similar markets (exclude the position market itself)
+          const otherMarkets = candidateMarkets.filter(m => m.id !== position.marketId);
+          
+          // Generate embeddings for markets that don't have them
+          const marketsWithEmbeddings = await Promise.all(
+            otherMarkets.map(async (market) => {
+              let embedding = market.embedding as number[] | null;
+              if (!embedding || embedding.length === 0) {
+                try {
+                  embedding = await generateMarketEmbedding(
+                    market.question,
+                    market.description || undefined
+                  );
+                  // Update market with embedding (fire and forget)
+                  storage.updateMarket(market.id, { embedding: embedding as any }).catch(console.error);
+                } catch (error) {
+                  console.error(`Failed to generate embedding for market ${market.id}:`, error);
+                  return { ...market, embedding: null };
+                }
+              }
+              return { ...market, embedding };
+            })
+          );
+
+          const similarMarkets = findSimilarMarkets(
+            positionEmbedding,
+            marketsWithEmbeddings.map(m => ({
+              id: m.id,
+              question: m.question,
+              category: m.category,
+              embedding: m.embedding,
+              yesPrice: m.yesPrice,
+              noPrice: m.noPrice,
+            })),
+            5 // Top 5 similar markets
+          );
+
+          // Calculate position details
+          const hasYesPosition = position.yesShares > 0;
+          const hasNoPosition = position.noShares > 0;
+          const positionValue = (position.yesShares * positionMarket.yesPrice) + 
+                                (position.noShares * positionMarket.noPrice);
+
+          // Determine recommended hedge action (inverse position)
+          const recommendedSide = hasYesPosition ? 'NO' : 'YES';
+
+          return {
+            position: {
+              marketId: position.marketId,
+              question: positionMarket.question,
+              category: positionMarket.category,
+              yesShares: position.yesShares,
+              noShares: position.noShares,
+              positionValue,
+              currentPrice: hasYesPosition ? positionMarket.yesPrice : positionMarket.noPrice,
+            },
+            recommendedHedges: similarMarkets.map(sm => ({
+              marketId: sm.marketId,
+              question: sm.question,
+              category: sm.category,
+              correlationScore: sm.similarity,
+              recommendedSide,
+              currentPrice: recommendedSide === 'YES' ? sm.yesPrice : sm.noPrice,
+              suggestedShares: Math.floor(positionValue / (recommendedSide === 'YES' ? sm.yesPrice : sm.noPrice)),
+              suggestedCost: positionValue,
+            })),
+          };
+        })
+      );
+
+      // Filter out null suggestions
+      const validSuggestions = suggestions.filter(s => s !== null);
+
+      res.json({ suggestions: validSuggestions });
+    } catch (error: any) {
+      console.error('Error generating hedge suggestions:', error);
+      res.status(500).json({ error: 'Failed to generate hedge suggestions' });
     }
   });
 

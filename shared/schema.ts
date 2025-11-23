@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, real, bigint, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, real, bigint, index, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -60,6 +60,9 @@ export const markets = pgTable("markets", {
   
   // AI analysis
   aiAnalysis: text("ai_analysis"), // JSON string containing AI analysis results
+  
+  // AI embeddings for correlation detection (Portfolio Auto-Hedger feature)
+  embedding: jsonb("embedding").$type<number[]>(), // OpenAI text-embedding-3-small vector (1536 dimensions)
   
   // Sports market fields (for ESPN integration)
   espnEventId: text("espn_event_id"), // ESPN event ID for sports markets

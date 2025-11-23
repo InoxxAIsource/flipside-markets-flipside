@@ -1,4 +1,4 @@
-import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen, Menu } from 'lucide-react';
+import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen, Menu, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -51,6 +51,11 @@ export function TopNav({ onSearch }: TopNavProps) {
               <PlusCircle className="h-5 w-5" />
             </Button>
           </Link>
+          <Link href="/hedge">
+            <Button variant="ghost" size="icon" data-testid="button-hedge">
+              <Shield className="h-5 w-5" />
+            </Button>
+          </Link>
           <Link href="/leaderboard">
             <Button variant="ghost" size="icon" data-testid="button-leaderboard">
               <Trophy className="h-5 w-5" />
@@ -99,6 +104,14 @@ export function TopNav({ onSearch }: TopNavProps) {
                   <div className="flex items-center gap-2 w-full" data-testid="menu-item-create">
                     <PlusCircle className="h-4 w-4" />
                     <span>Create Market</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/hedge">
+                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-hedge">
+                    <Shield className="h-4 w-4" />
+                    <span>Hedge</span>
                   </div>
                 </Link>
               </DropdownMenuItem>
