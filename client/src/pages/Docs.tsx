@@ -15,23 +15,37 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Menu
+  Menu,
+  Zap,
+  GitCompare,
+  Wallet,
+  Database,
+  Brain,
+  Archive
 } from 'lucide-react';
 
 const CONTRACT_ADDRESSES = {
-  ConditionalTokens: '0x7D8610E9567d2a6C9FBf66a5A13E9Ba8bb120d43',
+  ConditionalTokens: '0xdC8CB01c328795C007879B2C030AbF1c1b580D84',
   MarketFactory: '0x0BCF2E4dE978557a88d5a25271881f5D31E7A30F',
   CTFExchange: '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E',
   ProxyWalletFactory: '0x36ac1F1E95fD0B4E691b3B29869Ec423490D50c2',
   ProxyWalletImplementation: '0xc50cA824d3140CB3E0FB4C00fE336d7Ebd2dB5A7',
-  MockUSDT: '0x5f207d42F869fd1c71d7f0f81a2A67Fc20FF7323',
+  MockUSDT: '0xAf24D4DDbA993F6b11372528C678edb718a097Aa',
+  AMMPoolFactory: '0xAe14f8BC192306A891b172A3bc0e91132a4417EF',
 };
 
 const sections = [
   { id: 'overview', label: 'Project Overview', icon: Globe },
   { id: 'uiux', label: 'UI/UX Features', icon: BookOpen },
   { id: 'contracts', label: 'Smart Contracts', icon: Code2 },
+  { id: 'proxywallet', label: 'ProxyWallet System', icon: Wallet },
+  { id: 'pyth', label: 'Pyth Oracle', icon: Zap },
+  { id: 'trading', label: 'Dual Trading Systems', icon: GitCompare },
+  { id: 'amm', label: 'AMM Pool Trading', icon: ArrowLeftRight },
   { id: 'clob', label: 'CLOB System', icon: ArrowLeftRight },
+  { id: 'hedge', label: 'AI Hedge Suggestions', icon: Brain },
+  { id: 'realtime', label: 'Real-Time Updates', icon: Database },
+  { id: 'archived', label: 'Archived Markets', icon: Archive },
   { id: 'ai', label: 'AI Analysis', icon: Trophy },
   { id: 'decentralization', label: 'Decentralization', icon: Boxes },
   { id: 'benefits', label: 'Creator Benefits', icon: Trophy },
@@ -451,11 +465,571 @@ export default function Docs() {
                   name="Mock USDT (Testnet)" 
                   address={CONTRACT_ADDRESSES.MockUSDT}
                 />
+                <ContractAddress 
+                  name="AMM Pool Factory" 
+                  address={CONTRACT_ADDRESSES.AMMPoolFactory}
+                />
                 
                 <div className="mt-6 p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <p className="text-sm text-muted-foreground">
                     <strong className="text-foreground">Note:</strong> All contracts are deployed on Ethereum Sepolia testnet. 
                     View contract code and verification on Etherscan by clicking the external link icon.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* ProxyWallet System */}
+            <section 
+              ref={(el) => contentRefs.current['proxywallet'] = el}
+              id="proxywallet" 
+              data-testid="section-proxywallet"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">ProxyWallet Meta-Transaction System</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Gasless trading powered by EIP-712 signed messages
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">How It Works</h3>
+                  <p>
+                    Each user gets a dedicated ProxyWallet smart contract deployed via CREATE2 for deterministic addresses. 
+                    This wallet executes trades on your behalf using cryptographically signed messages, eliminating the need 
+                    to pay gas fees for every trade.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Gasless Trading Flow</h3>
+                  <div className="space-y-3">
+                    <Card className="border-l-4 border-l-primary">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">User Signs EIP-712 Message</div>
+                            <p className="text-sm">
+                              You sign a typed message in your wallet containing order details (no gas required)
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Relayer Submits Transaction</div>
+                            <p className="text-sm">
+                              Our backend relayer pays the gas fee and submits your signed order to the blockchain
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-green-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">ProxyWallet Executes On-Chain</div>
+                            <p className="text-sm">
+                              Your ProxyWallet verifies the signature and executes the trade trustlessly
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Key Benefits</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Zero Gas Costs:</span> Place unlimited orders without paying transaction fees
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Full Control:</span> You control your ProxyWallet through signature verification
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Non-Custodial:</span> Your funds stay in your ProxyWallet, never on our servers
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Deterministic Addresses:</span> CREATE2 deployment ensures predictable wallet addresses
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-sm">
+                    <strong className="text-foreground">Note:</strong> Direct token operations (deposits, withdrawals, splits, merges) 
+                    still require gas as they involve ERC-20 token transfers. Only order placement and cancellation are gasless.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Pyth Oracle */}
+            <section 
+              ref={(el) => contentRefs.current['pyth'] = el}
+              id="pyth" 
+              data-testid="section-pyth"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Pyth Oracle Resolution</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Real-time price feeds for trustless market resolution
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">What is Pyth Network?</h3>
+                  <p>
+                    Pyth Network is a decentralized oracle that provides high-fidelity financial market data on-chain. 
+                    We use Pyth price feeds to automatically resolve crypto price prediction markets with verified, 
+                    tamper-proof data directly from the blockchain.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Supported Price Feeds</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Card>
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                          <div className="font-medium">Bitcoin (BTC/USD)</div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Real-time spot price</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                          <div className="font-medium">Ethereum (ETH/USD)</div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Real-time spot price</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                          <div className="font-medium">Solana (SOL/USD)</div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Real-time spot price</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                          <div className="font-medium">XRP, BNB, Gold, Silver</div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Additional assets</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Market Resolution Flow</h3>
+                  <div className="space-y-3">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Market Expires</div>
+                            <p className="text-sm">
+                              When the market expiration time is reached, it becomes eligible for resolution
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Pyth Price Query</div>
+                            <p className="text-sm">
+                              The oracle queries Pyth Network for the current on-chain price feed at expiry time
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Automated Resolution</div>
+                            <p className="text-sm">
+                              Market is resolved based on price vs. target (YES if price ≥ target, NO otherwise)
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500/20 text-purple-500 font-bold text-sm flex-shrink-0">4</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Token Redemption</div>
+                            <p className="text-sm">
+                              Winners can redeem their tokens for collateral (1 USDT per winning share)
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">Real-Time Price Updates</h3>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong className="text-foreground">Market Cards:</strong> Prices update every 30 seconds</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong className="text-foreground">Detail Pages:</strong> Prices update every 10 seconds</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong className="text-foreground">Confidence Intervals:</strong> Displays Pyth's confidence range for price accuracy</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-sm">
+                    <strong className="text-foreground">Current Status:</strong> On testnet, markets are resolved manually by admins 
+                    using Pyth price data. Fully automated resolution is planned for mainnet deployment.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Dual Trading Systems */}
+            <section 
+              ref={(el) => contentRefs.current['trading'] = el}
+              id="trading" 
+              data-testid="section-trading"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <GitCompare className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Dual Trading Systems</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Choose between CLOB and AMM based on your trading style
+              </p>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Trading System Comparison</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-3 font-semibold">Feature</th>
+                          <th className="text-left p-3 font-semibold">CLOB (Order Book)</th>
+                          <th className="text-left p-3 font-semibold">AMM Pool</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-muted-foreground">
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Execution</td>
+                          <td className="p-3">Order matching</td>
+                          <td className="p-3">Instant swap</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Price Control</td>
+                          <td className="p-3">Set exact price</td>
+                          <td className="p-3">Market price</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Gas Costs</td>
+                          <td className="p-3">✅ Gasless orders</td>
+                          <td className="p-3">⚠️ Requires gas</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Liquidity</td>
+                          <td className="p-3">Maker-provided</td>
+                          <td className="p-3">Pool-based (x+y=k)</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Fees</td>
+                          <td className="p-3">None for makers</td>
+                          <td className="p-3">2.0% swap fee</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Rewards</td>
+                          <td className="p-3">2x for makers</td>
+                          <td className="p-3">LP fee share</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Best For</td>
+                          <td className="p-3">Price optimization</td>
+                          <td className="p-3">Guaranteed execution</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">When to Use Each System</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Card className="border-l-4 border-l-primary">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold mb-3 text-foreground">Use CLOB When:</h4>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary mt-0.5">✓</span>
+                            <span>You want to set a specific price</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary mt-0.5">✓</span>
+                            <span>You can wait for order matching</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary mt-0.5">✓</span>
+                            <span>You want gasless trading</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary mt-0.5">✓</span>
+                            <span>You want 2x rewards as a maker</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold mb-3 text-foreground">Use AMM When:</h4>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <span className="text-blue-500 mt-0.5">✓</span>
+                            <span>You need instant execution</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-blue-500 mt-0.5">✓</span>
+                            <span>Market has low order book liquidity</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-blue-500 mt-0.5">✓</span>
+                            <span>You accept market price</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-blue-500 mt-0.5">✓</span>
+                            <span>You want to provide liquidity for fees</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* AMM Pool Trading */}
+            <section 
+              ref={(el) => contentRefs.current['amm'] = el}
+              id="amm" 
+              data-testid="section-amm"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <ArrowLeftRight className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">AMM Pool Trading</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Constant-sum automated market maker for instant trading
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">How AMM Pools Work</h3>
+                  <p>
+                    Our AMM uses a constant-sum formula (x + y = k) instead of the typical constant-product formula. 
+                    This ensures that YES and NO shares always maintain a combined value close to 1 USDT, reflecting 
+                    binary outcome probabilities.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Constant-Sum Formula</h3>
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <div className="text-3xl font-mono font-bold text-foreground mb-4">
+                          x + y = k
+                        </div>
+                        <div className="grid gap-3 text-sm max-w-md mx-auto">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">x =</span>
+                            <span>YES token reserves in pool</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">y =</span>
+                            <span>NO token reserves in pool</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">k =</span>
+                            <span>Constant sum (total supply)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Fee Structure</h3>
+                  <div className="space-y-3">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                          <span className="font-medium text-foreground">Swap Fee</span>
+                          <Badge variant="secondary">2.0%</Badge>
+                        </div>
+                        <p className="text-sm">
+                          Charged on every AMM swap and distributed to liquidity providers proportionally
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                          <span className="font-medium text-foreground">Liquidity Provider Returns</span>
+                          <Badge variant="secondary">100% of fees</Badge>
+                        </div>
+                        <p className="text-sm">
+                          All swap fees go directly to LP token holders based on their pool share
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Liquidity Provision</h3>
+                  <div className="space-y-3">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Add Liquidity</div>
+                            <p className="text-sm">
+                              Deposit equal values of YES and NO tokens to receive LP tokens
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Earn Fees</div>
+                            <p className="text-sm">
+                              Collect 2% of all swaps proportional to your LP token share
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Remove Liquidity</div>
+                            <p className="text-sm">
+                              Burn LP tokens to withdraw your share of the pool plus accumulated fees
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-sm">
+                    <strong className="text-foreground">Note:</strong> Unlike CLOB orders, AMM swaps require gas payment 
+                    as they involve direct token exchanges on-chain. However, execution is guaranteed at the calculated price.
                   </p>
                 </div>
               </div>
@@ -536,6 +1110,499 @@ export default function Docs() {
                       <strong className="text-foreground">Note:</strong> Deposits, withdrawals, splits, and merges still require gas as they involve direct token transfers.
                     </p>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            {/* AI Hedge Suggestions */}
+            <section 
+              ref={(el) => contentRefs.current['hedge'] = el}
+              id="hedge" 
+              data-testid="section-hedge"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">AI Hedge Suggestions</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                AI-powered portfolio risk management through correlated market detection
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">How It Works</h3>
+                  <p>
+                    The hedge suggestion system uses OpenAI embeddings to analyze market descriptions and find correlated markets. 
+                    When you have open positions, the AI identifies similar markets where you can take opposite positions to 
+                    reduce overall portfolio risk.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Hedge Discovery Process</h3>
+                  <div className="space-y-3">
+                    <Card className="border-l-4 border-l-primary">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Position Analysis</div>
+                            <p className="text-sm">
+                              System identifies your filled CLOB trades (excludes AMM swaps and open orders)
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Embedding Generation</div>
+                            <p className="text-sm">
+                              Creates vector embeddings for each market's question and description using OpenAI
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-green-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Similarity Matching</div>
+                            <p className="text-sm">
+                              Finds correlated markets using cosine similarity between embeddings
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-purple-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500/20 text-purple-500 font-bold text-sm flex-shrink-0">4</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Hedge Recommendations</div>
+                            <p className="text-sm">
+                              Suggests inverse positions in correlated markets to balance portfolio risk
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Example Hedge Scenario</h3>
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <Badge variant="secondary">Your Position</Badge>
+                        <div className="flex-1">
+                          <div className="font-medium mb-1">Market: "Will BTC reach $100k by year end?"</div>
+                          <div className="text-sm text-muted-foreground">Position: 100 YES shares at $0.65</div>
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="flex items-start gap-3">
+                        <Badge className="bg-primary/20 text-primary">Hedge Suggestion</Badge>
+                        <div className="flex-1">
+                          <div className="font-medium mb-1">Market: "Will ETH outperform BTC this quarter?"</div>
+                          <div className="text-sm text-muted-foreground">
+                            Recommended: Buy 80 NO shares (inverse correlation detected)
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Similarity: 78% | Reduces exposure to crypto market downturn
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Key Features</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Semantic Understanding:</span> AI analyzes meaning, not just keywords
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">CLOB-Only Tracking:</span> Only considers filled limit/market orders for accuracy
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Similarity Scoring:</span> Shows correlation strength between markets
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Inverse Position Logic:</span> Automatically calculates opposite side recommendations
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-sm">
+                    <strong className="text-foreground">Note:</strong> Hedge suggestions are for informational purposes only. 
+                    Correlation does not guarantee risk reduction. Always do your own analysis before placing hedge trades.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Real-Time Updates */}
+            <section 
+              ref={(el) => contentRefs.current['realtime'] = el}
+              id="realtime" 
+              data-testid="section-realtime"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Database className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Real-Time Updates System</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                WebSocket-powered live data synchronization
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">Architecture Overview</h3>
+                  <p>
+                    Flipside uses a multi-layer real-time data pipeline to ensure you always see the latest market prices, 
+                    orders, and trades. The system combines blockchain event monitoring, database indexing, and WebSocket 
+                    broadcasting for instant UI updates.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Data Flow Pipeline</h3>
+                  <div className="space-y-3">
+                    <Card className="border-l-4 border-l-primary">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Blockchain Events</div>
+                            <p className="text-sm">
+                              Smart contracts emit events: OrderFilled, ConditionPreparation, PositionsMerge, etc.
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Event Indexer Service</div>
+                            <p className="text-sm">
+                              Background service continuously monitors and processes blockchain events
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-green-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">PostgreSQL Database</div>
+                            <p className="text-sm">
+                              Indexed events update markets, orders, positions, and trade history tables
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-purple-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500/20 text-purple-500 font-bold text-sm flex-shrink-0">4</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">WebSocket Server</div>
+                            <p className="text-sm">
+                              Broadcasts updates to all connected clients in real-time
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-center">
+                      <div className="h-8 w-px bg-border"></div>
+                    </div>
+
+                    <Card className="border-l-4 border-l-orange-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-orange-500/20 text-orange-500 font-bold text-sm flex-shrink-0">5</div>
+                          <div>
+                            <div className="font-medium text-foreground mb-1">Frontend UI</div>
+                            <p className="text-sm">
+                              React components receive updates and re-render automatically
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Background Services</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Event Indexer</div>
+                        <p className="text-sm">
+                          Monitors blockchain for market creation, order fills, and position changes
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Pyth Worker</div>
+                        <p className="text-sm">
+                          Updates oracle price feeds every 10-30 seconds for active markets
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Order Matcher</div>
+                        <p className="text-sm">
+                          Finds and executes compatible limit orders in the CLOB system
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Rewards Cron</div>
+                        <p className="text-sm">
+                          Recalculates trading rewards and leaderboard rankings hourly
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">Polling Fallback</h3>
+                  <p>
+                    If WebSocket connection fails, the frontend automatically falls back to HTTP polling 
+                    to ensure data freshness. This provides resilience against network issues and firewall 
+                    restrictions that may block WebSocket connections.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-sm">
+                    <strong className="text-foreground">Performance:</strong> WebSocket updates are typically received 
+                    within 1-2 seconds of on-chain confirmation, ensuring near-instant UI responsiveness.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Archived Markets */}
+            <section 
+              ref={(el) => contentRefs.current['archived'] = el}
+              id="archived" 
+              data-testid="section-archived"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Archive className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Archived Markets</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Dedicated page for browsing expired prediction markets
+              </p>
+
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">Dual-Page Structure</h3>
+                  <p>
+                    Flipside separates active and expired markets into two distinct pages for better organization 
+                    and user experience. This makes it easy to focus on current trading opportunities while still 
+                    accessing historical market data.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Page Comparison</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-3 font-semibold">Feature</th>
+                          <th className="text-left p-3 font-semibold">Home Page (/)</th>
+                          <th className="text-left p-3 font-semibold">Archived (/archived)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-muted-foreground">
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Markets Shown</td>
+                          <td className="p-3">Active only (expiresAt ≥ now)</td>
+                          <td className="p-3">Expired only (expiresAt &lt; now)</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Sort Options</td>
+                          <td className="p-3">Most Volume, Ending Soon</td>
+                          <td className="p-3">Most Volume, Recently Expired</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Default Sort</td>
+                          <td className="p-3">Most Volume</td>
+                          <td className="p-3">Recently Expired</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Time Filters</td>
+                          <td className="p-3">24h, 7d, 30d, All</td>
+                          <td className="p-3">None (not applicable)</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Sidebar</td>
+                          <td className="p-3">Full FilterSidebar</td>
+                          <td className="p-3">No sidebar (cleaner layout)</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-3 font-medium text-foreground">Trading</td>
+                          <td className="p-3">Active (buy/sell enabled)</td>
+                          <td className="p-3">View only (resolved)</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Navigation</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Desktop</div>
+                        <p className="text-sm">
+                          Archive icon button in the top navigation bar for quick access
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium text-foreground mb-2">Mobile</div>
+                        <p className="text-sm">
+                          Archive menu item in the dropdown navigation menu
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Archived Page Features</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Category Filtering:</span> Filter by Crypto, Politics, Sports, or All categories
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Search:</span> Full-text search across market questions and descriptions
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Recently Expired:</span> Default sort shows newest expired markets first
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">Empty State:</span> Helpful message when no expired markets match filters
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-sm">
+                    <strong className="text-foreground">Use Case:</strong> The archived page is perfect for analyzing historical market performance, 
+                    studying resolution patterns, and learning from past predictions.
+                  </p>
                 </div>
               </div>
             </section>
