@@ -68,19 +68,25 @@ function Router() {
   );
 }
 
-function App() {
+function AppContent() {
   const [location] = useLocation();
   const isInvestorRoute = location.startsWith('/investor');
 
+  return (
+    <div className="min-h-screen bg-background overflow-x-hidden">
+      {!isInvestorRoute && <TopNav />}
+      <Router />
+    </div>
+  );
+}
+
+function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <Web3Provider>
           <TooltipProvider>
-            <div className="min-h-screen bg-background overflow-x-hidden">
-              {!isInvestorRoute && <TopNav />}
-              <Router />
-            </div>
+            <AppContent />
             <Toaster />
           </TooltipProvider>
         </Web3Provider>
