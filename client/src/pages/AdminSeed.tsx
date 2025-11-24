@@ -8,12 +8,12 @@ import { Loader2, Database, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function AdminSeed() {
   const { toast } = useToast();
-  const { address } = useWallet();
+  const { account } = useWallet();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
   const handleSeedMarkets = async () => {
-    if (!address) {
+    if (!account) {
       toast({
         title: "Wallet Not Connected",
         description: "Please connect your wallet to seed markets",
@@ -32,7 +32,7 @@ export default function AdminSeed() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          walletAddress: address,
+          walletAddress: account,
         }),
       });
 
@@ -88,7 +88,7 @@ export default function AdminSeed() {
             </AlertDescription>
           </Alert>
 
-          {!address && (
+          {!account && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -97,18 +97,18 @@ export default function AdminSeed() {
             </Alert>
           )}
 
-          {address && (
+          {account && (
             <div className="bg-muted p-4 rounded-lg">
               <div className="text-sm">
                 <div className="font-semibold mb-1">Connected Wallet:</div>
-                <div className="font-mono text-xs break-all">{address}</div>
+                <div className="font-mono text-xs break-all">{account}</div>
               </div>
             </div>
           )}
 
           <Button
             onClick={handleSeedMarkets}
-            disabled={loading || !address}
+            disabled={loading || !account}
             className="w-full"
             size="lg"
             data-testid="button-seed-markets"
