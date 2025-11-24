@@ -548,3 +548,138 @@ export type InsertCommentVote = z.infer<typeof insertCommentVoteSchema>;
 
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+
+// Investor Applications - pending applications from interested investors
+export const investorApplications = pgTable("investor_applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company"),
+  linkedinUrl: text("linkedin_url"),
+  investmentAmount: text("investment_amount"),
+  message: text("message"),
+  status: text("status").notNull().default('pending'), // 'pending', 'approved', 'rejected'
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: text("reviewed_by"), // Admin wallet address who reviewed
+}, (table) => ({
+  statusIdx: index("investor_applications_status_idx").on(table.status),
+  emailIdx: index("investor_applications_email_idx").on(table.email),
+}));
+
+export const insertInvestorApplicationSchema = createInsertSchema(investorApplications).omit({
+  id: true,
+  createdAt: true,
+  reviewedAt: true,
+  reviewedBy: true,
+});
+
+// Investors - approved investors with login credentials
+export const investors = pgTable("investors", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  applicationId: varchar("application_id").references(() => investorApplications.id),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(), // Bcrypt hashed password
+  company: text("company"),
+  linkedinUrl: text("linkedin_url"),
+  investmentAmount: text("investment_amount"),
+  status: text("status").notNull().default('active'), // 'active', 'suspended'
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  createdBy: text("created_by"), // Admin wallet address who approved
+}, (table) => ({
+  emailIdx: uniqueIndex("investors_email_idx").on(table.email),
+  statusIdx: index("investors_status_idx").on(table.status),
+}));
+
+export const insertInvestorSchema = createInsertSchema(investors).omit({
+  id: true,
+  createdAt: true,
+  lastLoginAt: true,
+});
+
+// Roadmap Items - platform development milestones
+export const roadmapItems = pgTable("roadmap_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default('planned'), // 'completed', 'in_progress', 'planned'
+  category: text("category").notNull(), // 'core', 'feature', 'integration', 'marketing'
+  priority: integer("priority").notNull().default(0), // Higher number = higher priority
+  targetDate: timestamp("target_date"),
+  completedDate: timestamp("completed_date"),
+  visibility: text("visibility").notNull().default('public'), // 'public', 'investors_only'
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  statusIdx: index("roadmap_items_status_idx").on(table.status),
+  visibilityIdx: index("roadmap_items_visibility_idx").on(table.visibility),
+  targetDateIdx: index("roadmap_items_target_date_idx").on(table.targetDate),
+}));
+
+export const insertRoadmapItemSchema = createInsertSchema(roadmapItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Financial Reports - quarterly/monthly financial data
+export const financialReports = pgTable("financial_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  period: text("period").notNull(), // 'Q1 2025', 'Q2 2025', 'Jan 2025'
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  
+  // Revenue breakdown
+  tradingFeeRevenue: real("trading_fee_revenue").notNull().default(0),
+  apiRevenue: real("api_revenue").notNull().default(0),
+  otherRevenue: real("other_revenue").notNull().default(0),
+  totalRevenue: real("total_revenue").notNull().default(0),
+  
+  // Expenses
+  infrastructureCosts: real("infrastructure_costs").notNull().default(0),
+  developmentCosts: real("development_costs").notNull().default(0),
+  marketingCosts: real("marketing_costs").notNull().default(0),
+  operationalCosts: real("operational_costs").notNull().default(0),
+  totalExpenses: real("total_expenses").notNull().default(0),
+  
+  // Metrics
+  burnRate: real("burn_rate").notNull().default(0), // Monthly burn rate
+  runwayMonths: real("runway_months"), // Estimated runway in months
+  
+  // User metrics
+  activeUsers: integer("active_users").notNull().default(0),
+  newUsers: integer("new_users").notNull().default(0),
+  tradingVolume: real("trading_volume").notNull().default(0),
+  
+  // Notes
+  notes: text("notes"),
+  
+  // Status
+  published: boolean("published").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  periodIdx: index("financial_reports_period_idx").on(table.period),
+  publishedIdx: index("financial_reports_published_idx").on(table.published),
+  periodStartIdx: index("financial_reports_period_start_idx").on(table.periodStart),
+}));
+
+export const insertFinancialReportSchema = createInsertSchema(financialReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InvestorApplication = typeof investorApplications.$inferSelect;
+export type InsertInvestorApplication = z.infer<typeof insertInvestorApplicationSchema>;
+
+export type Investor = typeof investors.$inferSelect;
+export type InsertInvestor = z.infer<typeof insertInvestorSchema>;
+
+export type RoadmapItem = typeof roadmapItems.$inferSelect;
+export type InsertRoadmapItem = z.infer<typeof insertRoadmapItemSchema>;
+
+export type FinancialReport = typeof financialReports.$inferSelect;
+export type InsertFinancialReport = z.infer<typeof insertFinancialReportSchema>;

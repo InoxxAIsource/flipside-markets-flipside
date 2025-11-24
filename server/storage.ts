@@ -15,6 +15,10 @@ import {
   comments,
   commentVotes,
   apiKeys,
+  investorApplications,
+  investors,
+  roadmapItems,
+  financialReports,
   type User,
   type InsertUser,
   type Market,
@@ -38,6 +42,14 @@ import {
   type InsertCommentVote,
   type ApiKey,
   type InsertApiKey,
+  type InvestorApplication,
+  type InsertInvestorApplication,
+  type Investor,
+  type InsertInvestor,
+  type RoadmapItem,
+  type InsertRoadmapItem,
+  type FinancialReport,
+  type InsertFinancialReport,
 } from "@shared/schema";
 
 // Initialize database connection
@@ -117,6 +129,37 @@ export interface IStorage {
   getApiKeyByHash(keyHash: string): Promise<ApiKey | undefined>;
   updateApiKeyUsage(id: string): Promise<void>;
   deleteApiKey(id: string): Promise<void>;
+  
+  // Investor Application methods
+  createInvestorApplication(application: InsertInvestorApplication): Promise<InvestorApplication>;
+  getAllInvestorApplications(): Promise<InvestorApplication[]>;
+  getPendingInvestorApplications(): Promise<InvestorApplication[]>;
+  getInvestorApplication(id: string): Promise<InvestorApplication | undefined>;
+  updateInvestorApplication(id: string, updates: Partial<InvestorApplication>): Promise<InvestorApplication | undefined>;
+  
+  // Investor methods
+  createInvestor(investor: InsertInvestor): Promise<Investor>;
+  getInvestorByEmail(email: string): Promise<Investor | undefined>;
+  getInvestorById(id: string): Promise<Investor | undefined>;
+  getAllInvestors(): Promise<Investor[]>;
+  updateInvestor(id: string, updates: Partial<Investor>): Promise<Investor | undefined>;
+  updateInvestorLastLogin(id: string): Promise<void>;
+  
+  // Roadmap methods
+  createRoadmapItem(item: InsertRoadmapItem): Promise<RoadmapItem>;
+  getAllRoadmapItems(): Promise<RoadmapItem[]>;
+  getPublicRoadmapItems(): Promise<RoadmapItem[]>;
+  getRoadmapItem(id: string): Promise<RoadmapItem | undefined>;
+  updateRoadmapItem(id: string, updates: Partial<RoadmapItem>): Promise<RoadmapItem | undefined>;
+  deleteRoadmapItem(id: string): Promise<void>;
+  
+  // Financial Report methods
+  createFinancialReport(report: InsertFinancialReport): Promise<FinancialReport>;
+  getAllFinancialReports(): Promise<FinancialReport[]>;
+  getPublishedFinancialReports(): Promise<FinancialReport[]>;
+  getFinancialReport(id: string): Promise<FinancialReport | undefined>;
+  updateFinancialReport(id: string, updates: Partial<FinancialReport>): Promise<FinancialReport | undefined>;
+  deleteFinancialReport(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -643,6 +686,194 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(apiKeys)
       .where(eq(apiKeys.id, id));
+  }
+
+  // Investor Application methods
+  async createInvestorApplication(application: InsertInvestorApplication): Promise<InvestorApplication> {
+    const result = await db
+      .insert(investorApplications)
+      .values(application)
+      .returning();
+    return result[0];
+  }
+
+  async getAllInvestorApplications(): Promise<InvestorApplication[]> {
+    return await db
+      .select()
+      .from(investorApplications)
+      .orderBy(desc(investorApplications.createdAt));
+  }
+
+  async getPendingInvestorApplications(): Promise<InvestorApplication[]> {
+    return await db
+      .select()
+      .from(investorApplications)
+      .where(eq(investorApplications.status, 'pending'))
+      .orderBy(desc(investorApplications.createdAt));
+  }
+
+  async getInvestorApplication(id: string): Promise<InvestorApplication | undefined> {
+    const result = await db
+      .select()
+      .from(investorApplications)
+      .where(eq(investorApplications.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateInvestorApplication(id: string, updates: Partial<InvestorApplication>): Promise<InvestorApplication | undefined> {
+    const result = await db
+      .update(investorApplications)
+      .set(updates)
+      .where(eq(investorApplications.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Investor methods
+  async createInvestor(investor: InsertInvestor): Promise<Investor> {
+    const result = await db
+      .insert(investors)
+      .values(investor)
+      .returning();
+    return result[0];
+  }
+
+  async getInvestorByEmail(email: string): Promise<Investor | undefined> {
+    const result = await db
+      .select()
+      .from(investors)
+      .where(eq(investors.email, email))
+      .limit(1);
+    return result[0];
+  }
+
+  async getInvestorById(id: string): Promise<Investor | undefined> {
+    const result = await db
+      .select()
+      .from(investors)
+      .where(eq(investors.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getAllInvestors(): Promise<Investor[]> {
+    return await db
+      .select()
+      .from(investors)
+      .orderBy(desc(investors.createdAt));
+  }
+
+  async updateInvestor(id: string, updates: Partial<Investor>): Promise<Investor | undefined> {
+    const result = await db
+      .update(investors)
+      .set(updates)
+      .where(eq(investors.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateInvestorLastLogin(id: string): Promise<void> {
+    await db
+      .update(investors)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(investors.id, id));
+  }
+
+  // Roadmap methods
+  async createRoadmapItem(item: InsertRoadmapItem): Promise<RoadmapItem> {
+    const result = await db
+      .insert(roadmapItems)
+      .values(item)
+      .returning();
+    return result[0];
+  }
+
+  async getAllRoadmapItems(): Promise<RoadmapItem[]> {
+    return await db
+      .select()
+      .from(roadmapItems)
+      .orderBy(roadmapItems.targetDate);
+  }
+
+  async getPublicRoadmapItems(): Promise<RoadmapItem[]> {
+    return await db
+      .select()
+      .from(roadmapItems)
+      .where(eq(roadmapItems.visibility, 'public'))
+      .orderBy(roadmapItems.targetDate);
+  }
+
+  async getRoadmapItem(id: string): Promise<RoadmapItem | undefined> {
+    const result = await db
+      .select()
+      .from(roadmapItems)
+      .where(eq(roadmapItems.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateRoadmapItem(id: string, updates: Partial<RoadmapItem>): Promise<RoadmapItem | undefined> {
+    const result = await db
+      .update(roadmapItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(roadmapItems.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteRoadmapItem(id: string): Promise<void> {
+    await db
+      .delete(roadmapItems)
+      .where(eq(roadmapItems.id, id));
+  }
+
+  // Financial Report methods
+  async createFinancialReport(report: InsertFinancialReport): Promise<FinancialReport> {
+    const result = await db
+      .insert(financialReports)
+      .values(report)
+      .returning();
+    return result[0];
+  }
+
+  async getAllFinancialReports(): Promise<FinancialReport[]> {
+    return await db
+      .select()
+      .from(financialReports)
+      .orderBy(desc(financialReports.periodStart));
+  }
+
+  async getPublishedFinancialReports(): Promise<FinancialReport[]> {
+    return await db
+      .select()
+      .from(financialReports)
+      .where(eq(financialReports.published, true))
+      .orderBy(desc(financialReports.periodStart));
+  }
+
+  async getFinancialReport(id: string): Promise<FinancialReport | undefined> {
+    const result = await db
+      .select()
+      .from(financialReports)
+      .where(eq(financialReports.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateFinancialReport(id: string, updates: Partial<FinancialReport>): Promise<FinancialReport | undefined> {
+    const result = await db
+      .update(financialReports)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(financialReports.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteFinancialReport(id: string): Promise<void> {
+    await db
+      .delete(financialReports)
+      .where(eq(financialReports.id, id));
   }
 }
 

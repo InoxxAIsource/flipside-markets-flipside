@@ -18,6 +18,8 @@ import Archived from "@/pages/Archived";
 import ApiDocs from "@/pages/ApiDocs";
 import ApiKeys from "@/pages/ApiKeys";
 import AdminSeed from "@/pages/AdminSeed";
+import AdminInvestors from "@/pages/AdminInvestors";
+import InvestorApply from "@/pages/InvestorApply";
 import NotFound from "@/pages/not-found";
 
 // Force rebuild - v1.0.2
@@ -37,6 +39,8 @@ function Router() {
       <Route path="/api-docs" component={ApiDocs} />
       <Route path="/api-keys" component={ApiKeys} />
       <Route path="/admin/seed" component={AdminSeed} />
+      <Route path="/admin/investors" component={AdminInvestors} />
+      <Route path="/investor/apply" component={InvestorApply} />
       <Route component={NotFound} />
     </Switch>
   );

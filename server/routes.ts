@@ -2483,5 +2483,247 @@ Crawl-delay: 1`;
     }
   });
 
+  // ==================== INVESTOR ROUTES ====================
+  
+  // Public: Submit investor application
+  app.post("/api/investor/apply", async (req, res) => {
+    try {
+      const { name, email, company, linkedinUrl, investmentAmount, message } = req.body;
+      
+      // Validation
+      if (!name || !email) {
+        return res.status(400).json({ error: "Name and email are required" });
+      }
+      
+      // Create application
+      const application = await storage.createInvestorApplication({
+        name,
+        email,
+        company,
+        linkedinUrl,
+        investmentAmount,
+        message,
+        status: 'pending'
+      });
+      
+      res.json({ success: true, application });
+    } catch (error: any) {
+      console.error('Error creating investor application:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Get all investor applications
+  app.get("/api/admin/investor-applications", async (req, res) => {
+    try {
+      const applications = await storage.getAllInvestorApplications();
+      res.json(applications);
+    } catch (error: any) {
+      console.error('Error fetching investor applications:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Approve investor application and create investor account
+  app.post("/api/admin/investor-applications/:id/approve", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { walletAddress, password } = req.body;
+      
+      // Get application
+      const application = await storage.getInvestorApplication(id);
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      
+      // Check if already approved
+      if (application.status === 'approved') {
+        return res.status(400).json({ error: "Application already approved" });
+      }
+      
+      // Hash password
+      const bcrypt = require('bcryptjs');
+      const passwordHash = await bcrypt.hash(password, 10);
+      
+      // Create investor account
+      const investor = await storage.createInvestor({
+        applicationId: id,
+        name: application.name,
+        email: application.email,
+        passwordHash,
+        company: application.company,
+        linkedinUrl: application.linkedinUrl,
+        investmentAmount: application.investmentAmount,
+        status: 'active',
+        createdBy: walletAddress
+      });
+      
+      // Update application status
+      await storage.updateInvestorApplication(id, {
+        status: 'approved',
+        reviewedAt: new Date(),
+        reviewedBy: walletAddress
+      });
+      
+      res.json({ 
+        success: true, 
+        investor: {
+          ...investor,
+          passwordHash: undefined // Don't send password hash to frontend
+        },
+        generatedPassword: password
+      });
+    } catch (error: any) {
+      console.error('Error approving investor application:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Reject investor application
+  app.post("/api/admin/investor-applications/:id/reject", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { walletAddress } = req.body;
+      
+      await storage.updateInvestorApplication(id, {
+        status: 'rejected',
+        reviewedAt: new Date(),
+        reviewedBy: walletAddress
+      });
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error rejecting investor application:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor: Login
+  app.post("/api/investor/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      // Get investor by email
+      const investor = await storage.getInvestorByEmail(email);
+      if (!investor) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Check if account is active
+      if (investor.status !== 'active') {
+        return res.status(403).json({ error: "Account is not active" });
+      }
+      
+      // Verify password
+      const bcrypt = require('bcryptjs');
+      const valid = await bcrypt.compare(password, investor.passwordHash);
+      if (!valid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Update last login
+      await storage.updateInvestorLastLogin(investor.id);
+      
+      // Return investor data (without password)
+      res.json({
+        success: true,
+        investor: {
+          id: investor.id,
+          name: investor.name,
+          email: investor.email,
+          company: investor.company,
+          linkedinUrl: investor.linkedinUrl,
+          investmentAmount: investor.investmentAmount,
+          lastLoginAt: new Date()
+        }
+      });
+    } catch (error: any) {
+      console.error('Error during investor login:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor: Get roadmap items (only investors can see investors_only items)
+  app.get("/api/investor/roadmap", async (req, res) => {
+    try {
+      // TODO: Add investor auth middleware
+      const items = await storage.getAllRoadmapItems();
+      res.json(items);
+    } catch (error: any) {
+      console.error('Error fetching roadmap items:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor: Get published financial reports
+  app.get("/api/investor/financials", async (req, res) => {
+    try {
+      // TODO: Add investor auth middleware
+      const reports = await storage.getPublishedFinancialReports();
+      res.json(reports);
+    } catch (error: any) {
+      console.error('Error fetching financial reports:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Create roadmap item
+  app.post("/api/admin/roadmap", async (req, res) => {
+    try {
+      const item = await storage.createRoadmapItem(req.body);
+      res.json(item);
+    } catch (error: any) {
+      console.error('Error creating roadmap item:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Update roadmap item
+  app.put("/api/admin/roadmap/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const item = await storage.updateRoadmapItem(id, req.body);
+      res.json(item);
+    } catch (error: any) {
+      console.error('Error updating roadmap item:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Delete roadmap item
+  app.delete("/api/admin/roadmap/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteRoadmapItem(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting roadmap item:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Create financial report
+  app.post("/api/admin/financials", async (req, res) => {
+    try {
+      const report = await storage.createFinancialReport(req.body);
+      res.json(report);
+    } catch (error: any) {
+      console.error('Error creating financial report:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Admin: Update financial report
+  app.put("/api/admin/financials/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const report = await storage.updateFinancialReport(id, req.body);
+      res.json(report);
+    } catch (error: any) {
+      console.error('Error updating financial report:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
