@@ -20,6 +20,8 @@ import { postMarketToTwitter } from "./services/twitter";
 import { rewardsService } from "./services/rewardsService";
 import { sql } from "drizzle-orm";
 import { generateMarketEmbedding, findSimilarMarkets } from "./services/embeddingService";
+import jwt from "jsonwebtoken";
+import { authenticateInvestor } from "./middleware/investorAuth";
 
 // Module-level variable for ProxyWalletService (set by server/index.ts)
 let proxyWalletServiceInstance: ProxyWalletService | null = null;
@@ -2603,8 +2605,12 @@ Crawl-delay: 1`;
     try {
       const { email, password } = req.body;
       
-      // Get investor by email
-      const investor = await storage.getInvestorByEmail(email);
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+      
+      // Verify credentials via storage helper
+      const investor = await storage.verifyInvestorCredentials(email, password);
       if (!investor) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
@@ -2614,15 +2620,31 @@ Crawl-delay: 1`;
         return res.status(403).json({ error: "Account is not active" });
       }
       
-      // Verify password
-      const bcrypt = require('bcryptjs');
-      const valid = await bcrypt.compare(password, investor.passwordHash);
-      if (!valid) {
-        return res.status(401).json({ error: "Invalid credentials" });
+      // Generate JWT token
+      const jwtSecret = process.env.INVESTOR_JWT_SECRET;
+      if (!jwtSecret) {
+        throw new Error('INVESTOR_JWT_SECRET environment variable is required');
       }
+      const token = jwt.sign(
+        { 
+          investorId: investor.id,
+          email: investor.email,
+          name: investor.name
+        },
+        jwtSecret,
+        { expiresIn: '24h' }
+      );
       
       // Update last login
       await storage.updateInvestorLastLogin(investor.id);
+      
+      // Set HTTP-only cookie
+      res.cookie('investor_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      });
       
       // Return investor data (without password)
       res.json({
@@ -2634,6 +2656,7 @@ Crawl-delay: 1`;
           company: investor.company,
           linkedinUrl: investor.linkedinUrl,
           investmentAmount: investor.investmentAmount,
+          status: investor.status,
           lastLoginAt: new Date()
         }
       });
@@ -2643,10 +2666,116 @@ Crawl-delay: 1`;
     }
   });
   
-  // Investor: Get roadmap items (only investors can see investors_only items)
-  app.get("/api/investor/roadmap", async (req, res) => {
+  // Investor: Verify session (uses auth middleware)
+  app.get("/api/investor/verify", authenticateInvestor, async (req, res) => {
     try {
-      // TODO: Add investor auth middleware
+      // If middleware passed, investor is authenticated
+      const investorId = req.investor!.id;
+      
+      // Get fresh investor data with all fields
+      const investor = await storage.getInvestorById(investorId);
+      if (!investor) {
+        return res.status(401).json({ error: "Investor not found" });
+      }
+      
+      res.json({
+        success: true,
+        investor: {
+          id: investor.id,
+          name: investor.name,
+          email: investor.email,
+          company: investor.company,
+          linkedinUrl: investor.linkedinUrl,
+          investmentAmount: investor.investmentAmount,
+          status: investor.status,
+          lastLoginAt: investor.lastLoginAt
+        }
+      });
+    } catch (error: any) {
+      console.error('Error verifying investor:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor: Logout
+  app.post("/api/investor/logout", async (req, res) => {
+    res.clearCookie('investor_token');
+    res.json({ success: true });
+  });
+  
+  // Investor: Request password reset
+  app.post("/api/investor/request-reset", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      
+      const investor = await storage.getInvestorByEmail(email);
+      
+      // Always return success to prevent email enumeration
+      if (!investor) {
+        return res.json({ success: true, message: "If an account exists, a password reset link has been sent." });
+      }
+      
+      // Generate reset token
+      const token = await storage.createPasswordResetToken(investor.id);
+      
+      // TODO: Send email with reset link
+      // For now, just log it (in production, integrate with email service)
+      console.log(`Password reset token for ${email}: ${token}`);
+      console.log(`Reset link: ${process.env.VITE_API_URL || 'http://localhost:5000'}/investor/reset-password?token=${token}`);
+      
+      res.json({ 
+        success: true, 
+        message: "If an account exists, a password reset link has been sent.",
+        // Only include token in response for development
+        ...(process.env.NODE_ENV === 'development' && { token })
+      });
+    } catch (error: any) {
+      console.error('Error requesting password reset:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor: Reset password with token
+  app.post("/api/investor/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+      
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+      
+      // Validate token and get investor ID
+      const investorId = await storage.validatePasswordResetToken(token);
+      
+      if (!investorId) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+      
+      // Reset password
+      const success = await storage.resetInvestorPassword(investorId, newPassword, token);
+      
+      if (!success) {
+        return res.status(500).json({ error: "Failed to reset password" });
+      }
+      
+      res.json({ success: true, message: "Password reset successfully. You can now log in with your new password." });
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor: Get roadmap items (protected by auth middleware)
+  app.get("/api/investor/roadmap", authenticateInvestor, async (req, res) => {
+    try {
       const items = await storage.getAllRoadmapItems();
       res.json(items);
     } catch (error: any) {
@@ -2655,10 +2784,9 @@ Crawl-delay: 1`;
     }
   });
   
-  // Investor: Get published financial reports
-  app.get("/api/investor/financials", async (req, res) => {
+  // Investor: Get published financial reports (protected by auth middleware)
+  app.get("/api/investor/financials", authenticateInvestor, async (req, res) => {
     try {
-      // TODO: Add investor auth middleware
       const reports = await storage.getPublishedFinancialReports();
       res.json(reports);
     } catch (error: any) {

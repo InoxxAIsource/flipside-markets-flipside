@@ -20,6 +20,10 @@ import ApiKeys from "@/pages/ApiKeys";
 import AdminSeed from "@/pages/AdminSeed";
 import AdminInvestors from "@/pages/AdminInvestors";
 import InvestorApply from "@/pages/InvestorApply";
+import InvestorLogin from "@/pages/InvestorLogin";
+import InvestorForgotPassword from "@/pages/InvestorForgotPassword";
+import InvestorResetPassword from "@/pages/InvestorResetPassword";
+import InvestorDashboard from "@/pages/InvestorDashboard";
 import NotFound from "@/pages/not-found";
 
 // Force rebuild - v1.0.2
@@ -41,6 +45,10 @@ function Router() {
       <Route path="/admin/seed" component={AdminSeed} />
       <Route path="/admin/investors" component={AdminInvestors} />
       <Route path="/investor/apply" component={InvestorApply} />
+      <Route path="/investor/login" component={InvestorLogin} />
+      <Route path="/investor/forgot-password" component={InvestorForgotPassword} />
+      <Route path="/investor/reset-password" component={InvestorResetPassword} />
+      <Route path="/investor/dashboard" component={InvestorDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

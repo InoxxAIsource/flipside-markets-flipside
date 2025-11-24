@@ -593,6 +593,19 @@ export const investors = pgTable("investors", {
   statusIdx: index("investors_status_idx").on(table.status),
 }));
 
+// Password reset tokens for investors
+export const investorPasswordResetTokens = pgTable("investor_password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  investorId: varchar("investor_id").notNull().references(() => investors.id, { onDelete: 'cascade' }),
+  token: text("token").notNull().unique(), // Secure random token
+  expiresAt: timestamp("expires_at").notNull(), // Token expiration (typically 1 hour)
+  usedAt: timestamp("used_at"), // null if unused, timestamp when used
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => ({
+  tokenIdx: uniqueIndex("investor_reset_token_idx").on(table.token),
+  investorIdx: index("investor_reset_investor_idx").on(table.investorId),
+}));
+
 export const insertInvestorSchema = createInsertSchema(investors).omit({
   id: true,
   createdAt: true,

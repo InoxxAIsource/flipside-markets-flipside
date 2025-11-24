@@ -17,6 +17,7 @@ import {
   apiKeys,
   investorApplications,
   investors,
+  investorPasswordResetTokens,
   roadmapItems,
   financialReports,
   type User,
@@ -144,6 +145,10 @@ export interface IStorage {
   getAllInvestors(): Promise<Investor[]>;
   updateInvestor(id: string, updates: Partial<Investor>): Promise<Investor | undefined>;
   updateInvestorLastLogin(id: string): Promise<void>;
+  verifyInvestorCredentials(email: string, password: string): Promise<Investor | null>;
+  createPasswordResetToken(investorId: string): Promise<string>;
+  validatePasswordResetToken(token: string): Promise<string | null>;
+  resetInvestorPassword(investorId: string, newPassword: string, token: string): Promise<boolean>;
   
   // Roadmap methods
   createRoadmapItem(item: InsertRoadmapItem): Promise<RoadmapItem>;
@@ -778,6 +783,82 @@ export class DatabaseStorage implements IStorage {
       .update(investors)
       .set({ lastLoginAt: new Date() })
       .where(eq(investors.id, id));
+  }
+
+  async verifyInvestorCredentials(email: string, password: string): Promise<Investor | null> {
+    const investor = await this.getInvestorByEmail(email);
+    if (!investor || !investor.passwordHash) {
+      return null;
+    }
+    
+    const isValid = await bcrypt.compare(password, investor.passwordHash);
+    return isValid ? investor : null;
+  }
+
+  async createPasswordResetToken(investorId: string): Promise<string> {
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    
+    await db
+      .insert(investorPasswordResetTokens)
+      .values({
+        investorId,
+        token,
+        expiresAt,
+      });
+    
+    return token;
+  }
+
+  async validatePasswordResetToken(token: string): Promise<string | null> {
+    const result = await db
+      .select()
+      .from(investorPasswordResetTokens)
+      .where(eq(investorPasswordResetTokens.token, token))
+      .limit(1);
+    
+    const resetToken = result[0];
+    if (!resetToken) {
+      return null;
+    }
+    
+    // Check if token is expired
+    if (new Date() > resetToken.expiresAt) {
+      return null;
+    }
+    
+    // Check if token has already been used
+    if (resetToken.usedAt) {
+      return null;
+    }
+    
+    return resetToken.investorId;
+  }
+
+  async resetInvestorPassword(investorId: string, newPassword: string, token: string): Promise<boolean> {
+    // Validate token first
+    const validInvestorId = await this.validatePasswordResetToken(token);
+    if (validInvestorId !== investorId) {
+      return false;
+    }
+    
+    // Hash the plain text password (NOT double-hashing)
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update investor password
+    await db
+      .update(investors)
+      .set({ passwordHash: hashedPassword })
+      .where(eq(investors.id, investorId));
+    
+    // Mark token as used
+    await db
+      .update(investorPasswordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(investorPasswordResetTokens.token, token));
+    
+    return true;
   }
 
   // Roadmap methods

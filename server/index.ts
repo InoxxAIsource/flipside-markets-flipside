@@ -11,6 +11,7 @@ import { getSplitMergeService } from "./services/splitMergeService";
 import { getProxyWalletService } from "./services/proxyWalletService";
 import { CONTRACT_ADDRESSES } from "./config/contracts";
 import path from "path";
+import cookieParser from "cookie-parser";
 
 // Global BigInt serializer - converts all BigInt values to strings in JSON
 (BigInt.prototype as any).toJSON = function() {
@@ -30,6 +31,7 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 // Serve uploaded market images
 app.use('/market_images', express.static(path.join(process.cwd(), 'attached_assets', 'market_images')));
