@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Web3Provider } from "@/contexts/Web3Provider";
 import { HelmetProvider } from "react-helmet-async";
 import { TopNav } from "@/components/TopNav";
+import { InvestorLayout } from "@/components/InvestorLayout";
 import Home from "@/pages/Home";
 import MarketPage from "@/pages/MarketPage";
 import CreateMarket from "@/pages/CreateMarket";
@@ -26,7 +27,7 @@ import InvestorResetPassword from "@/pages/InvestorResetPassword";
 import InvestorDashboard from "@/pages/InvestorDashboard";
 import NotFound from "@/pages/not-found";
 
-// Force rebuild - v1.0.2
+// Force rebuild - v1.0.3
 
 function Router() {
   return (
@@ -44,24 +45,40 @@ function Router() {
       <Route path="/api-keys" component={ApiKeys} />
       <Route path="/admin/seed" component={AdminSeed} />
       <Route path="/admin/investors" component={AdminInvestors} />
-      <Route path="/investor/apply" component={InvestorApply} />
-      <Route path="/investor/login" component={InvestorLogin} />
-      <Route path="/investor/forgot-password" component={InvestorForgotPassword} />
-      <Route path="/investor/reset-password" component={InvestorResetPassword} />
-      <Route path="/investor/dashboard" component={InvestorDashboard} />
+      
+      {/* Investor routes with separate layout */}
+      <Route path="/investor/apply">
+        <InvestorLayout><InvestorApply /></InvestorLayout>
+      </Route>
+      <Route path="/investor/login">
+        <InvestorLayout><InvestorLogin /></InvestorLayout>
+      </Route>
+      <Route path="/investor/forgot-password">
+        <InvestorLayout><InvestorForgotPassword /></InvestorLayout>
+      </Route>
+      <Route path="/investor/reset-password">
+        <InvestorLayout><InvestorResetPassword /></InvestorLayout>
+      </Route>
+      <Route path="/investor/dashboard">
+        <InvestorLayout><InvestorDashboard /></InvestorLayout>
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
+  const [location] = useLocation();
+  const isInvestorRoute = location.startsWith('/investor');
+
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <Web3Provider>
           <TooltipProvider>
             <div className="min-h-screen bg-background overflow-x-hidden">
-              <TopNav />
+              {!isInvestorRoute && <TopNav />}
               <Router />
             </div>
             <Toaster />
