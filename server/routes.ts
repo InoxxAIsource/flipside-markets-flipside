@@ -2413,5 +2413,75 @@ Crawl-delay: 1`;
     res.send(robotsTxt);
   });
 
+  // ========================================
+  // ADMIN ENDPOINTS - Market Seeding
+  // ========================================
+
+  // POST /api/admin/seed-markets - Seed new markets to production
+  app.post('/api/admin/seed-markets', async (req, res) => {
+    try {
+      const { walletAddress, signature } = req.body;
+      
+      // Get admin wallet addresses from environment (comma-separated)
+      const adminWallets = (process.env.ADMIN_WALLET_ADDRESSES || '').toLowerCase().split(',').map(a => a.trim()).filter(Boolean);
+      
+      if (adminWallets.length === 0) {
+        return res.status(403).json({ 
+          success: false, 
+          error: 'Admin wallets not configured. Set ADMIN_WALLET_ADDRESSES environment variable.' 
+        });
+      }
+
+      // Verify the requesting wallet is an admin
+      if (!walletAddress || !adminWallets.includes(walletAddress.toLowerCase())) {
+        return res.status(403).json({ 
+          success: false, 
+          error: 'Unauthorized. Only admin wallets can seed markets.' 
+        });
+      }
+
+      // Import seed data
+      const { seedMarkets } = await import('./seeds/markets');
+      
+      // Track results
+      const results = {
+        inserted: 0,
+        skipped: 0,
+        errors: [] as string[]
+      };
+
+      // Insert each market, skipping duplicates
+      for (const market of seedMarkets) {
+        try {
+          // Check if market already exists (by question)
+          const existing = await storage.getMarketByQuestion(market.question);
+          
+          if (existing) {
+            results.skipped++;
+            continue;
+          }
+
+          // Insert the market
+          await storage.createMarket(market as any);
+          results.inserted++;
+        } catch (error: any) {
+          results.errors.push(`${market.question}: ${error.message}`);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Seeding complete: ${results.inserted} inserted, ${results.skipped} skipped`,
+        results
+      });
+    } catch (error: any) {
+      console.error('Error seeding markets:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+
   return httpServer;
 }

@@ -177,6 +177,15 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(markets.createdAt));
   }
 
+  async getMarketByQuestion(question: string): Promise<Market | undefined> {
+    const result = await db
+      .select()
+      .from(markets)
+      .where(eq(markets.question, question))
+      .limit(1);
+    return result[0];
+  }
+
   async createMarket(market: InsertMarket): Promise<Market> {
     const result = await db
       .insert(markets)
