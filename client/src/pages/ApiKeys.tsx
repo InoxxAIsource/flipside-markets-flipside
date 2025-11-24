@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Key, Trash2, Copy, CheckCircle, AlertTriangle } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
-import { useAccount } from "@web3modal/ethers/react";
+import { useWallet } from "@/contexts/Web3Provider";
 
 interface ApiKey {
   id: string;
@@ -27,7 +27,7 @@ interface ApiKey {
 }
 
 export default function ApiKeys() {
-  const { address } = useAccount();
+  const { account: address, isConnected } = useWallet();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isKeyCreated, setIsKeyCreated] = useState(false);
@@ -38,7 +38,7 @@ export default function ApiKeys() {
 
   const { data: apiKeys = [], isLoading } = useQuery<ApiKey[]>({
     queryKey: ['/api/user/api-keys', address],
-    enabled: !!address,
+    enabled: !!address && isConnected,
     queryFn: async () => {
       const response = await fetch(`/api/user/api-keys?walletAddress=${address}`);
       if (!response.ok) throw new Error('Failed to fetch API keys');
