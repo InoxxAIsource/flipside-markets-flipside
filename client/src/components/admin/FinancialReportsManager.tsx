@@ -1,26 +1,44 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useWallet } from "@/contexts/Web3Provider";
 import { Loader2, Plus, Trash2, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { z } from "zod";
+
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  period: z.string().min(1, "Period is required"),
+  summary: z.string().optional(),
+  published: z.boolean(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function FinancialReportsManager() {
   const { toast } = useToast();
+  const { account } = useWallet();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    period: "",
-    summary: "",
-    published: true,
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      period: "",
+      summary: "",
+      published: true,
+    },
   });
 
   const { data: reports, isLoading } = useQuery({
@@ -28,66 +46,87 @@ export function FinancialReportsManager() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/admin/financials", data);
+    mutationFn: async (data: FormValues) => {
+      const now = new Date();
+      return await apiRequest("POST", "/api/admin/financials", {
+        ...data,
+        walletAddress: account,
+        periodStart: now.toISOString(),
+        periodEnd: now.toISOString(),
+        tradingFeeRevenue: 0,
+        apiRevenue: 0,
+        otherRevenue: 0,
+        totalRevenue: 0,
+        infrastructureCosts: 0,
+        developmentCosts: 0,
+        marketingCosts: 0,
+        operationalCosts: 0,
+        totalExpenses: 0,
+        burnRate: 0,
+        activeUsers: 0,
+        newUsers: 0,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/investor/financials"] });
       toast({ title: "Success", description: "Financial report created" });
-      resetForm();
+      setIsDialogOpen(false);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return await apiRequest("PUT", `/api/admin/financials/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: Partial<FormValues> }) => {
+      return await apiRequest("PUT", `/api/admin/financials/${id}`, {
+        ...data,
+        walletAddress: account,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/investor/financials"] });
       toast({ title: "Success", description: "Financial report updated" });
-      resetForm();
+      setIsDialogOpen(false);
+      form.reset();
+      setEditingReport(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/financials/${id}`, {});
+      return await apiRequest("DELETE", `/api/admin/financials/${id}`, { walletAddress: account });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/investor/financials"] });
       toast({ title: "Success", description: "Financial report deleted" });
     },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
   });
-
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      period: "",
-      summary: "",
-      published: true,
-    });
-    setEditingReport(null);
-    setIsDialogOpen(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingReport) {
-      updateMutation.mutate({ id: editingReport.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
 
   const handleEdit = (report: any) => {
     setEditingReport(report);
-    setFormData({
+    form.reset({
       title: report.title,
       period: report.period,
       summary: report.summary || "",
       published: report.published,
     });
     setIsDialogOpen(true);
+  };
+
+  const onSubmit = (data: FormValues) => {
+    if (editingReport) {
+      updateMutation.mutate({ id: editingReport.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   return (
@@ -103,7 +142,7 @@ export function FinancialReportsManager() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()} data-testid="button-add-report">
+            <Button onClick={() => { setEditingReport(null); form.reset(); }} data-testid="button-add-report">
               <Plus className="mr-2 h-4 w-4" />
               Add Report
             </Button>
@@ -115,67 +154,81 @@ export function FinancialReportsManager() {
                 {editingReport ? "Update" : "Add"} a financial report for investors
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Q1 2025 Financial Report"
-                  required
-                  data-testid="input-title"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="period">Period</Label>
-                <Input
-                  id="period"
-                  value={formData.period}
-                  onChange={(e) => setFormData({ ...formData, period: e.target.value })}
-                  placeholder="Q1 2025"
-                  required
-                  data-testid="input-period"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="summary">Summary</Label>
-                <Textarea
-                  id="summary"
-                  value={formData.summary}
-                  onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                  rows={4}
-                  placeholder="Brief summary of financial performance..."
-                  data-testid="textarea-summary"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="published">Status</Label>
-                <Select
-                  value={formData.published ? "published" : "draft"}
-                  onValueChange={(value) => setFormData({ ...formData, published: value === "published" })}
-                >
-                  <SelectTrigger data-testid="select-published">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {(createMutation.isPending || updateMutation.isPending) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Q1 2025 Financial Report" data-testid="input-title" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                  {editingReport ? "Update" : "Create"}
-                </Button>
-              </div>
-            </form>
+                />
+                <FormField
+                  control={form.control}
+                  name="period"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Period</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Q1 2025" data-testid="input-period" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="summary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Summary</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} rows={4} placeholder="Brief summary of financial performance..." data-testid="textarea-summary" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="published"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={(value) => field.onChange(value === "published")} value={field.value ? "published" : "draft"}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-published">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="published">Published</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-submit">
+                    {(createMutation.isPending || updateMutation.isPending) && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {editingReport ? "Update" : "Create"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
@@ -190,7 +243,7 @@ export function FinancialReportsManager() {
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
-          ) : reports && reports.length > 0 ? (
+          ) : reports && Array.isArray(reports) && reports.length > 0 ? (
             <div className="space-y-3">
               {reports.map((report: any, index: number) => (
                 <div
@@ -200,14 +253,14 @@ export function FinancialReportsManager() {
                 >
                   <div className="flex-1">
                     <div className="flex items-start gap-2">
-                      <h4 className="font-medium">{report.title}</h4>
-                      <Badge variant={report.published ? "default" : "secondary"}>
+                      <h4 className="font-medium" data-testid={`report-${index}-title`}>{report.title}</h4>
+                      <Badge variant={report.published ? "default" : "secondary"} data-testid={`report-${index}-status`}>
                         {report.published ? "Published" : "Draft"}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">{report.period}</p>
+                    <p className="text-sm text-muted-foreground mt-1" data-testid={`report-${index}-period`}>{report.period}</p>
                     {report.summary && (
-                      <p className="text-sm text-muted-foreground mt-2">{report.summary}</p>
+                      <p className="text-sm text-muted-foreground mt-2" data-testid={`report-${index}-summary`}>{report.summary}</p>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -232,7 +285,7 @@ export function FinancialReportsManager() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">
+            <p className="text-sm text-muted-foreground text-center py-8" data-testid="text-no-reports">
               No financial reports yet. Click "Add Report" to create one.
             </p>
           )}

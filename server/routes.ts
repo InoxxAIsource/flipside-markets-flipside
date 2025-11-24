@@ -2895,32 +2895,73 @@ Crawl-delay: 1`;
     }
   });
   
+  // Admin authentication helper
+  const requireAdmin = (req: any, res: any) => {
+    const { walletAddress } = req.body;
+    const adminWallets = (process.env.ADMIN_WALLET_ADDRESSES || '').toLowerCase().split(',').map(a => a.trim()).filter(Boolean);
+    
+    if (adminWallets.length === 0) {
+      res.status(403).json({ error: 'Admin wallets not configured' });
+      return false;
+    }
+    
+    if (!walletAddress || !adminWallets.includes(walletAddress.toLowerCase())) {
+      res.status(403).json({ error: 'Unauthorized. Admin access required.' });
+      return false;
+    }
+    
+    return true;
+  };
+
   // Admin: Create roadmap item
   app.post("/api/admin/roadmap", async (req, res) => {
     try {
-      const item = await storage.createRoadmapItem(req.body);
+      const { insertRoadmapItemSchema } = await import("@shared/schema");
+      
+      // Validate schema first
+      const { walletAddress, ...data } = req.body;
+      const validatedData = insertRoadmapItemSchema.parse(data);
+      
+      // Then check admin authorization
+      if (!requireAdmin({ body: { walletAddress } }, res)) return;
+      
+      const item = await storage.createRoadmapItem(validatedData);
       res.json(item);
     } catch (error: any) {
       console.error('Error creating roadmap item:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   });
   
   // Admin: Update roadmap item
   app.put("/api/admin/roadmap/:id", async (req, res) => {
     try {
+      const { insertRoadmapItemSchema } = await import("@shared/schema");
+      
+      // Validate schema first
+      const { walletAddress, ...data } = req.body;
+      const validatedData = insertRoadmapItemSchema.partial().parse(data);
+      
+      // Then check admin authorization
+      if (!requireAdmin({ body: { walletAddress } }, res)) return;
+      
       const { id } = req.params;
-      const item = await storage.updateRoadmapItem(id, req.body);
+      const item = await storage.updateRoadmapItem(id, validatedData);
       res.json(item);
     } catch (error: any) {
       console.error('Error updating roadmap item:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   });
   
   // Admin: Delete roadmap item
   app.delete("/api/admin/roadmap/:id", async (req, res) => {
     try {
+      const { walletAddress } = req.body;
+      
+      // Check admin authorization
+      if (!requireAdmin({ body: { walletAddress } }, res)) return;
+      
       const { id } = req.params;
       await storage.deleteRoadmapItem(id);
       res.json({ success: true });
@@ -2933,29 +2974,52 @@ Crawl-delay: 1`;
   // Admin: Create financial report
   app.post("/api/admin/financials", async (req, res) => {
     try {
-      const report = await storage.createFinancialReport(req.body);
+      const { insertFinancialReportSchema } = await import("@shared/schema");
+      
+      // Validate schema first
+      const { walletAddress, ...data } = req.body;
+      const validatedData = insertFinancialReportSchema.parse(data);
+      
+      // Then check admin authorization
+      if (!requireAdmin({ body: { walletAddress } }, res)) return;
+      
+      const report = await storage.createFinancialReport(validatedData);
       res.json(report);
     } catch (error: any) {
       console.error('Error creating financial report:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   });
   
   // Admin: Update financial report
   app.put("/api/admin/financials/:id", async (req, res) => {
     try {
+      const { insertFinancialReportSchema } = await import("@shared/schema");
+      
+      // Validate schema first
+      const { walletAddress, ...data } = req.body;
+      const validatedData = insertFinancialReportSchema.partial().parse(data);
+      
+      // Then check admin authorization
+      if (!requireAdmin({ body: { walletAddress } }, res)) return;
+      
       const { id } = req.params;
-      const report = await storage.updateFinancialReport(id, req.body);
+      const report = await storage.updateFinancialReport(id, validatedData);
       res.json(report);
     } catch (error: any) {
       console.error('Error updating financial report:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   });
 
   // Admin: Delete financial report
   app.delete("/api/admin/financials/:id", async (req, res) => {
     try {
+      const { walletAddress } = req.body;
+      
+      // Check admin authorization
+      if (!requireAdmin({ body: { walletAddress } }, res)) return;
+      
       const { id } = req.params;
       await storage.deleteFinancialReport(id);
       res.json({ success: true });
