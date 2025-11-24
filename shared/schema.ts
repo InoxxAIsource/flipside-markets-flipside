@@ -362,6 +362,34 @@ export const commentVotes = pgTable("comment_votes", {
   uniqueVote: uniqueIndex("comment_votes_unique_idx").on(table.commentId, table.userAddress),
 }));
 
+// API Keys - for developer API access
+export const apiKeys = pgTable("api_keys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  
+  // API key details
+  name: text("name").notNull(), // User-friendly name for the key
+  keyHash: text("key_hash").notNull(), // bcrypt hash of the API key
+  keyPrefix: text("key_prefix").notNull(), // First 8 characters for display (e.g., "fp_live_")
+  
+  // Access control
+  tier: text("tier").notNull().default('free'), // 'free', 'pro', 'enterprise'
+  rateLimit: integer("rate_limit").notNull().default(100), // Requests per hour
+  isActive: boolean("is_active").notNull().default(true),
+  
+  // Usage tracking
+  lastUsedAt: timestamp("last_used_at"),
+  requestCount: integer("request_count").notNull().default(0), // Total requests made
+  
+  // Metadata
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  userIdx: index("api_keys_user_idx").on(table.userId),
+  keyPrefixIdx: index("api_keys_key_prefix_idx").on(table.keyPrefix),
+  tierIdx: index("api_keys_tier_idx").on(table.tier),
+}));
+
 // Insert schemas with validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -464,6 +492,17 @@ export const insertCommentVoteSchema = createInsertSchema(commentVotes).omit({
   vote: z.number().refine(v => v === 1 || v === -1, { message: "Vote must be 1 or -1" }),
 });
 
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastUsedAt: true,
+  requestCount: true,
+}).extend({
+  name: z.string().min(1).max(100),
+  tier: z.enum(['free', 'pro', 'enterprise']).default('free'),
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -506,3 +545,6 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 
 export type CommentVote = typeof commentVotes.$inferSelect;
 export type InsertCommentVote = z.infer<typeof insertCommentVoteSchema>;
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
