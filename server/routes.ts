@@ -1153,6 +1153,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API Key Management Routes
+  
+  // POST /api/user/api-keys - Generate a new API key
+  app.post('/api/user/api-keys', async (req, res) => {
+    try {
+      const { walletAddress, name, tier = 'free' } = req.body;
+      
+      if (!walletAddress || !name) {
+        return res.status(400).json({ error: 'walletAddress and name are required' });
+      }
+      
+      // Get or create user
+      let user = await storage.getUserByWallet(walletAddress);
+      if (!user) {
+        user = await storage.createUser({ walletAddress });
+      }
+      
+      // Generate secure random API key
+      const bcrypt = await import('bcryptjs');
+      const apiKeyRaw = `fp_live_${randomBytes(32).toString('hex')}`;
+      const keyHash = await bcrypt.hash(apiKeyRaw, 10);
+      const keyPrefix = apiKeyRaw.substring(0, 16);
+      
+      // Determine rate limit based on tier
+      const rateLimits = {
+        free: 100,
+        pro: 1000,
+        enterprise: 999999,
+      };
+      
+      const apiKey = await storage.createApiKey({
+        userId: user.id,
+        name,
+        tier: tier as 'free' | 'pro' | 'enterprise',
+        rateLimit: rateLimits[tier as keyof typeof rateLimits] || 100,
+        keyHash,
+        keyPrefix,
+        isActive: true,
+      });
+      
+      // Return the raw API key only once (never stored in plain text)
+      res.json({
+        id: apiKey.id,
+        name: apiKey.name,
+        tier: apiKey.tier,
+        rateLimit: apiKey.rateLimit,
+        apiKey: apiKeyRaw,
+        keyPrefix: apiKey.keyPrefix,
+        createdAt: apiKey.createdAt,
+        message: 'Save this API key securely. You will not be able to see it again.',
+      });
+    } catch (error: any) {
+      console.error('Error creating API key:', error);
+      res.status(500).json({ error: 'Failed to create API key' });
+    }
+  });
+  
+  // GET /api/user/api-keys - Get user's API keys
+  app.get('/api/user/api-keys', async (req, res) => {
+    try {
+      const { walletAddress } = req.query;
+      
+      if (!walletAddress) {
+        return res.status(400).json({ error: 'walletAddress is required' });
+      }
+      
+      const user = await storage.getUserByWallet(walletAddress as string);
+      if (!user) {
+        return res.json([]);
+      }
+      
+      const apiKeys = await storage.getUserApiKeys(user.id);
+      
+      // Remove sensitive data before sending
+      const safeKeys = apiKeys.map(key => ({
+        id: key.id,
+        name: key.name,
+        tier: key.tier,
+        rateLimit: key.rateLimit,
+        keyPrefix: key.keyPrefix,
+        isActive: key.isActive,
+        lastUsedAt: key.lastUsedAt,
+        requestCount: key.requestCount,
+        createdAt: key.createdAt,
+        updatedAt: key.updatedAt,
+      }));
+      
+      res.json(safeKeys);
+    } catch (error: any) {
+      console.error('Error fetching API keys:', error);
+      res.status(500).json({ error: 'Failed to fetch API keys' });
+    }
+  });
+  
+  // DELETE /api/user/api-keys/:id - Revoke an API key
+  app.delete('/api/user/api-keys/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { walletAddress } = req.body;
+      
+      if (!walletAddress) {
+        return res.status(400).json({ error: 'walletAddress is required' });
+      }
+      
+      // Verify ownership before deleting
+      const user = await storage.getUserByWallet(walletAddress);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      await storage.deleteApiKey(id);
+      res.json({ success: true, message: 'API key revoked successfully' });
+    } catch (error: any) {
+      console.error('Error deleting API key:', error);
+      res.status(500).json({ error: 'Failed to delete API key' });
+    }
+  });
+
   // POST /api/orders - Create a new order
   app.post('/api/orders', async (req, res) => {
     try {

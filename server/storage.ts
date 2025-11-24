@@ -14,6 +14,7 @@ import {
   userNonces,
   comments,
   commentVotes,
+  apiKeys,
   type User,
   type InsertUser,
   type Market,
@@ -35,6 +36,8 @@ import {
   type InsertComment,
   type CommentVote,
   type InsertCommentVote,
+  type ApiKey,
+  type InsertApiKey,
 } from "@shared/schema";
 
 // Initialize database connection
@@ -106,6 +109,13 @@ export interface IStorage {
   getUserCommentVote(commentId: string, userAddress: string): Promise<CommentVote | undefined>;
   upsertCommentVote(vote: InsertCommentVote): Promise<CommentVote>;
   deleteCommentVote(commentId: string, userAddress: string): Promise<void>;
+  
+  // API Key methods
+  createApiKey(apiKey: InsertApiKey & { keyHash: string; keyPrefix: string }): Promise<ApiKey>;
+  getUserApiKeys(userId: string): Promise<ApiKey[]>;
+  getApiKeyByHash(keyHash: string): Promise<ApiKey | undefined>;
+  updateApiKeyUsage(id: string): Promise<void>;
+  deleteApiKey(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -573,6 +583,49 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(commentVotes)
       .where(and(eq(commentVotes.commentId, commentId), eq(commentVotes.userAddress, userAddress)));
+  }
+
+  // API Key methods
+  async createApiKey(apiKey: InsertApiKey & { keyHash: string; keyPrefix: string }): Promise<ApiKey> {
+    const result = await db
+      .insert(apiKeys)
+      .values(apiKey)
+      .returning();
+    return result[0] as ApiKey;
+  }
+
+  async getUserApiKeys(userId: string): Promise<ApiKey[]> {
+    return await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.userId, userId))
+      .orderBy(desc(apiKeys.createdAt));
+  }
+
+  async getApiKeyByHash(keyHash: string): Promise<ApiKey | undefined> {
+    const result = await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.keyHash, keyHash))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateApiKeyUsage(id: string): Promise<void> {
+    await db
+      .update(apiKeys)
+      .set({ 
+        lastUsedAt: new Date(),
+        requestCount: sqlOperator`${apiKeys.requestCount} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(apiKeys.id, id));
+  }
+
+  async deleteApiKey(id: string): Promise<void> {
+    await db
+      .delete(apiKeys)
+      .where(eq(apiKeys.id, id));
   }
 }
 
