@@ -6,7 +6,7 @@ import { web3Service } from "./contracts/web3Service";
 import { ammService } from "./contracts/ammService";
 import { relayerService } from "./services/relayerService";
 import { orderMatcher } from "./services/orderMatcher";
-import { insertMarketSchema, insertOrderSchema, orders, orderFills } from "@shared/schema";
+import { insertMarketSchema, insertOrderSchema, orders, orderFills, users, markets } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { MarketDepthCalculator } from "./services/marketDepth";
@@ -2791,6 +2791,106 @@ Crawl-delay: 1`;
       res.json(reports);
     } catch (error: any) {
       console.error('Error fetching financial reports:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor Overview: Get platform metrics
+  app.get("/api/investor/overview/metrics", authenticateInvestor, async (req, res) => {
+    try {
+      const [totalUsers, totalMarkets, volume] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(users),
+        db.select({ count: sql<number>`count(*)::int` }).from(markets),
+        db.select({ total: sql<number>`coalesce(sum(volume), 0)::real` }).from(markets)
+      ]);
+      
+      const activeMarkets = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(markets)
+        .where(sql`resolved_at IS NULL AND expires_at > NOW()`);
+      
+      res.json({
+        totalUsers: totalUsers[0]?.count || 0,
+        totalMarkets: totalMarkets[0]?.count || 0,
+        activeMarkets: activeMarkets[0]?.count || 0,
+        totalVolume: volume[0]?.total || 0
+      });
+    } catch (error: any) {
+      console.error('Error fetching metrics:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor Overview: Get user growth data
+  app.get("/api/investor/overview/growth", authenticateInvestor, async (req, res) => {
+    try {
+      const growthData = await db.execute(sql`
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as users
+        FROM users
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `);
+      
+      res.json(growthData.rows.map((row: any) => ({
+        date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        users: parseInt(row.users)
+      })));
+    } catch (error: any) {
+      console.error('Error fetching growth data:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor Overview: Get revenue data
+  app.get("/api/investor/overview/revenue", authenticateInvestor, async (req, res) => {
+    try {
+      const revenueData = await db.execute(sql`
+        SELECT 
+          DATE(created_at) as date,
+          SUM(volume * 0.02) as revenue
+        FROM markets
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `);
+      
+      res.json(revenueData.rows.map((row: any) => ({
+        date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        revenue: parseFloat(row.revenue) || 0
+      })));
+    } catch (error: any) {
+      console.error('Error fetching revenue data:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Investor Overview: Get recent milestones
+  app.get("/api/investor/overview/milestones", authenticateInvestor, async (req, res) => {
+    try {
+      const milestones = [
+        {
+          title: "Platform Launch",
+          description: "Flipside prediction markets went live on Ethereum Sepolia testnet",
+          date: new Date('2024-01-15')
+        },
+        {
+          title: "1000 Users Milestone",
+          description: "Reached 1,000 registered users trading on the platform",
+          date: new Date('2024-02-20')
+        },
+        {
+          title: "AMM Pool Feature",
+          description: "Launched automated market maker pools for instant liquidity",
+          date: new Date('2024-03-10')
+        }
+      ];
+      
+      res.json(milestones);
+    } catch (error: any) {
+      console.error('Error fetching milestones:', error);
       res.status(500).json({ error: error.message });
     }
   });

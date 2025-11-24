@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, FileText, Map, TrendingUp, Users, LogOut } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { OverviewTab } from "@/components/investor/OverviewTab";
 
 export default function InvestorDashboard() {
   const [, setLocation] = useLocation();
@@ -103,66 +104,8 @@ export default function InvestorDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Platform Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-green-600">Live</div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    All systems operational
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Total Markets</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">17</div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Active prediction markets
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Total Volume</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">$X,XXX</div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Cumulative trading volume
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Welcome to the Investor Portal</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p>
-                  Thank you for your interest in Flipside. This portal provides you with
-                  exclusive access to:
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                  <li>Real-time platform metrics and growth analytics</li>
-                  <li>Comprehensive technical documentation and whitepapers</li>
-                  <li>Product roadmap with quarterly milestones</li>
-                  <li>Financial reports and revenue projections</li>
-                  <li>Team information and vision statements</li>
-                </ul>
-                <p className="text-sm text-muted-foreground pt-4">
-                  Navigate using the tabs above to explore different sections.
-                </p>
-              </CardContent>
-            </Card>
+          <TabsContent value="overview">
+            <OverviewTab />
           </TabsContent>
 
           <TabsContent value="docs">
