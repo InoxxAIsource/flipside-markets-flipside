@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,10 @@ import {
   Wallet,
   Database,
   Brain,
-  Archive
+  Archive,
+  Key
 } from 'lucide-react';
+import { Link } from 'wouter';
 
 const CONTRACT_ADDRESSES = {
   ConditionalTokens: '0xdC8CB01c328795C007879B2C030AbF1c1b580D84',
@@ -37,6 +39,7 @@ const CONTRACT_ADDRESSES = {
 
 const sections = [
   { id: 'overview', label: 'Project Overview', icon: Globe },
+  { id: 'api', label: 'Developer API', icon: Code2 },
   { id: 'uiux', label: 'UI/UX Features', icon: BookOpen },
   { id: 'contracts', label: 'Smart Contracts', icon: Code2 },
   { id: 'proxywallet', label: 'ProxyWallet System', icon: Wallet },
@@ -265,6 +268,103 @@ export default function Docs() {
                     </li>
                   </ul>
                 </div>
+              </div>
+            </section>
+
+            {/* Developer API */}
+            <section 
+              ref={(el) => contentRefs.current['api'] = el}
+              id="api" 
+              data-testid="section-api"
+              className="scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Code2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <h1 className="text-2xl sm:text-3xl font-bold">Developer API</h1>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                Programmatic access to Flipside prediction markets
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Link href="/api-docs">
+                  <Card className="hover-elevate transition-all cursor-pointer h-full" data-testid="card-api-docs-link">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Code2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <CardTitle>API Documentation</CardTitle>
+                      </div>
+                      <CardDescription>
+                        Complete REST API reference
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Access real-time market data, place orders, manage positions, and integrate WebSocket support for live updates.
+                      </p>
+                      <div className="space-y-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          Authentication & API keys
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          Complete endpoint reference
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          SDK examples (JS, Python, cURL)
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          WebSocket real-time updates
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                <Link href="/api-keys">
+                  <Card className="hover-elevate transition-all cursor-pointer h-full" data-testid="card-api-keys-link">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Key className="h-5 w-5 text-primary" />
+                        </div>
+                        <CardTitle>API Keys</CardTitle>
+                      </div>
+                      <CardDescription>
+                        Generate and manage your keys
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Create API keys for programmatic access. Monitor usage, track requests, and manage authentication credentials.
+                      </p>
+                      <div className="space-y-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          Generate new API keys instantly
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          Track API usage and requests
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          Revoke keys anytime
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          Secure bcrypt-hashed storage
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               </div>
             </section>
 

@@ -1,4 +1,4 @@
-import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen, Menu, Shield, Archive, Code, Key } from 'lucide-react';
+import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen, Menu, Shield, Archive } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -71,16 +71,6 @@ export function TopNav({ onSearch }: TopNavProps) {
               <BookOpen className="h-5 w-5" />
             </Button>
           </Link>
-          <Link href="/api-docs">
-            <Button variant="ghost" size="icon" data-testid="button-api-docs">
-              <Code className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Link href="/api-keys">
-            <Button variant="ghost" size="icon" data-testid="button-api-keys">
-              <Key className="h-5 w-5" />
-            </Button>
-          </Link>
           <Link href="/portfolio">
             <Button variant="ghost" size="icon" data-testid="button-portfolio">
               <Wallet className="h-5 w-5" />
@@ -151,22 +141,6 @@ export function TopNav({ onSearch }: TopNavProps) {
                   <div className="flex items-center gap-2 w-full" data-testid="menu-item-docs">
                     <BookOpen className="h-4 w-4" />
                     <span>Documentation</span>
-                  </div>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/api-docs">
-                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-api-docs">
-                    <Code className="h-4 w-4" />
-                    <span>API Docs</span>
-                  </div>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/api-keys">
-                  <div className="flex items-center gap-2 w-full" data-testid="menu-item-api-keys">
-                    <Key className="h-4 w-4" />
-                    <span>API Keys</span>
                   </div>
                 </Link>
               </DropdownMenuItem>

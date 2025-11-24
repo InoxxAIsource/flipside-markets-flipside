@@ -116,7 +116,7 @@ graph TD
       path: "/api/v1/orders",
       auth: true,
       description: "Place a new order",
-      rateLimit: "Tier-based",
+      rateLimit: "API Key Required",
       request: `{
   "marketId": "uuid",
   "makerAddress": "0x...",
@@ -147,7 +147,7 @@ graph TD
       path: "/api/v1/orders/:id",
       auth: true,
       description: "Cancel an order",
-      rateLimit: "Tier-based",
+      rateLimit: "API Key Required",
       request: "No body required",
       response: `{
   "success": true,
@@ -159,7 +159,7 @@ graph TD
       path: "/api/v1/positions",
       auth: true,
       description: "Get user positions",
-      rateLimit: "Tier-based",
+      rateLimit: "API Key Required",
       request: "?userAddress=0x...",
       response: `{
   "success": true,
@@ -179,7 +179,7 @@ graph TD
       path: "/api/v1/orders",
       auth: true,
       description: "Get user orders",
-      rateLimit: "Tier-based",
+      rateLimit: "API Key Required",
       request: "?userAddress=0x...",
       response: `{
   "success": true,
@@ -201,7 +201,7 @@ graph TD
 class FlipsideClient {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    this.baseUrl = 'https://your-domain.replit.app';
+    this.baseUrl = 'https://flipside.exchange';
   }
 
   async request(endpoint, options = {}) {
@@ -292,7 +292,7 @@ from typing import Dict, List, Optional
 class FlipsideClient:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key
-        self.base_url = 'https://your-domain.replit.app'
+        self.base_url = 'https://flipside.exchange'
         
     def _request(self, method: str, endpoint: str, **kwargs) -> Dict:
         headers = kwargs.pop('headers', {})
@@ -360,16 +360,16 @@ order = client.create_order({
 print(f"Order created: {order['data']['id']}")`;
 
   const curlExample = `# Get all markets (public)
-curl https://your-domain.replit.app/api/v1/markets
+curl https://flipside.exchange/api/v1/markets
 
 # Get specific market (public)
-curl https://your-domain.replit.app/api/v1/markets/market-id
+curl https://flipside.exchange/api/v1/markets/market-id
 
 # Get market orderbook (public)
-curl https://your-domain.replit.app/api/v1/markets/market-id/orderbook
+curl https://flipside.exchange/api/v1/markets/market-id/orderbook
 
 # Place an order (authenticated)
-curl -X POST https://your-domain.replit.app/api/v1/orders \\
+curl -X POST https://flipside.exchange/api/v1/orders \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: fp_live_your_api_key_here" \\
   -d '{
@@ -386,11 +386,11 @@ curl -X POST https://your-domain.replit.app/api/v1/orders \\
   }'
 
 # Get user positions (authenticated)
-curl "https://your-domain.replit.app/api/v1/positions?userAddress=0x..." \\
+curl "https://flipside.exchange/api/v1/positions?userAddress=0x..." \\
   -H "X-API-Key: fp_live_your_api_key_here"
 
 # Cancel an order (authenticated)
-curl -X DELETE https://your-domain.replit.app/api/v1/orders/order-id \\
+curl -X DELETE https://flipside.exchange/api/v1/orders/order-id \\
   -H "X-API-Key: fp_live_your_api_key_here"`;
 
   return (
@@ -403,12 +403,11 @@ curl -X DELETE https://your-domain.replit.app/api/v1/orders/order-id \\
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 gap-2" data-testid="tabs-api-docs">
+        <TabsList className="grid w-full grid-cols-5 gap-2" data-testid="tabs-api-docs">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
           <TabsTrigger value="auth" data-testid="tab-auth">Authentication</TabsTrigger>
           <TabsTrigger value="endpoints" data-testid="tab-endpoints">Endpoints</TabsTrigger>
           <TabsTrigger value="sdk" data-testid="tab-sdk">SDK Examples</TabsTrigger>
-          <TabsTrigger value="pricing" data-testid="tab-pricing">Pricing</TabsTrigger>
           <TabsTrigger value="websocket" data-testid="tab-websocket">WebSocket</TabsTrigger>
         </TabsList>
 
@@ -425,7 +424,7 @@ curl -X DELETE https://your-domain.replit.app/api/v1/orders/order-id \\
               <div>
                 <h3 className="font-semibold mb-2">Base URL</h3>
                 <code className="bg-muted px-3 py-2 rounded block">
-                  https://your-domain.replit.app/api/v1
+                  https://flipside.exchange/api/v1
                 </code>
               </div>
 
@@ -433,7 +432,7 @@ curl -X DELETE https://your-domain.replit.app/api/v1/orders/order-id \\
                 <h3 className="font-semibold mb-2">Features</h3>
                 <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                   <li>RESTful API with JSON responses</li>
-                  <li>Tier-based rate limiting (100-1000+ req/hour)</li>
+                  <li>Rate limiting with X-API-Key authentication</li>
                   <li>WebSocket support for real-time updates</li>
                   <li>Comprehensive error messages</li>
                   <li>CORS enabled for browser requests</li>
@@ -491,10 +490,9 @@ curl -X DELETE https://your-domain.replit.app/api/v1/orders/order-id \\
                   Every authenticated response includes rate limit information:
                 </p>
                 <div className="bg-muted p-4 rounded space-y-1 text-sm font-mono">
-                  <div>X-RateLimit-Limit: 1000</div>
-                  <div>X-RateLimit-Remaining: 999</div>
+                  <div>X-RateLimit-Limit: 100</div>
+                  <div>X-RateLimit-Remaining: 99</div>
                   <div>X-RateLimit-Reset: 2025-12-31T12:00:00.000Z</div>
-                  <div>X-RateLimit-Tier: pro</div>
                 </div>
               </div>
             </CardContent>
@@ -618,103 +616,6 @@ curl -X DELETE https://your-domain.replit.app/api/v1/orders/order-id \\
           </Card>
         </TabsContent>
 
-        {/* Pricing Tab */}
-        <TabsContent value="pricing" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card data-testid="card-tier-free">
-              <CardHeader>
-                <CardTitle>Free</CardTitle>
-                <CardDescription>For testing and development</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">$0<span className="text-sm text-muted-foreground">/mo</span></div>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    100 requests/hour
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    All public endpoints
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    WebSocket access
-                  </li>
-                </ul>
-                <Button className="w-full" variant="outline" data-testid="button-get-started-free">
-                  Get Started
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary" data-testid="card-tier-pro">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Pro
-                  <Badge>Popular</Badge>
-                </CardTitle>
-                <CardDescription>For production applications</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">$99<span className="text-sm text-muted-foreground">/mo</span></div>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    1,000 requests/hour
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    All endpoints
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Priority support
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    99.9% uptime SLA
-                  </li>
-                </ul>
-                <Button className="w-full" data-testid="button-upgrade-pro">
-                  Upgrade to Pro
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card data-testid="card-tier-enterprise">
-              <CardHeader>
-                <CardTitle>Enterprise</CardTitle>
-                <CardDescription>For large-scale deployments</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">Custom</div>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Unlimited requests
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Dedicated support
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Custom SLA
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    On-premise option
-                  </li>
-                </ul>
-                <Button className="w-full" variant="outline" data-testid="button-contact-sales">
-                  Contact Sales
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
         {/* WebSocket Tab */}
         <TabsContent value="websocket" className="space-y-6">
           <Card data-testid="card-websocket">
@@ -726,14 +627,14 @@ curl -X DELETE https://your-domain.replit.app/api/v1/orders/order-id \\
               <div>
                 <h3 className="font-semibold mb-2">WebSocket URL</h3>
                 <code className="bg-muted px-3 py-2 rounded block">
-                  wss://your-domain.replit.app/ws
+                  wss://flipside.exchange/ws
                 </code>
               </div>
 
               <div>
                 <h3 className="font-semibold mb-2">Subscribe to Market Updates</h3>
                 <pre className="bg-muted p-4 rounded text-sm overflow-x-auto">
-{`const ws = new WebSocket('wss://your-domain.replit.app/ws');
+{`const ws = new WebSocket('wss://flipside.exchange/ws');
 
 ws.onopen = () => {
   // Subscribe to market updates

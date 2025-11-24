@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Key, Trash2, Copy, CheckCircle, AlertTriangle } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
@@ -32,7 +31,6 @@ export default function ApiKeys() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isKeyCreated, setIsKeyCreated] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
-  const [newKeyTier, setNewKeyTier] = useState<'free' | 'pro' | 'enterprise'>('free');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
@@ -56,7 +54,7 @@ export default function ApiKeys() {
         body: JSON.stringify({
           walletAddress: address,
           name: newKeyName,
-          tier: newKeyTier,
+          tier: 'free',
         }),
       });
 
@@ -134,7 +132,6 @@ export default function ApiKeys() {
     setIsKeyCreated(false);
     setGeneratedKey(null);
     setNewKeyName("");
-    setNewKeyTier('free');
     setCopiedKey(false);
   };
 
@@ -146,17 +143,6 @@ export default function ApiKeys() {
       description: "API key copied successfully",
     });
     setTimeout(() => setCopiedKey(false), 2000);
-  };
-
-  const getTierBadgeVariant = (tier: string) => {
-    switch (tier) {
-      case 'pro':
-        return 'default';
-      case 'enterprise':
-        return 'secondary';
-      default:
-        return 'outline';
-    }
   };
 
   if (!address) {
@@ -211,20 +197,6 @@ export default function ApiKeys() {
                       onChange={(e) => setNewKeyName(e.target.value)}
                       data-testid="input-api-key-name"
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="key-tier">Tier</Label>
-                    <Select value={newKeyTier} onValueChange={(value: 'free' | 'pro' | 'enterprise') => setNewKeyTier(value)}>
-                      <SelectTrigger data-testid="select-api-key-tier">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="free">Free (100 req/hour)</SelectItem>
-                        <SelectItem value="pro">Pro (1,000 req/hour)</SelectItem>
-                        <SelectItem value="enterprise">Enterprise (Unlimited)</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
@@ -323,9 +295,6 @@ export default function ApiKeys() {
                   <div className="space-y-1">
                     <CardTitle className="flex items-center gap-2">
                       {key.name}
-                      <Badge variant={getTierBadgeVariant(key.tier)}>
-                        {key.tier.toUpperCase()}
-                      </Badge>
                       {!key.isActive && <Badge variant="destructive">Inactive</Badge>}
                     </CardTitle>
                     <CardDescription>
@@ -343,11 +312,7 @@ export default function ApiKeys() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Rate Limit</div>
-                  <div className="font-semibold">{key.rateLimit}/hour</div>
-                </div>
+              <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Requests Made</div>
                   <div className="font-semibold">{key.requestCount.toLocaleString()}</div>
