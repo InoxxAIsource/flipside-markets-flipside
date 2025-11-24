@@ -17,6 +17,7 @@ import Hedge from "@/pages/Hedge";
 import Archived from "@/pages/Archived";
 import ApiDocs from "@/pages/ApiDocs";
 import ApiKeys from "@/pages/ApiKeys";
+import AdminSeed from "@/pages/AdminSeed";
 import NotFound from "@/pages/not-found";
 
 // Force rebuild - v1.0.2
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/docs" component={Docs} />
       <Route path="/api-docs" component={ApiDocs} />
       <Route path="/api-keys" component={ApiKeys} />
+      <Route path="/admin/seed" component={AdminSeed} />
       <Route component={NotFound} />
     </Switch>
   );
