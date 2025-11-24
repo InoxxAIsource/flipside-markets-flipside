@@ -8,6 +8,10 @@ import { Loader2, FileText, Map, TrendingUp, Users, LogOut } from "lucide-react"
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { OverviewTab } from "@/components/investor/OverviewTab";
+import { DocumentationTab } from "@/components/investor/DocumentationTab";
+import { RoadmapTab } from "@/components/investor/RoadmapTab";
+import { FinancialsTab } from "@/components/investor/FinancialsTab";
+import { TeamTab } from "@/components/investor/TeamTab";
 
 export default function InvestorDashboard() {
   const [, setLocation] = useLocation();
@@ -109,55 +113,19 @@ export default function InvestorDashboard() {
           </TabsContent>
 
           <TabsContent value="docs">
-            <Card>
-              <CardHeader>
-                <CardTitle>Documentation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Platform documentation and technical whitepapers coming soon.
-                </p>
-              </CardContent>
-            </Card>
+            <DocumentationTab />
           </TabsContent>
 
           <TabsContent value="roadmap">
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Roadmap</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Detailed roadmap with milestones and timelines coming soon.
-                </p>
-              </CardContent>
-            </Card>
+            <RoadmapTab />
           </TabsContent>
 
           <TabsContent value="financials">
-            <Card>
-              <CardHeader>
-                <CardTitle>Financial Reports</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Revenue breakdowns and financial projections coming soon.
-                </p>
-              </CardContent>
-            </Card>
+            <FinancialsTab />
           </TabsContent>
 
           <TabsContent value="team">
-            <Card>
-              <CardHeader>
-                <CardTitle>Team & Vision</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Founder bios and platform vision coming soon.
-                </p>
-              </CardContent>
-            </Card>
+            <TeamTab />
           </TabsContent>
         </Tabs>
       </main>

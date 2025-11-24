@@ -8,9 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useWallet } from "@/contexts/Web3Provider";
-import { Loader2, CheckCircle, XCircle, Copy, AlertCircle, Mail, Building, DollarSign } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Copy, AlertCircle, Mail, Building, DollarSign, Users, Map, TrendingUp } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { RoadmapManager } from "@/components/admin/RoadmapManager";
+import { FinancialReportsManager } from "@/components/admin/FinancialReportsManager";
 
 export default function AdminInvestors() {
   const { toast } = useToast();
@@ -122,9 +124,9 @@ export default function AdminInvestors() {
   return (
     <div className="container max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Investor Applications</h1>
+        <h1 className="text-3xl font-bold mb-2">Investor Admin Panel</h1>
         <p className="text-muted-foreground">
-          Review and manage investor applications
+          Manage investor applications, roadmap, and financial reports
         </p>
       </div>
 
@@ -168,18 +170,35 @@ export default function AdminInvestors() {
         </Alert>
       )}
 
-      <Tabs defaultValue="pending" className="space-y-6">
+      <Tabs defaultValue="applications" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="pending" data-testid="tab-pending">
-            Pending ({pending.length})
+          <TabsTrigger value="applications" data-testid="tab-applications">
+            <Users className="mr-2 h-4 w-4" />
+            Applications
           </TabsTrigger>
-          <TabsTrigger value="approved" data-testid="tab-approved">
-            Approved ({approved.length})
+          <TabsTrigger value="roadmap" data-testid="tab-roadmap">
+            <Map className="mr-2 h-4 w-4" />
+            Roadmap
           </TabsTrigger>
-          <TabsTrigger value="rejected" data-testid="tab-rejected">
-            Rejected ({rejected.length})
+          <TabsTrigger value="financials" data-testid="tab-financials">
+            <TrendingUp className="mr-2 h-4 w-4" />
+            Financial Reports
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="applications">
+          <Tabs defaultValue="pending" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="pending" data-testid="tab-pending">
+                Pending ({pending.length})
+              </TabsTrigger>
+              <TabsTrigger value="approved" data-testid="tab-approved">
+                Approved ({approved.length})
+              </TabsTrigger>
+              <TabsTrigger value="rejected" data-testid="tab-rejected">
+                Rejected ({rejected.length})
+              </TabsTrigger>
+            </TabsList>
 
         <TabsContent value="pending" className="space-y-4">
           {isLoading ? (
@@ -336,6 +355,16 @@ export default function AdminInvestors() {
               </Card>
             ))
           )}
+        </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="roadmap">
+          <RoadmapManager />
+        </TabsContent>
+
+        <TabsContent value="financials">
+          <FinancialReportsManager />
         </TabsContent>
       </Tabs>
     </div>

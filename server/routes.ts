@@ -2953,5 +2953,17 @@ Crawl-delay: 1`;
     }
   });
 
+  // Admin: Delete financial report
+  app.delete("/api/admin/financials/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFinancialReport(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting financial report:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
