@@ -296,3 +296,20 @@
     inset: -1px;
   }
 }
+
+/* Mermaid Diagram Styling */
+.mermaid-container {
+  @apply flex justify-center items-center my-6 overflow-x-auto;
+}
+
+.mermaid-container svg {
+  @apply max-w-full h-auto;
+  min-height: 200px;
+}
+
+/* Ensure mermaid diagrams are responsive */
+@media (max-width: 640px) {
+  .mermaid-container svg {
+    font-size: 12px;
+  }
+}

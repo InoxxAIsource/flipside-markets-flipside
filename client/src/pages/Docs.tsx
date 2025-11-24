@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { MermaidDiagram } from '@/components/MermaidDiagram';
 import { 
   BookOpen, 
   Boxes, 
@@ -509,57 +510,24 @@ export default function Docs() {
 
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-4">Gasless Trading Flow</h3>
-                  <div className="space-y-3">
-                    <Card className="border-l-4 border-l-primary">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">User Signs EIP-712 Message</div>
-                            <p className="text-sm">
-                              You sign a typed message in your wallet containing order details (no gas required)
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-blue-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Relayer Submits Transaction</div>
-                            <p className="text-sm">
-                              Our backend relayer pays the gas fee and submits your signed order to the blockchain
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-green-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">ProxyWallet Executes On-Chain</div>
-                            <p className="text-sm">
-                              Your ProxyWallet verifies the signature and executes the trade trustlessly
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <MermaidDiagram chart={`
+sequenceDiagram
+    participant User as User Wallet
+    participant EIP as EIP-712 Signature
+    participant Relayer as Backend Relayer
+    participant Proxy as ProxyWallet
+    participant Blockchain as Ethereum Sepolia
+    
+    User->>EIP: Sign typed message<br/>(no gas required)
+    Note over User,EIP: Order details:<br/>price, amount, side
+    EIP->>Relayer: Submit signed message
+    Relayer->>Relayer: Pay gas fee
+    Relayer->>Blockchain: Submit transaction
+    Blockchain->>Proxy: Verify signature
+    Proxy->>Blockchain: Execute trade on-chain
+    Blockchain->>User: Trade confirmed
+    Note over Proxy,Blockchain: Non-custodial & trustless
+`} />
                 </div>
 
                 <Separator />
@@ -677,63 +645,24 @@ export default function Docs() {
 
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-4">Market Resolution Flow</h3>
-                  <div className="space-y-3">
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Market Expires</div>
-                            <p className="text-sm">
-                              When the market expiration time is reached, it becomes eligible for resolution
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Pyth Price Query</div>
-                            <p className="text-sm">
-                              The oracle queries Pyth Network for the current on-chain price feed at expiry time
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Automated Resolution</div>
-                            <p className="text-sm">
-                              Market is resolved based on price vs. target (YES if price ≥ target, NO otherwise)
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500/20 text-purple-500 font-bold text-sm flex-shrink-0">4</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Token Redemption</div>
-                            <p className="text-sm">
-                              Winners can redeem their tokens for collateral (1 USDT per winning share)
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <MermaidDiagram chart={`
+flowchart TD
+    A[Market Expiration Time Reached] --> B{Query Pyth Network}
+    B --> C[Get On-Chain Price Feed]
+    C --> D{Compare Price vs Target}
+    D -->|Price >= Target| E[Resolve as YES]
+    D -->|Price < Target| F[Resolve as NO]
+    E --> G[YES Token Holders Win]
+    F --> H[NO Token Holders Win]
+    G --> I[Redeem: 1 Token = 1 USDT]
+    H --> I
+    
+    style A fill:#3b82f6,color:#fff
+    style D fill:#f59e0b,color:#fff
+    style E fill:#10b981,color:#fff
+    style F fill:#ef4444,color:#fff
+    style I fill:#8b5cf6,color:#fff
+`} />
                 </div>
 
                 <Separator />
@@ -981,49 +910,21 @@ export default function Docs() {
 
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-4">Liquidity Provision</h3>
-                  <div className="space-y-3">
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Add Liquidity</div>
-                            <p className="text-sm">
-                              Deposit equal values of YES and NO tokens to receive LP tokens
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Earn Fees</div>
-                            <p className="text-sm">
-                              Collect 2% of all swaps proportional to your LP token share
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Remove Liquidity</div>
-                            <p className="text-sm">
-                              Burn LP tokens to withdraw your share of the pool plus accumulated fees
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <MermaidDiagram chart={`
+flowchart LR
+    A[Deposit YES + NO Tokens<br/>Equal Value] --> B[Receive LP Tokens]
+    B --> C[Pool Earns 2% Swap Fees]
+    C --> D{Continue Providing?}
+    D -->|Yes| C
+    D -->|No| E[Burn LP Tokens]
+    E --> F[Withdraw: Tokens + Fees]
+    
+    style A fill:#3b82f6,color:#fff
+    style B fill:#10b981,color:#fff
+    style C fill:#f59e0b,color:#fff
+    style E fill:#ef4444,color:#fff
+    style F fill:#8b5cf6,color:#fff
+`} />
                 </div>
 
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
@@ -1144,75 +1045,26 @@ export default function Docs() {
 
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-4">Hedge Discovery Process</h3>
-                  <div className="space-y-3">
-                    <Card className="border-l-4 border-l-primary">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Position Analysis</div>
-                            <p className="text-sm">
-                              System identifies your filled CLOB trades (excludes AMM swaps and open orders)
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-blue-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Embedding Generation</div>
-                            <p className="text-sm">
-                              Creates vector embeddings for each market's question and description using OpenAI
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-green-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Similarity Matching</div>
-                            <p className="text-sm">
-                              Finds correlated markets using cosine similarity between embeddings
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-purple-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500/20 text-purple-500 font-bold text-sm flex-shrink-0">4</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Hedge Recommendations</div>
-                            <p className="text-sm">
-                              Suggests inverse positions in correlated markets to balance portfolio risk
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <MermaidDiagram chart={`
+flowchart TD
+    A[Analyze Your Portfolio] --> B{Have Filled CLOB Trades?}
+    B -->|Yes| C[Extract Market Descriptions]
+    B -->|No| Z[No Hedges Available]
+    C --> D[Generate OpenAI Embeddings<br/>Vector representations]
+    D --> E[Calculate Cosine Similarity<br/>Find correlated markets]
+    E --> F{Similarity > 70%?}
+    F -->|Yes| G[Hedge Opportunity Found]
+    F -->|No| H[Continue searching...]
+    G --> I[Suggest Inverse Position]
+    I --> J[Display: Market + Recommended Side]
+    H --> E
+    
+    style A fill:#3b82f6,color:#fff
+    style D fill:#f59e0b,color:#fff
+    style E fill:#8b5cf6,color:#fff
+    style G fill:#10b981,color:#fff
+    style I fill:#ec4899,color:#fff
+`} />
                 </div>
 
                 <Separator />
@@ -1318,93 +1170,35 @@ export default function Docs() {
 
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-4">Data Flow Pipeline</h3>
-                  <div className="space-y-3">
-                    <Card className="border-l-4 border-l-primary">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary font-bold text-sm flex-shrink-0">1</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Blockchain Events</div>
-                            <p className="text-sm">
-                              Smart contracts emit events: OrderFilled, ConditionPreparation, PositionsMerge, etc.
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-blue-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500/20 text-blue-500 font-bold text-sm flex-shrink-0">2</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Event Indexer Service</div>
-                            <p className="text-sm">
-                              Background service continuously monitors and processes blockchain events
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-green-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-green-500/20 text-green-500 font-bold text-sm flex-shrink-0">3</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">PostgreSQL Database</div>
-                            <p className="text-sm">
-                              Indexed events update markets, orders, positions, and trade history tables
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-purple-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500/20 text-purple-500 font-bold text-sm flex-shrink-0">4</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">WebSocket Server</div>
-                            <p className="text-sm">
-                              Broadcasts updates to all connected clients in real-time
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <div className="flex justify-center">
-                      <div className="h-8 w-px bg-border"></div>
-                    </div>
-
-                    <Card className="border-l-4 border-l-orange-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-orange-500/20 text-orange-500 font-bold text-sm flex-shrink-0">5</div>
-                          <div>
-                            <div className="font-medium text-foreground mb-1">Frontend UI</div>
-                            <p className="text-sm">
-                              React components receive updates and re-render automatically
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <MermaidDiagram chart={`
+flowchart TD
+    A[Ethereum Sepolia<br/>Smart Contracts] --> B[Event Emissions]
+    B --> C[OrderFilled]
+    B --> D[ConditionPreparation]
+    B --> E[PositionsMerge]
+    C --> F[Event Indexer Service<br/>Background Monitoring]
+    D --> F
+    E --> F
+    F --> G[PostgreSQL Database]
+    G --> H[Update Markets Table]
+    G --> I[Update Orders Table]
+    G --> J[Update Positions Table]
+    H --> K[WebSocket Server<br/>Broadcast to Clients]
+    I --> K
+    J --> K
+    K --> L[Frontend UI<br/>React Components]
+    L --> M[Auto Re-render]
+    
+    N[WebSocket Fails?] -.-> O[HTTP Polling Fallback]
+    O -.-> L
+    
+    style A fill:#3b82f6,color:#fff
+    style F fill:#f59e0b,color:#fff
+    style G fill:#8b5cf6,color:#fff
+    style K fill:#10b981,color:#fff
+    style L fill:#ec4899,color:#fff
+    style O fill:#ef4444,color:#fff
+`} />
                 </div>
 
                 <Separator />
