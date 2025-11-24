@@ -40,14 +40,15 @@ export async function authenticateApiKey(
     // Since we store bcrypt hashes, we need to fetch all active keys and compare
     // For better performance in production, consider using a faster hash for lookup
     // and bcrypt only for verification
-    const keyPrefix = apiKeyHeader.substring(0, 16);
+    const keyPrefix = apiKeyHeader.substring(0, 8);
     
-    // Get all active API keys with matching prefix (optimization)
-    const allKeys = await storage.getUserApiKeys(''); // This needs optimization
+    // Get all active API keys
+    const allKeys = await storage.getActiveApiKeys();
     
     // Find matching key by comparing hashes
+    // First filter by prefix for performance, then verify with bcrypt
     let matchedKey = null;
-    for (const key of allKeys.filter(k => k.isActive && k.keyPrefix === keyPrefix)) {
+    for (const key of allKeys.filter(k => k.keyPrefix === keyPrefix)) {
       const isMatch = await bcrypt.compare(apiKeyHeader, key.keyHash);
       if (isMatch) {
         matchedKey = key;

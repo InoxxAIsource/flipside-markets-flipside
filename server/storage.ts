@@ -113,6 +113,7 @@ export interface IStorage {
   // API Key methods
   createApiKey(apiKey: InsertApiKey & { keyHash: string; keyPrefix: string }): Promise<ApiKey>;
   getUserApiKeys(userId: string): Promise<ApiKey[]>;
+  getActiveApiKeys(): Promise<ApiKey[]>;
   getApiKeyByHash(keyHash: string): Promise<ApiKey | undefined>;
   updateApiKeyUsage(id: string): Promise<void>;
   deleteApiKey(id: string): Promise<void>;
@@ -600,6 +601,13 @@ export class DatabaseStorage implements IStorage {
       .from(apiKeys)
       .where(eq(apiKeys.userId, userId))
       .orderBy(desc(apiKeys.createdAt));
+  }
+
+  async getActiveApiKeys(): Promise<ApiKey[]> {
+    return await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.isActive, true));
   }
 
   async getApiKeyByHash(keyHash: string): Promise<ApiKey | undefined> {
