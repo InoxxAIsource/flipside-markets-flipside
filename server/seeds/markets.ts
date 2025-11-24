@@ -157,5 +157,72 @@ export const seedMarkets = [
     creatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
     marketType: 'CLOB' as const,
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg'
+  },
+
+  // Sports Markets
+  {
+    question: 'Will the Lakers win the 2025 NBA Championship?',
+    description: 'Market resolves YES if the Los Angeles Lakers win the 2025 NBA Championship Finals. Must win the final series to resolve YES. Season ends June 2025.',
+    category: 'Sports',
+    expiresAt: new Date('2025-06-30T23:59:00Z'),
+    yesPrice: 0.35,
+    noPrice: 0.65,
+    volume: 0,
+    liquidity: 0,
+    creatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+    marketType: 'CLOB' as const,
+    imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800'
+  },
+  {
+    question: 'Will Messi win another Ballon d\'Or in 2025?',
+    description: 'Market resolves YES if Lionel Messi wins the 2025 Ballon d\'Or award, announced in December 2025. Must be officially awarded the trophy.',
+    category: 'Sports',
+    expiresAt: new Date('2025-12-01T00:00:00Z'),
+    yesPrice: 0.28,
+    noPrice: 0.72,
+    volume: 0,
+    liquidity: 0,
+    creatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+    marketType: 'CLOB' as const,
+    imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800'
+  },
+  {
+    question: 'Will Usain Bolt\'s 100m record be broken by 2028?',
+    description: 'Market resolves YES if any athlete runs 100m faster than Usain Bolt\'s 9.58 second world record in an official IAAF-sanctioned event before August 31, 2028. Current record set in 2009.',
+    category: 'Sports',
+    expiresAt: new Date('2028-08-31T23:59:00Z'),
+    yesPrice: 0.41,
+    noPrice: 0.59,
+    volume: 0,
+    liquidity: 0,
+    creatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+    marketType: 'POOL' as const,
+    imageUrl: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800'
+  },
+  {
+    question: 'Will LeBron play until age 42?',
+    description: 'Market resolves YES if LeBron James plays in at least one official NBA regular season or playoff game after turning 42 years old (December 30, 2026). Must be active on NBA roster.',
+    category: 'Sports',
+    expiresAt: new Date('2027-01-01T00:00:00Z'),
+    yesPrice: 0.62,
+    noPrice: 0.38,
+    volume: 0,
+    liquidity: 0,
+    creatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+    marketType: 'POOL' as const,
+    imageUrl: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=800'
+  },
+  {
+    question: 'Will a woman play in the NFL by 2030?',
+    description: 'Market resolves YES if a woman plays in at least one official NFL regular season or playoff game before January 1, 2030. Must be on active roster and play at least one snap.',
+    category: 'Sports',
+    expiresAt: new Date('2030-01-01T00:00:00Z'),
+    yesPrice: 0.18,
+    noPrice: 0.82,
+    volume: 0,
+    liquidity: 0,
+    creatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+    marketType: 'POOL' as const,
+    imageUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800'
   }
 ];

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This automated seeding system allows you to easily migrate new prediction markets from development to production with a single click, eliminating manual SQL execution.
+This automated seeding system allows you to easily migrate new prediction markets from development to production with a single click, eliminating manual SQL execution. Currently includes 17 production-ready markets across Crypto, Stocks, and Sports categories.
 
 ## How It Works
 
@@ -10,7 +10,7 @@ This automated seeding system allows you to easily migrate new prediction market
 
 1. **Seed Data File**: `server/seeds/markets.ts`
    - Contains all market data ready for production
-   - Currently includes 12 markets (6 crypto + 6 stocks)
+   - Currently includes 17 markets (6 crypto + 6 stocks + 5 sports)
    - Easy to update with more markets
 
 2. **Admin API Endpoint**: `POST /api/admin/seed-markets`
@@ -50,13 +50,13 @@ After configuring the admin wallet:
 2. Connect your admin wallet using the "Connect Wallet" button in the top nav
 3. Verify your wallet address matches the configured admin address
 4. Click "Seed Markets to Production" button
-5. Wait for confirmation message
+5. Wait for confirmation message (e.g., "Seeding complete: 17 inserted, 0 skipped")
 
 ### Step 4: Verify Success
 
 1. Go to your homepage: `https://your-domain.replit.app`
-2. Filter by "Crypto" and "Stocks" categories
-3. You should see all 12 new markets displayed
+2. Filter by "Crypto", "Stocks", and "Sports" categories
+3. You should see all 17 new markets displayed (6 crypto + 6 stocks + 5 sports)
 
 ## Current Seed Markets
 
@@ -75,6 +75,13 @@ After configuring the admin wallet:
 4. Will Microsoft stock outperform Google in 2025?
 5. Will Amazon stock hit $250 by end of Q1 2025?
 6. Will Meta Reality Labs turn profitable in 2025?
+
+### Sports Markets (5)
+1. Will the Lakers win the 2025 NBA Championship?
+2. Will Messi win another Ballon d'Or in 2025?
+3. Will Usain Bolt's 100m record be broken by 2028?
+4. Will LeBron play until age 42?
+5. Will a woman play in the NFL by 2030?
 
 ## Adding New Markets
 
@@ -152,9 +159,9 @@ Success response:
 ```json
 {
   "success": true,
-  "message": "Seeding complete: 12 inserted, 0 skipped",
+  "message": "Seeding complete: 17 inserted, 0 skipped",
   "results": {
-    "inserted": 12,
+    "inserted": 17,
     "skipped": 0,
     "errors": []
   }
