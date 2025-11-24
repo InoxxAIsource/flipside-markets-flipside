@@ -1271,6 +1271,239 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =======================
+  // Public API v1 Endpoints
+  // =======================
+  
+  const { authenticateApiKey } = await import('./middleware/apiAuth');
+  const { rateLimitMiddleware } = await import('./middleware/rateLimit');
+  
+  // GET /api/v1/markets - Get all markets (Public)
+  app.get('/api/v1/markets', async (req, res) => {
+    try {
+      const markets = await storage.getAllMarkets();
+      
+      // Filter to only return active markets
+      const activeMarkets = markets.filter(m => !m.resolved);
+      
+      res.json({
+        success: true,
+        data: activeMarkets,
+        total: activeMarkets.length,
+      });
+    } catch (error: any) {
+      console.error('API v1: Error fetching markets:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch markets' 
+      });
+    }
+  });
+  
+  // GET /api/v1/markets/:id - Get market by ID (Public)
+  app.get('/api/v1/markets/:id', async (req, res) => {
+    try {
+      const market = await storage.getMarket(req.params.id);
+      
+      if (!market) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Market not found' 
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: market,
+      });
+    } catch (error: any) {
+      console.error('API v1: Error fetching market:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch market' 
+      });
+    }
+  });
+  
+  // GET /api/v1/markets/:id/orderbook - Get market order book (Public)
+  app.get('/api/v1/markets/:id/orderbook', async (req, res) => {
+    try {
+      const orders = await storage.getMarketOrders(req.params.id, 'open');
+      
+      // Organize orders by side
+      const buyOrders = orders.filter(o => o.side === 'buy')
+        .sort((a, b) => b.price - a.price); // Highest buy price first
+      const sellOrders = orders.filter(o => o.side === 'sell')
+        .sort((a, b) => a.price - b.price); // Lowest sell price first
+      
+      res.json({
+        success: true,
+        data: {
+          bids: buyOrders,
+          asks: sellOrders,
+          spread: buyOrders.length > 0 && sellOrders.length > 0 
+            ? sellOrders[0].price - buyOrders[0].price 
+            : 0,
+        },
+      });
+    } catch (error: any) {
+      console.error('API v1: Error fetching orderbook:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch orderbook' 
+      });
+    }
+  });
+  
+  // =================================
+  // Authenticated API v1 Endpoints
+  // =================================
+  
+  // POST /api/v1/orders - Place an order (Authenticated)
+  app.post('/api/v1/orders', authenticateApiKey, rateLimitMiddleware, async (req, res) => {
+    try {
+      const validation = insertOrderSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        const error = fromZodError(validation.error);
+        return res.status(400).json({ 
+          success: false,
+          error: error.message 
+        });
+      }
+      
+      const orderData = validation.data;
+      
+      // Verify signature
+      const { ethers } = await import('ethers');
+      const makerAmountWei = ethers.parseUnits(orderData.size.toString(), 6).toString();
+      const takerAmountWei = ethers.parseUnits(orderData.price.toString(), 6).toString();
+      const nonceBigInt = BigInt(orderData.nonce);
+      const expirationBigInt = BigInt(Math.floor(orderData.expiration.getTime() / 1000));
+      
+      const isValid = await web3Service.verifyOrderSignature(
+        {
+          maker: orderData.makerAddress,
+          taker: '0x0000000000000000000000000000000000000000',
+          tokenId: (orderData as any).tokenId || orderData.marketId,
+          makerAmount: makerAmountWei,
+          takerAmount: takerAmountWei,
+          side: orderData.side === 'buy' ? 0 : 1,
+          feeRateBps: 250,
+          nonce: nonceBigInt,
+          signer: orderData.makerAddress,
+          expiration: expirationBigInt,
+        },
+        orderData.signature
+      );
+      
+      if (!isValid) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid order signature' 
+        });
+      }
+      
+      // Create order
+      const order = await storage.createOrder(orderData);
+      
+      res.json({
+        success: true,
+        data: order,
+        message: 'Order created successfully',
+      });
+    } catch (error: any) {
+      console.error('API v1: Error creating order:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to create order' 
+      });
+    }
+  });
+  
+  // DELETE /api/v1/orders/:id - Cancel an order (Authenticated)
+  app.delete('/api/v1/orders/:id', authenticateApiKey, rateLimitMiddleware, async (req, res) => {
+    try {
+      const order = await storage.getOrder(req.params.id);
+      
+      if (!order) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Order not found' 
+        });
+      }
+      
+      await storage.cancelOrder(req.params.id);
+      
+      res.json({
+        success: true,
+        message: 'Order cancelled successfully',
+      });
+    } catch (error: any) {
+      console.error('API v1: Error cancelling order:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to cancel order' 
+      });
+    }
+  });
+  
+  // GET /api/v1/positions - Get user positions (Authenticated)
+  app.get('/api/v1/positions', authenticateApiKey, rateLimitMiddleware, async (req, res) => {
+    try {
+      const { userAddress } = req.query;
+      
+      if (!userAddress) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'userAddress query parameter is required' 
+        });
+      }
+      
+      const positions = await storage.getUserPositions(userAddress as string);
+      
+      res.json({
+        success: true,
+        data: positions,
+        total: positions.length,
+      });
+    } catch (error: any) {
+      console.error('API v1: Error fetching positions:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch positions' 
+      });
+    }
+  });
+  
+  // GET /api/v1/orders - Get user orders (Authenticated)
+  app.get('/api/v1/orders', authenticateApiKey, rateLimitMiddleware, async (req, res) => {
+    try {
+      const { userAddress } = req.query;
+      
+      if (!userAddress) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'userAddress query parameter is required' 
+        });
+      }
+      
+      const orders = await storage.getUserOrders(userAddress as string);
+      
+      res.json({
+        success: true,
+        data: orders,
+        total: orders.length,
+      });
+    } catch (error: any) {
+      console.error('API v1: Error fetching orders:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch orders' 
+      });
+    }
+  });
+
   // POST /api/orders - Create a new order
   app.post('/api/orders', async (req, res) => {
     try {
