@@ -15,9 +15,11 @@ import Leaderboard from "@/pages/Leaderboard";
 import Docs from "@/pages/Docs";
 import Hedge from "@/pages/Hedge";
 import Archived from "@/pages/Archived";
+import ApiDocs from "@/pages/ApiDocs";
+import ApiKeys from "@/pages/ApiKeys";
 import NotFound from "@/pages/not-found";
 
-// Force rebuild - v1.0.1
+// Force rebuild - v1.0.2
 
 function Router() {
   return (
@@ -31,6 +33,8 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/docs" component={Docs} />
+      <Route path="/api-docs" component={ApiDocs} />
+      <Route path="/api-keys" component={ApiKeys} />
       <Route component={NotFound} />
     </Switch>
   );
