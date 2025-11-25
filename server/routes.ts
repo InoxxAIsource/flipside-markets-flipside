@@ -21,6 +21,7 @@ import { rewardsService } from "./services/rewardsService";
 import { sql } from "drizzle-orm";
 import { generateMarketEmbedding, findSimilarMarkets } from "./services/embeddingService";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { authenticateInvestor } from "./middleware/investorAuth";
 
 // Module-level variable for ProxyWalletService (set by server/index.ts)
@@ -1172,8 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.createUser({ walletAddress });
       }
       
-      // Generate secure random API key
-      const bcrypt = await import('bcryptjs');
+      // Generate secure random API key using static import
       const apiKeyRaw = `fp_live_${randomBytes(32).toString('hex')}`;
       const keyHash = await bcrypt.hash(apiKeyRaw, 10);
       const keyPrefix = apiKeyRaw.substring(0, 16);
@@ -2543,8 +2543,7 @@ Crawl-delay: 1`;
         return res.status(400).json({ error: "Application already approved" });
       }
       
-      // Hash password
-      const bcrypt = await import('bcryptjs');
+      // Hash password using static import
       const passwordHash = await bcrypt.hash(password, 10);
       
       // Create investor account
