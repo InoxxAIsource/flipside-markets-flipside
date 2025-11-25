@@ -2642,6 +2642,60 @@ Crawl-delay: 1`;
     }
   });
   
+  // Investor: Self-registration (creates account directly)
+  app.post("/api/investor/register", async (req, res) => {
+    try {
+      const { name, email, password, company, linkedinUrl, investmentAmount, message } = req.body;
+      
+      // Validate required fields
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: "Name, email, and password are required" });
+      }
+      
+      // Check password strength
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+      
+      // Check if email already exists
+      const existingInvestor = await storage.getInvestorByEmail(email);
+      if (existingInvestor) {
+        return res.status(400).json({ error: "An account with this email already exists" });
+      }
+      
+      // Hash password
+      const bcrypt = require('bcryptjs');
+      const passwordHash = await bcrypt.hash(password, 10);
+      
+      // Create investor directly (no approval needed for self-registration)
+      const investor = await storage.createInvestor({
+        name,
+        email,
+        passwordHash,
+        company: company || null,
+        linkedinUrl: linkedinUrl || null,
+        investmentAmount: investmentAmount || null,
+        status: 'active',
+        createdBy: 'self-registration'
+      });
+      
+      console.log(`New investor registered: ${email}`);
+      
+      res.json({ 
+        success: true, 
+        message: "Account created successfully. You can now login.",
+        investor: {
+          id: investor.id,
+          name: investor.name,
+          email: investor.email
+        }
+      });
+    } catch (error: any) {
+      console.error('Error during investor registration:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
   // Investor: Login
   app.post("/api/investor/login", async (req, res) => {
     try {
