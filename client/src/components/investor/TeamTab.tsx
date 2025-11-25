@@ -2,9 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Target, TrendingUp, Zap, ExternalLink } from "lucide-react";
 import { SiX } from "react-icons/si";
-import tauheedAvatar from "@assets/generated_images/ceo_m._tauheed_portrait.png";
-import joeAvatar from "@assets/generated_images/lead_engineer_joe_fill_portrait.png";
-import inoxxAvatar from "@assets/generated_images/head_of_product_inoxx_portrait.png";
+import tauheedAvatar from "@assets/generated_images/crypto_punk_ceo_avatar.png";
+import joeAvatar from "@assets/generated_images/crypto_punk_engineer_avatar.png";
+import inoxxAvatar from "@assets/generated_images/crypto_punk_product_avatar.png";
 
 export function TeamTab() {
   const team = [
