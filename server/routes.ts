@@ -975,6 +975,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         signer,
       });
 
+      // Sync market liquidity after adding
+      try {
+        const poolInfo = await ammService.getPoolInfo(poolAddress);
+        const totalLiquidity = parseFloat(poolInfo.totalLiquidity);
+        
+        // Find market by pool address and update liquidity
+        const markets = await storage.getAllMarkets();
+        const market = markets.find(m => m.poolAddress?.toLowerCase() === poolAddress.toLowerCase());
+        if (market) {
+          await storage.updateMarket(market.id, { liquidity: totalLiquidity });
+          console.log(`✅ Market ${market.id} liquidity synced to $${totalLiquidity.toFixed(2)}`);
+        }
+      } catch (syncError) {
+        console.error('Warning: Failed to sync market liquidity:', syncError);
+      }
+
       res.json(result);
     } catch (error: any) {
       console.error('Error adding liquidity:', error);
@@ -1010,6 +1026,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         minNoAmount,
         signer,
       });
+
+      // Sync market liquidity after removing
+      try {
+        const poolInfo = await ammService.getPoolInfo(poolAddress);
+        const totalLiquidity = parseFloat(poolInfo.totalLiquidity);
+        
+        // Find market by pool address and update liquidity
+        const markets = await storage.getAllMarkets();
+        const market = markets.find(m => m.poolAddress?.toLowerCase() === poolAddress.toLowerCase());
+        if (market) {
+          await storage.updateMarket(market.id, { liquidity: totalLiquidity });
+          console.log(`✅ Market ${market.id} liquidity synced to $${totalLiquidity.toFixed(2)}`);
+        }
+      } catch (syncError) {
+        console.error('Warning: Failed to sync market liquidity:', syncError);
+      }
 
       res.json(result);
     } catch (error: any) {
