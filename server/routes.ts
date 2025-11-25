@@ -2664,7 +2664,6 @@ Crawl-delay: 1`;
       }
       
       // Hash password
-      const bcrypt = require('bcryptjs');
       const passwordHash = await bcrypt.hash(password, 10);
       
       // Create investor directly (no approval needed for self-registration)
