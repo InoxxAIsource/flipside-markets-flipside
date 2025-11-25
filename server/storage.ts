@@ -67,6 +67,7 @@ export interface IStorage {
   getMarket(id: string): Promise<Market | undefined>;
   getAllMarkets(): Promise<Market[]>;
   getMarketsByCategory(category: string): Promise<Market[]>;
+  getMarketByPoolAddress(poolAddress: string): Promise<Market | undefined>;
   createMarket(market: InsertMarket): Promise<Market>;
   updateMarket(id: string, updates: Partial<Market>): Promise<Market | undefined>;
   updateMarketAIAnalysis(id: string, aiAnalysis: string): Promise<Market | undefined>;
