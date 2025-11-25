@@ -2544,7 +2544,7 @@ Crawl-delay: 1`;
       }
       
       // Hash password
-      const bcrypt = require('bcryptjs');
+      const bcrypt = await import('bcryptjs');
       const passwordHash = await bcrypt.hash(password, 10);
       
       // Create investor account
