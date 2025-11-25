@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   CheckCircle2, 
   Target, 
@@ -16,11 +15,7 @@ import {
   Building,
   Cpu,
   BarChart3,
-  AlertTriangle,
   Award,
-  Mail,
-  FileText,
-  Briefcase,
   Clock,
   Server,
   Database,
@@ -1215,57 +1210,6 @@ export function RoadmapTab() {
 
       <Separator className="my-8" />
 
-      {/* ==================== SECTION 10: RISK MITIGATION ==================== */}
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2 border-b pb-2">
-          <AlertTriangle className="h-6 w-6 text-yellow-500" />
-          Risk Mitigation & Contingency Planning
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-t-4 border-t-red-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Technical Risks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><strong className="text-foreground">Smart Contract Vulnerabilities:</strong> Mitigated by Trail of Bits audit, bug bounty program, timelock upgrades</li>
-                <li><strong className="text-foreground">Oracle Failures:</strong> Multi-oracle strategy (Pyth + Chainlink + UMA), fallback to governance resolution</li>
-                <li><strong className="text-foreground">Scalability Issues:</strong> Layer 2 expansion roadmap (Arbitrum, Optimism), database sharding plan</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="border-t-4 border-t-yellow-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Market Risks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><strong className="text-foreground">Regulatory Uncertainty:</strong> Legal counsel engaged, compliance framework for regulated jurisdictions</li>
-                <li><strong className="text-foreground">Low Liquidity:</strong> Market maker partnerships, AMM pool seeding, fee rebates for early liquidity providers</li>
-                <li><strong className="text-foreground">User Acquisition Costs:</strong> Referral program, viral mechanics, gasless onboarding to reduce friction</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="border-t-4 border-t-orange-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Competitive Risks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><strong className="text-foreground">Polymarket Dominance:</strong> Differentiate through automation, AI, and superior UX</li>
-                <li><strong className="text-foreground">New Entrants:</strong> Technology moat (Oracle + ProxyWallet + AI) creates 12-18 month competitive advantage</li>
-                <li><strong className="text-foreground">Regulatory Crackdown:</strong> Geographic diversification, decentralized governance transition</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <Separator className="my-8" />
-
       {/* ==================== SECTION 11: INVESTMENT HIGHLIGHTS ==================== */}
       <section className="space-y-6">
         <h2 className="text-2xl font-bold flex items-center gap-2 border-b pb-2">
@@ -1391,75 +1335,9 @@ export function RoadmapTab() {
         </Card>
       </section>
 
-      <Separator className="my-8" />
-
-      {/* ==================== SECTION 12: CONTACT & NEXT STEPS ==================== */}
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2 border-b pb-2">
-          <Mail className="h-6 w-6 text-primary" />
-          Contact & Next Steps
-        </h2>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <p className="text-xl font-semibold">Ready to learn more?</p>
-              <div className="flex flex-wrap justify-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>[Your email]</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <span>[Your URL]</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span>[Pitch Deck]</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
-                  <span>[LinkedIn]</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Due Diligence Materials Available</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Smart contract source code (verified on Etherscan)
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Financial models and projections
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Security audit reports
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                User research and feedback
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Competitive analysis deep dive
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      </section>
-
       {/* Footer */}
       <div className="text-center pt-8 pb-4 border-t">
-        <p className="text-sm text-muted-foreground">Last Updated: November 2024</p>
+        <p className="text-sm text-muted-foreground">Last Updated: November 2025</p>
         <p className="text-lg font-bold text-primary mt-2">Flipside - The Future of Decentralized Prediction Markets</p>
       </div>
     </div>

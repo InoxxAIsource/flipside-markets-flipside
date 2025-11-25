@@ -1,26 +1,39 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Target, TrendingUp, Zap } from "lucide-react";
+import { Target, TrendingUp, Zap, ExternalLink } from "lucide-react";
+import { SiX } from "react-icons/si";
+import tauheedAvatar from "@assets/generated_images/ceo_m._tauheed_portrait.png";
+import joeAvatar from "@assets/generated_images/lead_engineer_joe_fill_portrait.png";
+import inoxxAvatar from "@assets/generated_images/head_of_product_inoxx_portrait.png";
 
 export function TeamTab() {
   const team = [
     {
-      name: "Alex Chen",
+      name: "M. Tauheed",
       role: "Founder & CEO",
-      bio: "Former blockchain engineer at Coinbase. 8+ years experience building decentralized applications.",
-      expertise: ["Smart Contracts", "DeFi", "System Architecture"],
+      xHandle: "@beingtauheedtk",
+      xUrl: "https://x.com/beingtauheedtk",
+      avatar: tauheedAvatar,
+      bio: "Visionary entrepreneur driving Flipside's mission to revolutionize prediction markets through blockchain innovation and AI integration.",
+      expertise: ["Strategy", "Blockchain", "Business Development"],
     },
     {
-      name: "Sarah Johnson",
-      role: "Head of Product",
-      bio: "Previously led product at Uniswap. Expert in prediction markets and trading UX.",
-      expertise: ["Product Strategy", "UX Design", "Market Research"],
-    },
-    {
-      name: "Marcus Rodriguez",
+      name: "Joe Fill",
       role: "Lead Engineer",
-      bio: "Full-stack engineer with deep expertise in TypeScript and Ethereum. Built trading systems at Jane Street.",
-      expertise: ["React", "Node.js", "Solidity"],
+      xHandle: "@joe_fill1",
+      xUrl: "https://x.com/joe_fill1",
+      avatar: joeAvatar,
+      bio: "Full-stack architect with deep expertise in TypeScript, Solidity, and building high-performance trading systems.",
+      expertise: ["React", "Node.js", "Solidity", "System Architecture"],
+    },
+    {
+      name: "Inoxx Infra",
+      role: "Head of Product",
+      xHandle: "@InoxxProtocol",
+      xUrl: "https://x.com/InoxxProtocol",
+      avatar: inoxxAvatar,
+      bio: "Product strategist focused on creating intuitive user experiences that bridge Web2 simplicity with Web3 innovation.",
+      expertise: ["Product Strategy", "UX Design", "Market Research"],
     },
   ];
 
@@ -43,23 +56,87 @@ export function TeamTab() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight" data-testid="text-team-title">
-          Team & Vision
+    <div className="space-y-8">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold tracking-tight mb-2" data-testid="text-team-title">
+          Meet Our Team
         </h2>
-        <p className="text-muted-foreground" data-testid="text-team-description">
-          Meet the founders and learn about our mission
+        <p className="text-muted-foreground max-w-2xl mx-auto" data-testid="text-team-description">
+          The passionate builders behind Flipside's vision to democratize prediction markets
         </p>
       </div>
 
-      {/* Vision Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3 mb-12">
+        {team.map((member, index) => (
+          <Card 
+            key={member.name} 
+            className="hover-elevate overflow-hidden group"
+            data-testid={`card-team-member-${index}`}
+          >
+            <div className="relative h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent overflow-hidden">
+              <img 
+                src={member.avatar} 
+                alt={member.name}
+                className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+            </div>
+            <CardHeader className="relative -mt-12 pb-2">
+              <div className="flex items-end justify-between">
+                <div>
+                  <CardTitle className="text-xl" data-testid={`team-member-${index}-name`}>
+                    {member.name}
+                  </CardTitle>
+                  <CardDescription className="text-primary font-medium" data-testid={`team-member-${index}-role`}>
+                    {member.role}
+                  </CardDescription>
+                </div>
+                <a 
+                  href={member.xUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors bg-muted/50 px-2 py-1 rounded-full"
+                  data-testid={`team-member-${index}-x-link`}
+                >
+                  <SiX className="h-3 w-3" />
+                  {member.xHandle}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground leading-relaxed" data-testid={`team-member-${index}-bio`}>
+                {member.bio}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {member.expertise.map((skill) => (
+                  <Badge 
+                    key={skill} 
+                    variant="secondary" 
+                    className="text-xs"
+                    data-testid={`team-member-${index}-skill-${skill.toLowerCase().replace(/\s/g, '-')}`}
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3 mb-8">
         {vision.map((item) => (
-          <Card key={item.title} data-testid={`card-vision-${item.title.toLowerCase()}`}>
+          <Card 
+            key={item.title} 
+            className="bg-gradient-to-br from-card to-card/50 border-primary/10"
+            data-testid={`card-vision-${item.title.toLowerCase()}`}
+          >
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <item.icon className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <item.icon className="h-5 w-5 text-primary" />
+                </div>
                 <CardTitle className="text-lg">{item.title}</CardTitle>
               </div>
             </CardHeader>
@@ -70,97 +147,79 @@ export function TeamTab() {
         ))}
       </div>
 
-      {/* Team Members */}
-      <div>
-        <h3 className="text-xl font-semibold mb-4">Core Team</h3>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {team.map((member, index) => (
-            <Card key={member.name} className="hover-elevate" data-testid={`card-team-member-${index}`}>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base" data-testid={`team-member-${index}-name`}>
-                      {member.name}
-                    </CardTitle>
-                    <CardDescription data-testid={`team-member-${index}-role`}>{member.role}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground" data-testid={`team-member-${index}-bio`}>
-                  {member.bio}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {member.expertise.map((skill) => (
-                    <Badge key={skill} variant="secondary" data-testid={`team-member-${index}-skill-${skill.toLowerCase().replace(/\s/g, '-')}`}>
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Market Opportunity */}
-      <Card data-testid="card-market-opportunity">
+      <Card className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-primary/20" data-testid="card-market-opportunity">
         <CardHeader>
-          <CardTitle>Market Opportunity</CardTitle>
+          <CardTitle className="text-2xl">Market Opportunity</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            <p>
+            <p className="text-muted-foreground leading-relaxed">
               The prediction markets industry is experiencing explosive growth, with total addressable market
-              estimated at $10B+ annually. Traditional platforms like Polymarket have demonstrated massive
+              estimated at <span className="text-primary font-bold">$10B+ annually</span>. Traditional platforms like Polymarket have demonstrated massive
               user demand, but centralized solutions face regulatory challenges and lack transparency.
             </p>
 
-            <h4 className="text-base font-semibold mt-4">Why Flipside Will Win</h4>
-            <ul className="space-y-2">
-              <li>
-                <strong>Fully Decentralized:</strong> Self-custodial wallets and on-chain settlement eliminate
-                regulatory risk and build user trust
-              </li>
-              <li>
-                <strong>Superior UX:</strong> Gasless trading via meta-transactions makes DeFi feel like Web2,
-                removing the biggest barrier to mainstream adoption
-              </li>
-              <li>
-                <strong>Dual Liquidity:</strong> Order book + AMM pools provide deep liquidity for any market
-                size, from niche events to major elections
-              </li>
-              <li>
-                <strong>Proven Traction:</strong> 1,000+ users and $50K+ in trading volume within first 3 months
-                demonstrates product-market fit
-              </li>
-              <li>
-                <strong>Multiple Revenue Streams:</strong> Trading fees (2%), market creation fees, and developer
-                API subscriptions create sustainable business model
-              </li>
-            </ul>
+            <div className="grid md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <h4 className="text-lg font-semibold mb-4 text-foreground">Why Flipside Will Win</h4>
+                <ul className="space-y-3 list-none pl-0">
+                  <li className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Fully Decentralized:</strong>
+                      <span className="text-muted-foreground"> Self-custodial wallets and on-chain settlement eliminate regulatory risk</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Superior UX:</strong>
+                      <span className="text-muted-foreground"> Gasless trading makes DeFi feel like Web2</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Dual Liquidity:</strong>
+                      <span className="text-muted-foreground"> Order book + AMM pools provide deep liquidity</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
 
-            <h4 className="text-base font-semibold mt-4">Growth Strategy</h4>
-            <p>
-              Our go-to-market strategy focuses on three key pillars:
-            </p>
-            <ol className="space-y-2">
-              <li>
-                <strong>Community Building:</strong> Crypto-native early adopters who value decentralization
-                and transparency
-              </li>
-              <li>
-                <strong>Sports Markets:</strong> Integration with ESPN provides immediate access to mainstream
-                sports betting audience
-              </li>
-              <li>
-                <strong>Developer API:</strong> Enable third-party applications and institutional traders to
-                build on our platform, creating network effects
-              </li>
-            </ol>
+              <div>
+                <h4 className="text-lg font-semibold mb-4 text-foreground">Growth Strategy</h4>
+                <ol className="space-y-3 list-none pl-0">
+                  <li className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-primary">1</div>
+                    <div>
+                      <strong className="text-foreground">Community Building:</strong>
+                      <span className="text-muted-foreground"> Crypto-native early adopters who value decentralization</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-primary">2</div>
+                    <div>
+                      <strong className="text-foreground">Sports Markets:</strong>
+                      <span className="text-muted-foreground"> ESPN integration for mainstream audience</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-primary">3</div>
+                    <div>
+                      <strong className="text-foreground">Developer API:</strong>
+                      <span className="text-muted-foreground"> Third-party apps and institutional traders</span>
+                    </div>
+                  </li>
+                </ol>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
