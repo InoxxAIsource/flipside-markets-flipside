@@ -786,17 +786,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyInvestorCredentials(email: string, password: string): Promise<Investor | null> {
-    console.log('[Debug] verifyInvestorCredentials called for:', email);
     const investor = await this.getInvestorByEmail(email);
     if (!investor || !investor.passwordHash) {
-      console.log('[Debug] No investor found or no password hash');
       return null;
     }
     
-    console.log('[Debug] Investor found, comparing password...');
-    console.log('[Debug] Password hash exists:', !!investor.passwordHash);
     const isValid = await bcrypt.compare(password, investor.passwordHash);
-    console.log('[Debug] Password valid:', isValid);
     return isValid ? investor : null;
   }
 
