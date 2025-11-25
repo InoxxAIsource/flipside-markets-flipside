@@ -19,7 +19,8 @@ export default function InvestorLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      return await apiRequest("POST", "/api/investor/login", credentials);
+      const response = await apiRequest("POST", "/api/investor/login", credentials);
+      return await response.json();
     },
     onSuccess: (data: any) => {
       toast({
