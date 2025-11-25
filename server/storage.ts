@@ -282,6 +282,18 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Pool market methods
+  async getMarketByPoolAddress(poolAddress: string): Promise<Market | undefined> {
+    // Normalize to lowercase for case-insensitive comparison
+    const normalizedAddress = poolAddress.toLowerCase();
+    const result = await db
+      .select()
+      .from(markets)
+      .where(sqlOperator`LOWER(${markets.poolAddress}) = ${normalizedAddress}`)
+      .limit(1);
+    return result[0];
+  }
+
   // Sports market methods
   async getMarketByEspnEventId(espnEventId: string): Promise<Market | undefined> {
     const result = await db

@@ -18,6 +18,7 @@ import fs from "fs/promises";
 import { randomBytes } from "crypto";
 import { postMarketToTwitter } from "./services/twitter";
 import { rewardsService } from "./services/rewardsService";
+import { eventIndexer } from "./services/eventIndexer";
 import { sql } from "drizzle-orm";
 import { generateMarketEmbedding, findSimilarMarkets } from "./services/embeddingService";
 import jwt from "jsonwebtoken";
@@ -825,6 +826,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('⏭️ Twitter posting skipped for pool market (postToTwitter = false)');
       }
 
+      // Refresh event listeners to include the new pool
+      try {
+        await eventIndexer.setupAMMPoolListeners();
+        console.log('✅ AMM pool listeners refreshed for new pool market');
+      } catch (listenerError) {
+        console.error('Warning: Failed to refresh AMM pool listeners:', listenerError);
+      }
+
       res.status(201).json({
         ...market,
         poolTxHash: poolResult.txHash,
@@ -975,18 +984,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         signer,
       });
 
+      // Find market by pool address using dedicated query (case-insensitive)
+      const marketForSync = await storage.getMarketByPoolAddress(poolAddress);
+      
+      if (!marketForSync) {
+        return res.status(404).json({ error: 'No market found for this pool address' });
+      }
+
       // Sync market liquidity after adding
       try {
         const poolInfo = await ammService.getPoolInfo(poolAddress);
         const totalLiquidity = parseFloat(poolInfo.totalLiquidity);
-        
-        // Find market by pool address and update liquidity
-        const markets = await storage.getAllMarkets();
-        const market = markets.find(m => m.poolAddress?.toLowerCase() === poolAddress.toLowerCase());
-        if (market) {
-          await storage.updateMarket(market.id, { liquidity: totalLiquidity });
-          console.log(`✅ Market ${market.id} liquidity synced to $${totalLiquidity.toFixed(2)}`);
-        }
+        await storage.updateMarket(marketForSync.id, { liquidity: totalLiquidity });
+        console.log(`✅ Market ${marketForSync.id} liquidity synced to $${totalLiquidity.toFixed(2)}`);
       } catch (syncError) {
         console.error('Warning: Failed to sync market liquidity:', syncError);
       }
@@ -1019,6 +1029,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const signer = ammService.getSigner(privateKey);
       
+      // Find market by pool address using dedicated query (case-insensitive)
+      const marketForSync = await storage.getMarketByPoolAddress(poolAddress);
+      
+      if (!marketForSync) {
+        return res.status(404).json({ error: 'No market found for this pool address' });
+      }
+
       const result = await ammService.removeLiquidity({
         poolAddress,
         lpTokens,
@@ -1031,14 +1048,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const poolInfo = await ammService.getPoolInfo(poolAddress);
         const totalLiquidity = parseFloat(poolInfo.totalLiquidity);
-        
-        // Find market by pool address and update liquidity
-        const markets = await storage.getAllMarkets();
-        const market = markets.find(m => m.poolAddress?.toLowerCase() === poolAddress.toLowerCase());
-        if (market) {
-          await storage.updateMarket(market.id, { liquidity: totalLiquidity });
-          console.log(`✅ Market ${market.id} liquidity synced to $${totalLiquidity.toFixed(2)}`);
-        }
+        await storage.updateMarket(marketForSync.id, { liquidity: totalLiquidity });
+        console.log(`✅ Market ${marketForSync.id} liquidity synced to $${totalLiquidity.toFixed(2)}`);
       } catch (syncError) {
         console.error('Warning: Failed to sync market liquidity:', syncError);
       }

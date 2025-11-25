@@ -183,8 +183,15 @@ export class EventIndexer {
 
   /**
    * Set up event listeners for all AMM pools
+   * Can be called to refresh listeners when new pools are created
    */
-  private async setupAMMPoolListeners() {
+  async setupAMMPoolListeners() {
+    // Ensure indexer is running before setting up listeners
+    if (!this.isRunning) {
+      console.log('EventIndexer not running, starting now...');
+      this.start();
+    }
+
     try {
       // Get all POOL markets
       const markets = await storage.getAllMarkets();
