@@ -2,6 +2,7 @@ import { web3Service } from "../contracts/web3Service";
 import { storage } from "../storage";
 import { ethers } from "ethers";
 import { AMMPoolABI } from "../contracts/abis";
+import { ammService } from "../contracts/ammService";
 
 /**
  * Event indexer service to listen to blockchain events and update the database
@@ -253,7 +254,55 @@ export class EventIndexer {
           }
         });
 
-        console.log(`✅ Listening to swaps on pool ${poolAddress}`);
+        // Listen for LiquidityAdded events
+        pool.on('LiquidityAdded', async (provider: string, yesAmount: bigint, noAmount: bigint, lpTokens: bigint, event: ethers.Log) => {
+          console.log('LiquidityAdded event:', {
+            pool: poolAddress,
+            provider,
+            yesAmount: yesAmount.toString(),
+            noAmount: noAmount.toString(),
+            lpTokens: lpTokens.toString(),
+            txHash: event.transactionHash,
+          });
+
+          try {
+            // Get current pool info and update market liquidity
+            const poolInfo = await ammService.getPoolInfo(poolAddress);
+            const totalLiquidity = parseFloat(poolInfo.totalLiquidity);
+            
+            await storage.updateMarket(market.id, { liquidity: totalLiquidity });
+            
+            console.log(`✅ Market ${market.id} liquidity updated to $${totalLiquidity.toFixed(2)}`);
+          } catch (error) {
+            console.error('Error processing LiquidityAdded event:', error);
+          }
+        });
+
+        // Listen for LiquidityRemoved events
+        pool.on('LiquidityRemoved', async (provider: string, yesAmount: bigint, noAmount: bigint, lpTokens: bigint, event: ethers.Log) => {
+          console.log('LiquidityRemoved event:', {
+            pool: poolAddress,
+            provider,
+            yesAmount: yesAmount.toString(),
+            noAmount: noAmount.toString(),
+            lpTokens: lpTokens.toString(),
+            txHash: event.transactionHash,
+          });
+
+          try {
+            // Get current pool info and update market liquidity
+            const poolInfo = await ammService.getPoolInfo(poolAddress);
+            const totalLiquidity = parseFloat(poolInfo.totalLiquidity);
+            
+            await storage.updateMarket(market.id, { liquidity: totalLiquidity });
+            
+            console.log(`✅ Market ${market.id} liquidity updated to $${totalLiquidity.toFixed(2)}`);
+          } catch (error) {
+            console.error('Error processing LiquidityRemoved event:', error);
+          }
+        });
+
+        console.log(`✅ Listening to swaps and liquidity events on pool ${poolAddress}`);
       }
     } catch (error) {
       console.error('Error in setupAMMPoolListeners:', error);
