@@ -13,7 +13,7 @@
 
 ## 🚀 Overview
 
-Flipside is a full-stack prediction market platform inspired by Polymarket, enabling users to create, trade, and resolve prediction markets on blockchain. Built on Ethereum Sepolia testnet, it combines the best of DeFi with a modern, intuitive web interface.
+Flipside is a full-stack prediction/opinion  market platform , enabling users to create, trade, and resolve prediction markets on blockchain. Built on Ethereum Sepolia testnet, it combines the best of DeFi with a modern, intuitive web interface.
 
 ### Key Features
 
@@ -204,7 +204,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE
 
 ## 🌟 Roadmap
 
-- [ ] **Mainnet Deployment** - Launch on Ethereum mainnet
+- [ ] **Mainnet Deployment** - Launch on BNB/BASE mainnet
 - [ ] **Mobile App** - Native iOS/Android applications
 - [ ] **Advanced Analytics** - Enhanced market statistics and charts
 - [ ] **Social Features** - User profiles, following, comments
