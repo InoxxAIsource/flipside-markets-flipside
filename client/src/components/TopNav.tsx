@@ -1,9 +1,10 @@
-import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen, Menu, Shield, Archive } from 'lucide-react';
+import { Search, User, PlusCircle, Wallet, Home, Trophy, BookOpen, Menu, Shield, Archive, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
 import { WalletButton } from './WalletButton';
 import { Link } from 'wouter';
+import { SiGithub } from 'react-icons/si';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,24 @@ export function TopNav({ onSearch }: TopNavProps) {
               <User className="h-5 w-5" />
             </Button>
           </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            data-testid="button-github-star"
+          >
+            <a
+              href="https://github.com/flipside-markets/flipside"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2"
+              aria-label="Star Flipside on GitHub"
+            >
+              <SiGithub className="h-4 w-4" />
+              <Star className="h-3 w-3" />
+              <span className="hidden xl:inline">Star</span>
+            </a>
+          </Button>
           <ThemeToggle />
           <WalletButton />
         </div>
@@ -159,6 +178,19 @@ export function TopNav({ onSearch }: TopNavProps) {
                     <span>Profile</span>
                   </div>
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a
+                  href="https://github.com/flipside-markets/flipside"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="menu-item-github"
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <SiGithub className="h-4 w-4" />
+                    <span>Star on GitHub</span>
+                  </div>
+                </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
